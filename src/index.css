@@ -8,49 +8,88 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* CampusLink Design System - Indigo & Teal Theme */
-    --background: 0 0% 96%;
-    --foreground: 243 25% 15%;
+    /* CampusLink Design System - Gold & Black Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 243 25% 15%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 243 25% 15%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Primary - Indigo (#4F46E5) */
-    --primary: 243 78% 59%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 243 90% 70%;
+    /* Primary - Gold (#D4AF37) */
+    --primary: 45 82% 52%;
+    --primary-foreground: 0 0% 10%;
+    --primary-glow: 45 100% 60%;
 
-    /* Accent - Teal (#2EC4B6) */
-    --accent: 174 65% 47%;
+    /* Accent - Deep Gold (#B8860B) */
+    --accent: 43 77% 38%;
     --accent-foreground: 0 0% 100%;
-    --accent-light: 174 60% 85%;
+    --accent-light: 43 60% 85%;
 
-    --secondary: 243 20% 95%;
-    --secondary-foreground: 243 25% 15%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 240 5% 92%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 46%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 243 78% 59%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 45 82% 52%;
 
     --radius: 0.75rem;
 
     /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(243 78% 59%), hsl(243 90% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(174 65% 47%), hsl(174 60% 65%));
-    --gradient-hero: linear-gradient(135deg, hsl(243 78% 59%), hsl(174 65% 47%));
+    --gradient-primary: linear-gradient(135deg, hsl(45 82% 52%), hsl(45 100% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(43 77% 38%), hsl(43 60% 50%));
+    --gradient-hero: linear-gradient(135deg, hsl(45 82% 52%), hsl(43 77% 38%));
 
     /* Shadows */
-    --shadow-card: 0 2px 8px hsl(243 78% 59% / 0.08);
-    --shadow-hover: 0 4px 16px hsl(243 78% 59% / 0.12);
+    --shadow-card: 0 2px 8px hsl(45 82% 52% / 0.15);
+    --shadow-hover: 0 4px 16px hsl(45 82% 52% / 0.25);
+  }
+
+  .dark {
+    /* Dark Mode - Black & Gold Theme */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Primary - Gold (#D4AF37) */
+    --primary: 45 82% 52%;
+    --primary-foreground: 0 0% 10%;
+    --primary-glow: 45 100% 60%;
+
+    /* Accent - Deep Gold (#B8860B) */
+    --accent: 43 77% 38%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 43 60% 30%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 60%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 45 82% 52%;
+
+    /* Shadows for dark mode */
+    --shadow-card: 0 2px 8px hsl(45 82% 52% / 0.2);
+    --shadow-hover: 0 4px 16px hsl(45 82% 52% / 0.3);
   }
 }
 

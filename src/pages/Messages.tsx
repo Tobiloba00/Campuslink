@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 type Message = {
   id: string;
@@ -24,6 +25,7 @@ type Conversation = {
 };
 
 const Messages = () => {
+  const [searchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -34,7 +36,12 @@ const Messages = () => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user);
     });
-  }, []);
+    
+    const userId = searchParams.get('userId');
+    if (userId) {
+      setSelectedConversation(userId);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (currentUser) {

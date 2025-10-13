@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, MessageSquare, TrendingUp, Users, ArrowRight } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -27,31 +28,40 @@ const Index = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-primary flex items-center justify-center mb-6 shadow-hover">
-            <GraduationCap className="h-12 w-12 text-primary-foreground" />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-primary">CampusLink</h1>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" asChild>
+              <a href="/auth">Login</a>
+            </Button>
+            <Button asChild>
+              <a href="/auth">Sign Up</a>
+            </Button>
           </div>
-          
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-hero bg-clip-text text-transparent">
-            Connect. Learn. Thrive.
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 py-20">
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-foreground">
+            Connect with peers, get help, and share resources
           </h1>
           
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
-            CampusLink brings students together to share knowledge, offer tutoring, and build a stronger community.
+          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl">
+            CampusLink is the easiest way for university students to find academic support, trade textbooks, and connect with the campus community.
           </p>
 
-          <div className="flex gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 mb-20">
             <Button size="lg" asChild className="shadow-hover">
-              <a href="/auth">
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </a>
+              <a href="/auth">Get Started</a>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href="/leaderboard">View Leaderboard</a>
+              <a href="/feed">Browse Feed</a>
             </Button>
           </div>
 

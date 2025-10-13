@@ -4,7 +4,8 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, BookOpen, Users, ShoppingCart, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, BookOpen, Users, ShoppingCart, Star, MessageCircle, Search } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ type Post = {
   optional_price: number | null;
   ai_summary: string | null;
   created_at: string;
+  user_id: string;
   profiles: {
     name: string;
     rating: number;
@@ -41,6 +43,7 @@ const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [user, setUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -92,6 +95,7 @@ const Feed = () => {
         optional_price,
         ai_summary,
         created_at,
+        user_id,
         profiles (
           name,
           rating
@@ -113,6 +117,14 @@ const Feed = () => {
     setPosts(data || []);
   };
 
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = searchQuery === "" || 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.profiles.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
   if (!user) return null;
 
   return (
@@ -124,7 +136,16 @@ const Feed = () => {
             <h1 className="text-3xl font-bold mb-2">Campus Feed</h1>
             <p className="text-muted-foreground">Discover requests, tutoring, and marketplace</p>
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <div className="relative flex-1 md:min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search posts or users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="Filter by category" />
@@ -146,7 +167,7 @@ const Feed = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <Card key={post.id} className="shadow-card hover:shadow-hover transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
@@ -155,7 +176,7 @@ const Feed = () => {
                     {post.category}
                   </Badge>
                   {post.optional_price && (
-                    <span className="font-bold text-accent">${post.optional_price}</span>
+                    <span className="font-bold text-primary">${post.optional_price}</span>
                   )}
                 </div>
                 <CardTitle className="text-xl">{post.title}</CardTitle>
@@ -178,13 +199,32 @@ const Feed = () => {
                 <p className="text-sm text-muted-foreground line-clamp-3">
                   {post.description}
                 </p>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to={`/post/${post.id}`}>View Details</Link>
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" asChild>
+                    <Link to={`/post/${post.id}`}>View Details</Link>
+                  </Button>
+                  {user?.id !== post.user_id && (
+                    <Button 
+                      variant="default" 
+                      size="icon"
+                      asChild
+                    >
+                      <Link to={`/messages?userId=${post.user_id}`}>
+                        <MessageCircle className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {filteredPosts.length === 0 && posts.length > 0 && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-lg">No posts match your search.</p>
+          </div>
+        )}
 
         {posts.length === 0 && (
           <div className="text-center py-16">
