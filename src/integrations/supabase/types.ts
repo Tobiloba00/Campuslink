@@ -14,25 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      comments: {
+        Row: {
+          comment_text: string
+          created_at: string
+          id: string
+          image_url: string | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           created_at: string | null
           id: string
-          message: string
+          image_url: string | null
+          message: string | null
           receiver_id: string
           sender_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          message: string
+          image_url?: string | null
+          message?: string | null
           receiver_id: string
           sender_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          message?: string
+          image_url?: string | null
+          message?: string | null
           receiver_id?: string
           sender_id?: string
         }
@@ -60,8 +101,10 @@ export type Database = {
           created_at: string | null
           description: string
           id: string
+          image_url: string | null
           optional_price: number | null
           title: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -70,8 +113,10 @@ export type Database = {
           created_at?: string | null
           description: string
           id?: string
+          image_url?: string | null
           optional_price?: number | null
           title: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -80,8 +125,10 @@ export type Database = {
           created_at?: string | null
           description?: string
           id?: string
+          image_url?: string | null
           optional_price?: number | null
           title?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
