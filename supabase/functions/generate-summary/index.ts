@@ -12,37 +12,36 @@ serve(async (req) => {
 
   try {
     const { description } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    if (!GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({ summary: null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that creates brief, engaging 1-2 sentence summaries of student posts.'
-          },
-          {
-            role: 'user',
-            content: `Create a brief, engaging summary (1-2 sentences max) for this post: ${description}`
-          }
-        ],
-        max_tokens: 100,
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Generate a concise 1-2 sentence summary of the following post description:\n\n${description}`
+            }]
+          }]
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
+      console.error('Gemini API error:', response.status, errorText);
       return new Response(
         JSON.stringify({ summary: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -50,7 +49,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const summary = data.choices[0]?.message?.content || null;
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
 
     return new Response(
       JSON.stringify({ summary }),
