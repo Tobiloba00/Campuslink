@@ -131,6 +131,12 @@ const PostDetail = () => {
     navigate(`/edit-post/${id}`);
   };
 
+  const handleRateUser = () => {
+    if (post?.user_id) {
+      navigate(`/rate-user/${post.user_id}`);
+    }
+  };
+
   if (loading || !post || !user) return null;
 
   const isOwner = user.id === post.user_id;
@@ -211,13 +217,23 @@ const PostDetail = () => {
 
             <div className="flex flex-wrap gap-3">
               {!isOwner && (
-                <Button 
-                  onClick={handleSendMessage} 
-                  className="flex-1 md:flex-none"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Send Message
-                </Button>
+                <>
+                  <Button 
+                    onClick={handleSendMessage} 
+                    className="flex-1 md:flex-none"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Send Message
+                  </Button>
+                  <Button 
+                    onClick={handleRateUser}
+                    variant="outline"
+                    className="flex-1 md:flex-none"
+                  >
+                    <Star className="h-4 w-4 mr-2" />
+                    Rate User
+                  </Button>
+                </>
               )}
               
               {isOwner && (

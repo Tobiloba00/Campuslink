@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -10,20 +10,74 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
-import { uploadImage } from "@/lib/imageUpload";
+import { uploadImage, deleteImage } from "@/lib/imageUpload";
 
-const CreatePost = () => {
+const EditPost = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    fetchPost();
+  }, [id]);
+
+  const fetchPost = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      if (data.user_id !== user.id) {
+        toast.error("You don't have permission to edit this post");
+        navigate("/feed");
+        return;
+      }
+
+      setTitle(data.title);
+      setDescription(data.description);
+      setCategory(data.category);
+      setPrice(data.optional_price?.toString() || "");
+      setCurrentImageUrl(data.image_url);
+    } catch (error: any) {
+      toast.error("Failed to load post");
+      navigate("/feed");
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
+  };
+
+  const handleImageRemove = async () => {
+    if (currentImageUrl) {
+      try {
+        const path = currentImageUrl.split('/').slice(-3).join('/');
+        await deleteImage('post-images', path);
+        setCurrentImageUrl(null);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,44 +88,59 @@ const CreatePost = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      let imageUrl = null;
+      let imageUrl = currentImageUrl;
 
-      // Upload image if selected
+      // Handle image changes
       if (selectedImage) {
         setUploading(true);
+        // Delete old image if exists
+        if (currentImageUrl) {
+          await handleImageRemove();
+        }
         const uploadResult = await uploadImage(selectedImage, 'post-images', 'posts');
         imageUrl = uploadResult.url;
         setUploading(false);
       }
 
-      // Generate AI summary
+      // Generate new AI summary
       const summaryResponse = await supabase.functions.invoke('generate-summary', {
         body: { description }
       });
 
       const { error } = await supabase
         .from('posts')
-        .insert({
-          user_id: user.id,
+        .update({
           title,
           description,
           category: category as any,
           optional_price: price ? parseFloat(price) : null,
           ai_summary: summaryResponse.data?.summary || null,
           image_url: imageUrl
-        });
+        })
+        .eq('id', id);
 
       if (error) throw error;
 
-      toast.success("Post created successfully!");
-      navigate("/feed");
+      toast.success("Post updated successfully!");
+      navigate(`/post/${id}`);
     } catch (error: any) {
-      toast.error(error.message || "Failed to create post");
+      toast.error(error.message || "Failed to update post");
     } finally {
       setLoading(false);
       setUploading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 flex justify-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,8 +148,8 @@ const CreatePost = () => {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <Card className="shadow-hover">
           <CardHeader>
-            <CardTitle className="text-2xl">Create a New Post</CardTitle>
-            <CardDescription>Share your request, offer tutoring, or list items for sale</CardDescription>
+            <CardTitle className="text-2xl">Edit Post</CardTitle>
+            <CardDescription>Update your post information</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -125,6 +194,8 @@ const CreatePost = () => {
                 <Label>Image (optional)</Label>
                 <ImageUpload 
                   onImageSelect={handleImageSelect}
+                  currentImage={currentImageUrl || undefined}
+                  onImageRemove={handleImageRemove}
                   isUploading={uploading}
                 />
               </div>
@@ -145,11 +216,16 @@ const CreatePost = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button type="button" variant="outline" onClick={() => navigate("/feed")} className="flex-1">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => navigate(`/post/${id}`)} 
+                  className="flex-1"
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={loading || uploading} className="flex-1">
-                  {uploading ? "Uploading..." : loading ? "Creating..." : "Create Post"}
+                  {uploading ? "Uploading..." : loading ? "Updating..." : "Update Post"}
                 </Button>
               </div>
             </form>
@@ -160,4 +236,4 @@ const CreatePost = () => {
   );
 };
 
-export default CreatePost;
+export default EditPost;

@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Star, Award } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageUpload } from "@/components/ImageUpload";
+import { uploadImage, deleteImage } from "@/lib/imageUpload";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -18,6 +21,8 @@ const Profile = () => {
   const [course, setCourse] = useState("");
   const [bio, setBio] = useState("");
   const [reviews, setReviews] = useState<any[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -61,6 +66,21 @@ const Profile = () => {
     setReviews(data || []);
   };
 
+  const handleImageSelect = (file: File) => {
+    setSelectedImage(file);
+  };
+
+  const handleImageRemove = async () => {
+    if (profile?.profile_picture) {
+      try {
+        const path = profile.profile_picture.split('/').slice(-2).join('/');
+        await deleteImage('profile-pictures', path);
+      } catch (error) {
+        console.error('Error deleting old image:', error);
+      }
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -69,19 +89,40 @@ const Profile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      let profilePictureUrl = profile?.profile_picture;
+
+      // Upload new profile picture if selected
+      if (selectedImage) {
+        setUploading(true);
+        // Delete old image if exists
+        if (profilePictureUrl) {
+          await handleImageRemove();
+        }
+        const uploadResult = await uploadImage(selectedImage, 'profile-pictures', 'profile');
+        profilePictureUrl = uploadResult.url;
+        setUploading(false);
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({ name, course, bio })
+        .update({ 
+          name, 
+          course, 
+          bio,
+          profile_picture: profilePictureUrl
+        })
         .eq('id', user.id);
 
       if (error) throw error;
 
       toast.success("Profile updated successfully!");
       fetchProfile();
+      setSelectedImage(null);
     } catch (error: any) {
       toast.error(error.message || "Failed to update profile");
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -97,6 +138,23 @@ const Profile = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdate} className="space-y-4">
+                <div className="flex justify-center mb-4">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={profile?.profile_picture || ""} />
+                    <AvatarFallback className="text-2xl">{name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Profile Picture</Label>
+                  <ImageUpload 
+                    onImageSelect={handleImageSelect}
+                    currentImage={profile?.profile_picture}
+                    onImageRemove={handleImageRemove}
+                    isUploading={uploading}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -128,8 +186,8 @@ const Profile = () => {
                   />
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Updating..." : "Update Profile"}
+                <Button type="submit" disabled={loading || uploading} className="w-full">
+                  {uploading ? "Uploading..." : loading ? "Updating..." : "Update Profile"}
                 </Button>
               </form>
             </CardContent>

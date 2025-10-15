@@ -7,11 +7,14 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
 import CreatePost from "./pages/CreatePost";
+import EditPost from "./pages/EditPost";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Admin from "./pages/Admin";
 import Leaderboard from "./pages/Leaderboard";
 import PostDetail from "./pages/PostDetail";
+import UserSearch from "./pages/UserSearch";
+import RateUser from "./pages/RateUser";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,8 +30,11 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/edit-post/:id" element={<EditPost />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/users" element={<UserSearch />} />
+          <Route path="/rate-user/:userId" element={<RateUser />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/post/:id" element={<PostDetail />} />

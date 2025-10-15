@@ -56,6 +56,10 @@ const UserSearch = () => {
     navigate(`/messages?userId=${userId}`);
   };
 
+  const handleRateUser = (userId: string) => {
+    navigate(`/rate-user/${userId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -125,14 +129,25 @@ const UserSearch = () => {
                     </p>
                   )}
 
-                  <Button
-                    onClick={() => handleMessage(profile.id)}
-                    className="w-full"
-                    size="sm"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Message
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleMessage(profile.id)}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Message
+                    </Button>
+                    <Button
+                      onClick={() => handleRateUser(profile.id)}
+                      variant="outline"
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      Rate
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

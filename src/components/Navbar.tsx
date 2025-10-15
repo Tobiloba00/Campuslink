@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { GraduationCap, LogOut, User as UserIcon, MessageSquare, LayoutDashboard } from "lucide-react";
+import { GraduationCap, LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DropdownMenu,
@@ -60,6 +60,12 @@ export const Navbar = () => {
           <ThemeToggle />
           {user ? (
             <>
+              <Button variant="ghost" size="sm" asChild className="hidden md:flex">
+                <Link to="/users">
+                  <Users className="h-4 w-4 mr-2" />
+                  Find Users
+                </Link>
+              </Button>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/messages">
                   <MessageSquare className="h-4 w-4 mr-2" />
@@ -84,6 +90,12 @@ export const Navbar = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
                     <Link to="/profile">View Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="md:hidden">
+                    <Link to="/users">
+                      <Users className="h-4 w-4 mr-2" />
+                      Find Users
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
