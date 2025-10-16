@@ -56,7 +56,7 @@ export const Navbar = () => {
           <span className="font-bold text-xl">CampusLink</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
           {user ? (
             <>
@@ -66,14 +66,14 @@ export const Navbar = () => {
                   Find Users
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" asChild className="px-2 md:px-3">
                 <Link to="/messages">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Messages
+                  <MessageSquare className="h-4 w-4 md:mr-2" />
+                  <span className="hidden sm:inline">Messages</span>
                 </Link>
               </Button>
               {isAdmin && (
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                   <Link to="/admin">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
                     Admin
@@ -82,9 +82,9 @@ export const Navbar = () => {
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <UserIcon className="h-4 w-4 mr-2" />
-                    Profile
+                  <Button variant="ghost" size="sm" className="px-2 md:px-3">
+                    <UserIcon className="h-4 w-4 md:mr-2" />
+                    <span className="hidden sm:inline">Profile</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -97,6 +97,14 @@ export const Navbar = () => {
                       Find Users
                     </Link>
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild className="lg:hidden">
+                      <Link to="/admin">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout

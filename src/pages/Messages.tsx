@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { Send, X, Image as ImageIcon, ArrowLeft, Home } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -213,7 +213,18 @@ const Messages = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-4 md:py-8">
-        <div className="grid md:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-8rem)] md:h-[600px]">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => navigate('/feed')}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Back to Feed
+          </Button>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-12rem)] md:h-[600px]">
           <Card className={`shadow-card p-4 ${showConversations ? 'block' : 'hidden md:block'}`}>
             <h2 className="font-bold text-lg mb-4">Conversations</h2>
             <ScrollArea className="h-[calc(100vh-12rem)] md:h-[500px]">

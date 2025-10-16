@@ -196,11 +196,13 @@ const PostDetail = () => {
 
           <CardContent className="space-y-6">
             {post.image_url && (
-              <img
-                src={post.image_url}
-                alt={post.title}
-                className="w-full h-auto max-h-96 object-cover rounded-lg"
-              />
+              <div className="w-full overflow-hidden rounded-lg">
+                <img
+                  src={post.image_url}
+                  alt={post.title}
+                  className="w-full h-auto max-h-96 object-cover rounded-lg"
+                />
+              </div>
             )}
 
             {post.ai_summary && (

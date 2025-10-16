@@ -308,7 +308,8 @@ export const Comments = ({ postId }: CommentsProps) => {
                     <img
                       src={comment.image_url}
                       alt="Comment attachment"
-                      className="mt-3 rounded-lg max-w-full h-auto max-h-96 object-contain"
+                      className="mt-3 rounded-lg max-w-full md:max-w-md h-auto max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(comment.image_url!, '_blank')}
                     />
                   )}
                 </div>

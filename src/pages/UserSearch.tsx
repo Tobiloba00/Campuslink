@@ -20,12 +20,19 @@ interface Profile {
 const UserSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchProfiles();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUser(user);
+  };
 
   const fetchProfiles = async () => {
     try {
@@ -43,14 +50,16 @@ const UserSearch = () => {
     }
   };
 
-  const filteredProfiles = profiles.filter((profile) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      profile.name.toLowerCase().includes(query) ||
-      profile.course?.toLowerCase().includes(query) ||
-      profile.bio?.toLowerCase().includes(query)
-    );
-  });
+  const filteredProfiles = profiles
+    .filter((profile) => profile.id !== currentUser?.id) // Exclude current user
+    .filter((profile) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        profile.name.toLowerCase().includes(query) ||
+        profile.course?.toLowerCase().includes(query) ||
+        profile.bio?.toLowerCase().includes(query)
+      );
+    });
 
   const handleMessage = (userId: string) => {
     navigate(`/messages?userId=${userId}`);
