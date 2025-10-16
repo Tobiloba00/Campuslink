@@ -17,6 +17,7 @@ type Post = {
   category: string;
   optional_price: number | null;
   ai_summary: string | null;
+  image_url: string | null;
   created_at: string;
   user_id: string;
   profiles: {
@@ -94,6 +95,7 @@ const Feed = () => {
         category,
         optional_price,
         ai_summary,
+        image_url,
         created_at,
         user_id,
         profiles (
@@ -166,7 +168,7 @@ const Feed = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPosts.map((post) => (
             <Card key={post.id} className="shadow-card hover:shadow-hover transition-shadow">
               <CardHeader>
@@ -194,6 +196,15 @@ const Feed = () => {
                 {post.ai_summary && (
                   <div className="bg-accent-light/20 border border-accent-light rounded-lg p-3">
                     <p className="text-sm text-foreground/80 italic">{post.ai_summary}</p>
+                  </div>
+                )}
+                {post.image_url && (
+                  <div className="rounded-lg overflow-hidden">
+                    <img 
+                      src={post.image_url} 
+                      alt={post.title}
+                      className="w-full h-48 object-cover"
+                    />
                   </div>
                 )}
                 <p className="text-sm text-muted-foreground line-clamp-3">

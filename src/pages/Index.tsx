@@ -46,9 +46,9 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-20">
+      <div className="container mx-auto px-4 py-12 md:py-20">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-foreground">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-foreground">
             Connect with peers, get help, and share resources
           </h1>
           
@@ -66,7 +66,7 @@ const Index = () => {
           </div>
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 w-full mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full mt-8">
             <div className="bg-card rounded-xl p-6 shadow-card hover:shadow-hover transition-shadow">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Users className="h-6 w-6 text-primary" />
@@ -101,9 +101,9 @@ const Index = () => {
       </div>
 
       {/* Stats Section */}
-      <div className="bg-primary/5 py-16">
+      <div className="bg-primary/5 py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-primary mb-2">500+</div>
               <div className="text-muted-foreground">Active Students</div>
@@ -121,8 +121,8 @@ const Index = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-3xl font-bold mb-4">Ready to join the community?</h2>
+      <div className="container mx-auto px-4 py-12 md:py-16 text-center">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to join the community?</h2>
         <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
           Sign up now and start connecting with fellow students who share your academic journey.
         </p>

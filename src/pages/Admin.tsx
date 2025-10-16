@@ -86,8 +86,8 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Dashboard</h1>
 
         <Tabs defaultValue="posts" className="space-y-6">
           <TabsList>
@@ -129,7 +129,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {users.map((user) => (
                 <Card key={user.id} className="shadow-card">
                   <CardHeader>
