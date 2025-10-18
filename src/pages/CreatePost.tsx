@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { uploadImage } from "@/lib/imageUpload";
+import { formatNairaInput, parseNairaInput } from "@/lib/utils";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -19,11 +20,19 @@ const CreatePost = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [displayPrice, setDisplayPrice] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const formatted = formatNairaInput(rawValue);
+    setDisplayPrice(formatted);
+    setPrice(parseNairaInput(formatted));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,14 +142,13 @@ const CreatePost = () => {
                 <Label htmlFor="price">Price (optional)</Label>
                 <Input
                   id="price"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  type="text"
+                  placeholder="e.g., 5,000"
+                  value={displayPrice}
+                  onChange={handlePriceChange}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Leave blank if not applicable
+                  Enter amount in Naira (₦)
                 </p>
               </div>
 

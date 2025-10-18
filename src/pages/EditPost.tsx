@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { uploadImage, deleteImage } from "@/lib/imageUpload";
+import { formatNairaInput, parseNairaInput } from "@/lib/utils";
 
 const EditPost = () => {
   const { id } = useParams();
@@ -21,6 +22,7 @@ const EditPost = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [displayPrice, setDisplayPrice] = useState("");
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,6 +57,7 @@ const EditPost = () => {
       setDescription(data.description);
       setCategory(data.category);
       setPrice(data.optional_price?.toString() || "");
+      setDisplayPrice(data.optional_price ? formatNairaInput(data.optional_price.toString()) : "");
       setCurrentImageUrl(data.image_url);
     } catch (error: any) {
       toast.error("Failed to load post");
@@ -66,6 +69,13 @@ const EditPost = () => {
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const formatted = formatNairaInput(rawValue);
+    setDisplayPrice(formatted);
+    setPrice(parseNairaInput(formatted));
   };
 
   const handleImageRemove = async () => {
@@ -204,14 +214,13 @@ const EditPost = () => {
                 <Label htmlFor="price">Price (optional)</Label>
                 <Input
                   id="price"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  type="text"
+                  placeholder="e.g., 5,000"
+                  value={displayPrice}
+                  onChange={handlePriceChange}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Leave blank if not applicable
+                  Enter amount in Naira (₦)
                 </p>
               </div>
 

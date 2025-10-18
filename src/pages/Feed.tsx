@@ -178,7 +178,7 @@ const Feed = () => {
                     {post.category}
                   </Badge>
                   {post.optional_price && (
-                    <span className="font-bold text-primary">${post.optional_price}</span>
+                    <span className="font-bold text-primary">₦{post.optional_price.toLocaleString('en-NG')}</span>
                   )}
                 </div>
                 <CardTitle className="text-xl">{post.title}</CardTitle>

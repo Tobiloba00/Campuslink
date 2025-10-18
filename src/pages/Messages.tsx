@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
@@ -40,6 +40,10 @@ const Messages = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showConversations, setShowConversations] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const messageLimit = 50;
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -128,18 +132,62 @@ const Messages = () => {
     setSelectedUserProfile(data);
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (loadMore = false) => {
     if (!currentUser || !selectedConversation) return;
+    if (loadMore && (!hasMore || isLoadingMore)) return;
 
-    const { data } = await supabase
+    if (loadMore) setIsLoadingMore(true);
+
+    let query = supabase
       .from('messages')
       .select('*')
       .or(
         `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedConversation}),and(sender_id.eq.${selectedConversation},receiver_id.eq.${currentUser.id})`
       )
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(messageLimit);
 
-    setMessages(data || []);
+    if (loadMore && messages.length > 0) {
+      const oldestMessage = messages[0];
+      query = query.lt('created_at', oldestMessage.created_at);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      if (loadMore) {
+        setMessages([...data.reverse(), ...messages]);
+        setHasMore(data.length === messageLimit);
+      } else {
+        setMessages(data.reverse());
+        setHasMore(data.length === messageLimit);
+        // Auto-scroll to bottom for new chats
+        setTimeout(scrollToBottom, 100);
+      }
+    }
+
+    if (loadMore) setIsLoadingMore(false);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
+      const previousScrollHeight = element.scrollHeight;
+      fetchMessages(true).then(() => {
+        // Maintain scroll position
+        const newScrollHeight = element.scrollHeight;
+        element.scrollTop = newScrollHeight - previousScrollHeight;
+      });
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,6 +245,7 @@ const Messages = () => {
       clearImage();
       fetchMessages();
       fetchConversations();
+      setTimeout(scrollToBottom, 100);
     } catch (error) {
       toast.error("Failed to send message");
     } finally {
@@ -277,7 +326,12 @@ const Messages = () => {
                     )}
                   </div>
                 </div>
-                <ScrollArea className="flex-1 p-3 md:p-4">
+                <ScrollArea ref={scrollAreaRef} className="flex-1 p-3 md:p-4" onScrollCapture={handleScroll}>
+                  {isLoadingMore && (
+                    <div className="text-center text-sm text-muted-foreground py-2">
+                      Loading older messages...
+                    </div>
+                  )}
                   <div className="space-y-3 md:space-y-4">
                     {messages.map((msg) => (
                       <div
@@ -306,7 +360,7 @@ const Messages = () => {
                             <img 
                               src={msg.image_url} 
                               alt="Message attachment" 
-                              className="mt-2 rounded max-w-full h-auto cursor-pointer hover:opacity-90"
+                              className="mt-2 rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                               onClick={() => window.open(msg.image_url!, '_blank')}
                             />
                           )}

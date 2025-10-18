@@ -181,7 +181,7 @@ const PostDetail = () => {
                 </Badge>
                 {post.optional_price && (
                   <Badge variant="outline" className="text-accent font-bold border-accent">
-                    ${post.optional_price}
+                    ₦{post.optional_price.toLocaleString('en-NG')}
                   </Badge>
                 )}
               </div>
