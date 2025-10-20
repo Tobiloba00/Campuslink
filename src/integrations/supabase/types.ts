@@ -97,36 +97,48 @@ export type Database = {
       posts: {
         Row: {
           ai_summary: string | null
+          campus_highlight: string | null
           category: Database["public"]["Enums"]["post_category"]
           created_at: string | null
           description: string
+          engagement_count: number | null
           id: string
           image_url: string | null
+          match_suggestions: Json | null
           optional_price: number | null
+          tags: string[] | null
           title: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
           ai_summary?: string | null
+          campus_highlight?: string | null
           category: Database["public"]["Enums"]["post_category"]
           created_at?: string | null
           description: string
+          engagement_count?: number | null
           id?: string
           image_url?: string | null
+          match_suggestions?: Json | null
           optional_price?: number | null
+          tags?: string[] | null
           title: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
           ai_summary?: string | null
+          campus_highlight?: string | null
           category?: Database["public"]["Enums"]["post_category"]
           created_at?: string | null
           description?: string
+          engagement_count?: number | null
           id?: string
           image_url?: string | null
+          match_suggestions?: Json | null
           optional_price?: number | null
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
           user_id?: string
@@ -148,10 +160,13 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          interests: string[] | null
           name: string
           profile_picture: string | null
           rating: number | null
+          skills: string[] | null
           updated_at: string | null
+          year_of_study: string | null
         }
         Insert: {
           bio?: string | null
@@ -159,10 +174,13 @@ export type Database = {
           created_at?: string | null
           email: string
           id: string
+          interests?: string[] | null
           name: string
           profile_picture?: string | null
           rating?: number | null
+          skills?: string[] | null
           updated_at?: string | null
+          year_of_study?: string | null
         }
         Update: {
           bio?: string | null
@@ -170,10 +188,13 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          interests?: string[] | null
           name?: string
           profile_picture?: string | null
           rating?: number | null
+          skills?: string[] | null
           updated_at?: string | null
+          year_of_study?: string | null
         }
         Relationships: []
       }

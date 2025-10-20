@@ -25,6 +25,7 @@ type Conversation = {
   userName: string;
   lastMessage: string;
   timestamp: string;
+  profilePicture?: string;
 };
 
 const Messages = () => {
@@ -42,7 +43,7 @@ const Messages = () => {
   const [showConversations, setShowConversations] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const messageLimit = 50;
+  const messageLimit = 10;
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,8 +94,8 @@ const Messages = () => {
       .from('messages')
       .select(`
         *,
-        sender:profiles!messages_sender_id_fkey(name),
-        receiver:profiles!messages_receiver_id_fkey(name)
+        sender:profiles!messages_sender_id_fkey(name, profile_picture),
+        receiver:profiles!messages_receiver_id_fkey(name, profile_picture)
       `)
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
       .order('created_at', { ascending: false });
@@ -106,13 +107,15 @@ const Messages = () => {
     data.forEach((msg: any) => {
       const otherUserId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
       const otherUserName = msg.sender_id === currentUser.id ? msg.receiver.name : msg.sender.name;
+      const otherUserPicture = msg.sender_id === currentUser.id ? msg.receiver.profile_picture : msg.sender.profile_picture;
 
       if (!conversationMap.has(otherUserId)) {
         conversationMap.set(otherUserId, {
           userId: otherUserId,
           userName: otherUserName,
           lastMessage: msg.message,
-          timestamp: msg.created_at
+          timestamp: msg.created_at,
+          profilePicture: otherUserPicture
         });
       }
     });
@@ -281,14 +284,24 @@ const Messages = () => {
                 <div
                   key={conv.userId}
                   onClick={() => handleSelectConversation(conv.userId)}
-                  className={`p-3 rounded-lg cursor-pointer mb-2 transition-colors ${
+                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer mb-2 transition-all hover:scale-[1.02] ${
                     selectedConversation === conv.userId
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-secondary"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-secondary/80"
                   }`}
                 >
-                  <div className="font-medium">{conv.userName}</div>
-                  <div className="text-sm truncate opacity-80">{conv.lastMessage || "Image"}</div>
+                  <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                    <AvatarImage src={conv.profilePicture || ""} />
+                    <AvatarFallback className="text-sm font-semibold">
+                      {conv.userName?.charAt(0) || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm">{conv.userName}</div>
+                    <div className="text-xs truncate opacity-80">
+                      {conv.lastMessage || "📷 Image"}
+                    </div>
+                  </div>
                 </div>
               ))}
             </ScrollArea>
@@ -332,6 +345,19 @@ const Messages = () => {
                       Loading older messages...
                     </div>
                   )}
+                  
+                  {/* System Privacy Message */}
+                  {messages.length > 0 && (
+                    <div className="flex justify-center mb-6">
+                      <div className="bg-muted/50 border border-border rounded-xl p-3 max-w-md text-center">
+                        <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+                          <span className="text-amber-500">⚠️</span>
+                          <span>CampusLink may review messages for safety and quality. Keep conversations respectful and academic.</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3 md:space-y-4">
                     {messages.map((msg) => (
                       <div
@@ -349,10 +375,10 @@ const Messages = () => {
                           </Avatar>
                         )}
                         <div
-                          className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 rounded-lg ${
+                          className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 shadow-sm ${
                             msg.sender_id === currentUser?.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary"
+                              ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-md"
+                              : "bg-secondary rounded-[18px] rounded-bl-md"
                           }`}
                         >
                           {msg.message && <p className="text-sm md:text-base">{msg.message}</p>}
@@ -384,7 +410,7 @@ const Messages = () => {
                     </div>
                   </div>
                 )}
-                <div className="p-3 md:p-4 border-t flex gap-2">
+                <div className="p-3 md:p-4 border-t flex gap-2 bg-background">
                   <input
                     type="file"
                     id="message-image"
@@ -394,12 +420,13 @@ const Messages = () => {
                     disabled={uploading}
                   />
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
+                    className="rounded-full hover:bg-secondary"
                     onClick={() => document.getElementById('message-image')?.click()}
                     disabled={uploading}
                   >
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-5 w-5" />
                   </Button>
                   <Input
                     value={newMessage}
@@ -407,9 +434,14 @@ const Messages = () => {
                     placeholder="Type a message..."
                     onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                     disabled={uploading}
-                    className="flex-1"
+                    className="flex-1 rounded-full border-2 focus-visible:ring-offset-0"
                   />
-                  <Button onClick={sendMessage} disabled={uploading || (!newMessage.trim() && !selectedImage)}>
+                  <Button 
+                    onClick={sendMessage} 
+                    disabled={uploading || (!newMessage.trim() && !selectedImage)}
+                    className="rounded-full h-10 w-10 p-0"
+                    size="icon"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>

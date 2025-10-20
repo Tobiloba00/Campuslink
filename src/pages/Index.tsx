@@ -130,6 +130,16 @@ const Index = () => {
           <a href="/auth">Create Your Account</a>
         </Button>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-6 mt-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-muted-foreground text-sm">
+            Powered by{" "}
+            <span className="font-semibold text-foreground">Omniai</span>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

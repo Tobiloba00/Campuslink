@@ -53,10 +53,28 @@ const CreatePost = () => {
         setUploading(false);
       }
 
+      // Fetch user profile for AI analysis
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('course, year_of_study, skills, interests')
+        .eq('id', user.id)
+        .single();
+
       // Generate AI summary
       const summaryResponse = await supabase.functions.invoke('generate-summary', {
         body: { description }
       });
+
+      // AI post analysis for matching and tagging
+      const analysisResponse = await supabase.functions.invoke('ai-post-analysis', {
+        body: { 
+          postTitle: title,
+          postDescription: description,
+          userProfile: userProfile || {}
+        }
+      });
+
+      const analysisData = analysisResponse.data || {};
 
       const { error } = await supabase
         .from('posts')
@@ -67,7 +85,10 @@ const CreatePost = () => {
           category: category as any,
           optional_price: price ? parseFloat(price) : null,
           ai_summary: summaryResponse.data?.summary || null,
-          image_url: imageUrl
+          image_url: imageUrl,
+          tags: analysisData.tags || [],
+          campus_highlight: analysisData.campus_highlight || null,
+          match_suggestions: analysisData.match_criteria || null
         });
 
       if (error) throw error;

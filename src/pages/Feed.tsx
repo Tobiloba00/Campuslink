@@ -20,6 +20,8 @@ type Post = {
   image_url: string | null;
   created_at: string;
   user_id: string;
+  tags: string[] | null;
+  campus_highlight: string | null;
   profiles: {
     name: string;
     rating: number;
@@ -98,6 +100,8 @@ const Feed = () => {
         image_url,
         created_at,
         user_id,
+        tags,
+        campus_highlight,
         profiles (
           name,
           rating
@@ -182,7 +186,15 @@ const Feed = () => {
                   )}
                 </div>
                 <CardTitle className="text-xl">{post.title}</CardTitle>
-                <CardDescription className="flex items-center gap-2 text-sm">
+                
+                {/* Campus Highlight */}
+                {post.campus_highlight && (
+                  <div className="bg-accent/10 border border-accent/30 rounded-lg px-3 py-1.5 mt-2">
+                    <p className="text-xs font-medium text-accent">{post.campus_highlight}</p>
+                  </div>
+                )}
+                
+                <CardDescription className="flex items-center gap-2 text-sm mt-2">
                   <span>{post.profiles.name}</span>
                   {post.profiles.rating > 0 && (
                     <span className="flex items-center gap-1 text-amber-500">
@@ -191,6 +203,17 @@ const Feed = () => {
                     </span>
                   )}
                 </CardDescription>
+                
+                {/* Tags */}
+                {post.tags && post.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {post.tags.slice(0, 3).map((tag, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 {post.ai_summary && (
