@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X, Image as ImageIcon, ArrowLeft, Home } from "lucide-react";
+import { Send, X, Image as ImageIcon, ArrowLeft, Home, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +18,8 @@ type Message = {
   message: string | null;
   image_url: string | null;
   created_at: string;
+  room_id: string | null;
+  read_at: string | null;
 };
 
 type Conversation = {
@@ -26,6 +28,7 @@ type Conversation = {
   lastMessage: string;
   timestamp: string;
   profilePicture?: string;
+  roomId: string;
 };
 
 const Messages = () => {
@@ -45,6 +48,10 @@ const Messages = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const messageLimit = 10;
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -64,9 +71,10 @@ const Messages = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    if (selectedConversation && currentUser) {
+    if (selectedConversation && currentUser && selectedRoomId) {
       fetchMessages();
       fetchUserProfile();
+      markMessagesAsRead(selectedRoomId);
 
       const channel = supabase
         .channel('messages-changes')
@@ -75,7 +83,18 @@ const Messages = () => {
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'messages'
+            table: 'messages',
+            filter: `room_id=eq.${selectedRoomId}`
+          },
+          () => fetchMessages()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages',
+            filter: `room_id=eq.${selectedRoomId}`
           },
           () => fetchMessages()
         )
@@ -85,7 +104,87 @@ const Messages = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [selectedConversation, currentUser]);
+  }, [selectedConversation, currentUser, selectedRoomId]);
+
+  // Presence tracking (online status)
+  useEffect(() => {
+    if (!selectedRoomId || !currentUser) return;
+
+    const presenceChannel = supabase.channel(`room:${selectedRoomId}:presence`, {
+      config: { presence: { key: currentUser.id } }
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const userIds = new Set(Object.keys(state).filter(id => id !== currentUser.id));
+        setOnlineUsers(userIds);
+      })
+      .on('presence', { event: 'join' }, ({ key }) => {
+        setOnlineUsers(prev => new Set(prev).add(key));
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        setOnlineUsers(prev => {
+          const updated = new Set(prev);
+          updated.delete(key);
+          return updated;
+        });
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            user_id: currentUser.id,
+            online_at: new Date().toISOString()
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [selectedRoomId, currentUser]);
+
+  // Typing indicator broadcast
+  useEffect(() => {
+    if (!selectedRoomId || !currentUser) return;
+
+    const broadcastChannel = supabase.channel(`room:${selectedRoomId}:broadcast`);
+
+    broadcastChannel
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.user_id !== currentUser.id) {
+          setTypingUsers(prev => new Set(prev).add(payload.user_id));
+          
+          setTimeout(() => {
+            setTypingUsers(prev => {
+              const updated = new Set(prev);
+              updated.delete(payload.user_id);
+              return updated;
+            });
+          }, 3000);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(broadcastChannel);
+    };
+  }, [selectedRoomId, currentUser]);
+
+  const markMessagesAsRead = async (roomId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      await (supabase as any)
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('room_id', roomId)
+        .neq('sender_id', currentUser.id)
+        .is('read_at', null);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
 
   const fetchConversations = async () => {
     if (!currentUser) return;
@@ -115,7 +214,8 @@ const Messages = () => {
           userName: otherUserName,
           lastMessage: msg.message,
           timestamp: msg.created_at,
-          profilePicture: otherUserPicture
+          profilePicture: otherUserPicture,
+          roomId: msg.room_id
         });
       }
     });
@@ -158,13 +258,23 @@ const Messages = () => {
     const { data } = await query;
 
     if (data) {
+      const typedMessages = (data as any[]).map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_id,
+        receiver_id: msg.receiver_id,
+        message: msg.message,
+        image_url: msg.image_url,
+        created_at: msg.created_at,
+        room_id: msg.room_id || null,
+        read_at: msg.read_at || null
+      })) as Message[];
+
       if (loadMore) {
-        setMessages([...data.reverse(), ...messages]);
+        setMessages([...typedMessages.reverse(), ...messages]);
         setHasMore(data.length === messageLimit);
       } else {
-        setMessages(data.reverse());
+        setMessages(typedMessages.reverse());
         setHasMore(data.length === messageLimit);
-        // Auto-scroll to bottom for new chats
         setTimeout(scrollToBottom, 100);
       }
     }
@@ -221,8 +331,23 @@ const Messages = () => {
     setImagePreview(null);
   };
 
+  const handleTyping = () => {
+    if (selectedRoomId && currentUser) {
+      const channel = supabase.channel(`room:${selectedRoomId}:broadcast`);
+      channel.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { user_id: currentUser.id }
+      });
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    }
+  };
+
   const sendMessage = async () => {
-    if ((!newMessage.trim() && !selectedImage) || !currentUser || !selectedConversation) return;
+    if ((!newMessage.trim() && !selectedImage) || !currentUser || !selectedConversation || !selectedRoomId) return;
 
     setUploading(true);
     try {
@@ -239,8 +364,9 @@ const Messages = () => {
           sender_id: currentUser.id,
           receiver_id: selectedConversation,
           message: newMessage.trim() || null,
-          image_url: imageUrl
-        });
+          image_url: imageUrl,
+          room_id: selectedRoomId
+        } as any);
 
       if (error) throw error;
 
@@ -256,8 +382,9 @@ const Messages = () => {
     }
   };
 
-  const handleSelectConversation = (userId: string) => {
+  const handleSelectConversation = (userId: string, roomId: string) => {
     setSelectedConversation(userId);
+    setSelectedRoomId(roomId);
     setShowConversations(false);
   };
 
@@ -283,19 +410,24 @@ const Messages = () => {
               {conversations.map((conv) => (
                 <div
                   key={conv.userId}
-                  onClick={() => handleSelectConversation(conv.userId)}
+                  onClick={() => handleSelectConversation(conv.userId, conv.roomId)}
                   className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer mb-2 transition-all hover:scale-[1.02] ${
                     selectedConversation === conv.userId
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "hover:bg-secondary/80"
                   }`}
                 >
-                  <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                    <AvatarImage src={conv.profilePicture || ""} />
-                    <AvatarFallback className="text-sm font-semibold">
-                      {conv.userName?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                      <AvatarImage src={conv.profilePicture || ""} />
+                      <AvatarFallback className="text-sm font-semibold">
+                        {conv.userName?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    {onlineUsers.has(conv.userId) && (
+                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm">{conv.userName}</div>
                     <div className="text-xs truncate opacity-80">
@@ -322,21 +454,28 @@ const Messages = () => {
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
-                    <AvatarFallback>
-                      {selectedUserProfile?.name?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
+                      <AvatarFallback>
+                        {selectedUserProfile?.name?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    {selectedConversation && onlineUsers.has(selectedConversation) && (
+                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                    )}
+                  </div>
                   <div>
                     <h2 className="font-bold text-base md:text-lg">
                       {selectedUserProfile?.name || "User"}
                     </h2>
-                    {selectedUserProfile?.rating > 0 && (
+                    {selectedConversation && onlineUsers.has(selectedConversation) ? (
+                      <p className="text-xs text-green-500">Online</p>
+                    ) : selectedUserProfile?.rating > 0 ? (
                       <p className="text-xs text-muted-foreground">
                         Rating: {selectedUserProfile.rating.toFixed(1)} ⭐
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
                 <ScrollArea ref={scrollAreaRef} className="flex-1 p-3 md:p-4" onScrollCapture={handleScroll}>
@@ -374,25 +513,53 @@ const Messages = () => {
                             </AvatarFallback>
                           </Avatar>
                         )}
-                        <div
-                          className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 shadow-sm ${
-                            msg.sender_id === currentUser?.id
-                              ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-md"
-                              : "bg-secondary rounded-[18px] rounded-bl-md"
-                          }`}
-                        >
-                          {msg.message && <p className="text-sm md:text-base">{msg.message}</p>}
-                          {msg.image_url && (
-                            <img 
-                              src={msg.image_url} 
-                              alt="Message attachment" 
-                              className="mt-2 rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => window.open(msg.image_url!, '_blank')}
-                            />
+                        <div className="flex flex-col">
+                          <div
+                            className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 shadow-sm ${
+                              msg.sender_id === currentUser?.id
+                                ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-md"
+                                : "bg-secondary rounded-[18px] rounded-bl-md"
+                            }`}
+                          >
+                            {msg.message && <p className="text-sm md:text-base">{msg.message}</p>}
+                            {msg.image_url && (
+                              <img 
+                                src={msg.image_url} 
+                                alt="Message attachment" 
+                                className="mt-2 rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(msg.image_url!, '_blank')}
+                              />
+                            )}
+                          </div>
+                          {msg.sender_id === currentUser?.id && (
+                            <div className="flex items-center gap-1 mt-1 justify-end">
+                              {msg.read_at ? (
+                                <>
+                                  <CheckCheck className="h-3 w-3 text-blue-500" />
+                                  <span className="text-xs text-blue-500">Read</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">Delivered</span>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
                     ))}
+                    {typingUsers.size > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground italic">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
+                          <AvatarFallback className="text-xs">
+                            {selectedUserProfile?.name?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{selectedUserProfile?.name} is typing...</span>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
                 {imagePreview && (
@@ -430,7 +597,10 @@ const Messages = () => {
                   </Button>
                   <Input
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTyping();
+                    }}
                     placeholder="Type a message..."
                     onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                     disabled={uploading}

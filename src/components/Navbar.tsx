@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { GraduationCap, LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
 export const Navbar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,6 +42,19 @@ export const Navbar = () => {
       setIsAdmin(!!data);
     };
     checkAdmin();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('profile_picture, name')
+        .eq('id', user.id)
+        .single();
+      setUserProfile(data);
+    };
+    fetchProfile();
   }, [user]);
 
   const handleLogout = async () => {
@@ -82,9 +97,13 @@ export const Navbar = () => {
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="px-2 md:px-3">
-                    <UserIcon className="h-4 w-4 md:mr-2" />
-                    <span className="hidden sm:inline">Profile</span>
+                  <Button variant="ghost" size="sm" className="p-1">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={userProfile?.profile_picture || ""} />
+                      <AvatarFallback className="text-xs">
+                        {userProfile?.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
