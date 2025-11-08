@@ -425,7 +425,7 @@ const Messages = () => {
                       </AvatarFallback>
                     </Avatar>
                     {onlineUsers.has(conv.userId) && (
-                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-background shadow-sm" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -462,7 +462,7 @@ const Messages = () => {
                       </AvatarFallback>
                     </Avatar>
                     {selectedConversation && onlineUsers.has(selectedConversation) && (
-                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-background shadow-sm" />
                     )}
                   </div>
                   <div>
@@ -470,7 +470,7 @@ const Messages = () => {
                       {selectedUserProfile?.name || "User"}
                     </h2>
                     {selectedConversation && onlineUsers.has(selectedConversation) ? (
-                      <p className="text-xs text-green-500">Online</p>
+                      <p className="text-xs text-success font-medium">Online</p>
                     ) : selectedUserProfile?.rating > 0 ? (
                       <p className="text-xs text-muted-foreground">
                         Rating: {selectedUserProfile.rating.toFixed(1)} ⭐
@@ -515,10 +515,10 @@ const Messages = () => {
                         )}
                         <div className="flex flex-col">
                           <div
-                            className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 shadow-sm ${
+                            className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 transition-all ${
                               msg.sender_id === currentUser?.id
-                                ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-md"
-                                : "bg-secondary rounded-[18px] rounded-bl-md"
+                                ? "bg-gradient-primary text-primary-foreground rounded-[18px] rounded-br-md shadow-primary"
+                                : "bg-secondary rounded-[18px] rounded-bl-md shadow-sm hover:shadow-md"
                             }`}
                           >
                             {msg.message && <p className="text-sm md:text-base">{msg.message}</p>}
@@ -535,8 +535,8 @@ const Messages = () => {
                             <div className="flex items-center gap-1 mt-1 justify-end">
                               {msg.read_at ? (
                                 <>
-                                  <CheckCheck className="h-3 w-3 text-blue-500" />
-                                  <span className="text-xs text-blue-500">Read</span>
+                                  <CheckCheck className="h-3 w-3 text-primary" />
+                                  <span className="text-xs text-primary font-medium">Read</span>
                                 </>
                               ) : (
                                 <>
@@ -604,13 +604,14 @@ const Messages = () => {
                     placeholder="Type a message..."
                     onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                     disabled={uploading}
-                    className="flex-1 rounded-full border-2 focus-visible:ring-offset-0"
+                    className="flex-1 rounded-full border-2 focus-visible:ring-offset-0 shadow-sm focus:shadow-md transition-shadow"
                   />
                   <Button 
                     onClick={sendMessage} 
                     disabled={uploading || (!newMessage.trim() && !selectedImage)}
-                    className="rounded-full h-10 w-10 p-0"
+                    className="rounded-full h-10 w-10 p-0 shadow-primary hover:shadow-lg"
                     size="icon"
+                    variant="default"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
