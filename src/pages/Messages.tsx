@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
@@ -53,16 +53,82 @@ const Messages = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUser(user);
-    });
-    
-    const userId = searchParams.get('userId');
-    if (userId) {
-      setSelectedConversation(userId);
+  const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
+    if (!currentUser) return null;
+
+    try {
+      // Check if a room already exists between these two users
+      const { data: existingRooms, error: searchError } = await supabase
+        .from('room_participants')
+        .select('room_id')
+        .eq('user_id', currentUser.id);
+
+      if (searchError) throw searchError;
+
+      if (existingRooms && existingRooms.length > 0) {
+        const roomIds = existingRooms.map(r => r.room_id);
+        
+        // Check which of these rooms also has the other user
+        const { data: otherUserRooms, error: otherError } = await supabase
+          .from('room_participants')
+          .select('room_id')
+          .eq('user_id', otherUserId)
+          .in('room_id', roomIds);
+
+        if (otherError) throw otherError;
+
+        if (otherUserRooms && otherUserRooms.length > 0) {
+          return otherUserRooms[0].room_id;
+        }
+      }
+
+      // Create new room
+      const { data: newRoom, error: roomError } = await supabase
+        .from('chat_rooms')
+        .insert({ type: 'direct' })
+        .select()
+        .single();
+
+      if (roomError) throw roomError;
+
+      // Add both participants
+      const { error: participantsError } = await supabase
+        .from('room_participants')
+        .insert([
+          { room_id: newRoom.id, user_id: currentUser.id },
+          { room_id: newRoom.id, user_id: otherUserId }
+        ]);
+
+      if (participantsError) throw participantsError;
+
+      return newRoom.id;
+    } catch (error) {
+      console.error('Error getting/creating room:', error);
+      toast.error('Failed to create chat room');
+      return null;
     }
-  }, [searchParams]);
+  }, [currentUser]);
+
+  useEffect(() => {
+    const initializeChat = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      
+      if (user) {
+        const userId = searchParams.get('userId');
+        if (userId) {
+          // Delay to ensure currentUser is set for getOrCreateRoom
+          setTimeout(async () => {
+            const roomId = await getOrCreateRoom(userId);
+            setSelectedConversation(userId);
+            setSelectedRoomId(roomId);
+          }, 100);
+        }
+      }
+    };
+    
+    initializeChat();
+  }, [searchParams, getOrCreateRoom]);
 
   useEffect(() => {
     if (currentUser) {
@@ -189,38 +255,70 @@ const Messages = () => {
   const fetchConversations = async () => {
     if (!currentUser) return;
 
-    const { data } = await supabase
-      .from('messages')
-      .select(`
-        *,
-        sender:profiles!messages_sender_id_fkey(name, profile_picture),
-        receiver:profiles!messages_receiver_id_fkey(name, profile_picture)
-      `)
-      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order('created_at', { ascending: false });
+    try {
+      // Get all rooms the user participates in
+      const { data: roomData, error: roomError } = await supabase
+        .from('room_participants')
+        .select(`
+          room_id,
+          chat_rooms!inner(id, created_at, updated_at)
+        `)
+        .eq('user_id', currentUser.id);
 
-    if (!data) return;
-
-    const conversationMap = new Map<string, Conversation>();
-
-    data.forEach((msg: any) => {
-      const otherUserId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
-      const otherUserName = msg.sender_id === currentUser.id ? msg.receiver.name : msg.sender.name;
-      const otherUserPicture = msg.sender_id === currentUser.id ? msg.receiver.profile_picture : msg.sender.profile_picture;
-
-      if (!conversationMap.has(otherUserId)) {
-        conversationMap.set(otherUserId, {
-          userId: otherUserId,
-          userName: otherUserName,
-          lastMessage: msg.message,
-          timestamp: msg.created_at,
-          profilePicture: otherUserPicture,
-          roomId: msg.room_id
-        });
+      if (roomError) throw roomError;
+      if (!roomData || roomData.length === 0) {
+        setConversations([]);
+        return;
       }
-    });
 
-    setConversations(Array.from(conversationMap.values()));
+      const roomIds = roomData.map(r => r.room_id);
+
+      // Get the other participants in each room
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('room_participants')
+        .select(`
+          room_id,
+          user_id,
+          profiles!inner(id, name, profile_picture)
+        `)
+        .in('room_id', roomIds)
+        .neq('user_id', currentUser.id);
+
+      if (participantsError) throw participantsError;
+
+      // Get the last message for each room
+      const { data: lastMessages, error: messagesError } = await supabase
+        .from('messages')
+        .select('room_id, message, image_url, created_at')
+        .in('room_id', roomIds)
+        .order('created_at', { ascending: false });
+
+      if (messagesError) throw messagesError;
+
+      // Build conversations map
+      const conversationMap = new Map<string, Conversation>();
+
+      participantsData?.forEach((participant: any) => {
+        const roomId = participant.room_id;
+        const lastMsg = lastMessages?.find(m => m.room_id === roomId);
+        
+        if (!conversationMap.has(participant.user_id)) {
+          conversationMap.set(participant.user_id, {
+            userId: participant.user_id,
+            userName: participant.profiles.name,
+            lastMessage: lastMsg?.message || (lastMsg?.image_url ? '📷 Image' : 'No messages yet'),
+            timestamp: lastMsg?.created_at || new Date().toISOString(),
+            profilePicture: participant.profiles.profile_picture,
+            roomId: roomId
+          });
+        }
+      });
+
+      setConversations(Array.from(conversationMap.values()));
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      toast.error('Failed to load conversations');
+    }
   };
 
   const fetchUserProfile = async () => {
@@ -236,47 +334,52 @@ const Messages = () => {
   };
 
   const fetchMessages = async (loadMore = false) => {
-    if (!currentUser || !selectedConversation) return;
+    if (!currentUser || !selectedRoomId) return;
     if (loadMore && (!hasMore || isLoadingMore)) return;
 
     if (loadMore) setIsLoadingMore(true);
 
-    let query = supabase
-      .from('messages')
-      .select('*')
-      .or(
-        `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedConversation}),and(sender_id.eq.${selectedConversation},receiver_id.eq.${currentUser.id})`
-      )
-      .order('created_at', { ascending: false })
-      .limit(messageLimit);
+    try {
+      let query = supabase
+        .from('messages')
+        .select('*')
+        .eq('room_id', selectedRoomId)
+        .order('created_at', { ascending: false })
+        .limit(messageLimit);
 
-    if (loadMore && messages.length > 0) {
-      const oldestMessage = messages[0];
-      query = query.lt('created_at', oldestMessage.created_at);
-    }
-
-    const { data } = await query;
-
-    if (data) {
-      const typedMessages = (data as any[]).map(msg => ({
-        id: msg.id,
-        sender_id: msg.sender_id,
-        receiver_id: msg.receiver_id,
-        message: msg.message,
-        image_url: msg.image_url,
-        created_at: msg.created_at,
-        room_id: msg.room_id || null,
-        read_at: msg.read_at || null
-      })) as Message[];
-
-      if (loadMore) {
-        setMessages([...typedMessages.reverse(), ...messages]);
-        setHasMore(data.length === messageLimit);
-      } else {
-        setMessages(typedMessages.reverse());
-        setHasMore(data.length === messageLimit);
-        setTimeout(scrollToBottom, 100);
+      if (loadMore && messages.length > 0) {
+        const oldestMessage = messages[0];
+        query = query.lt('created_at', oldestMessage.created_at);
       }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data) {
+        const typedMessages = (data as any[]).map(msg => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          message: msg.message,
+          image_url: msg.image_url,
+          created_at: msg.created_at,
+          room_id: msg.room_id,
+          read_at: msg.read_at
+        })) as Message[];
+
+        if (loadMore) {
+          setMessages([...typedMessages.reverse(), ...messages]);
+          setHasMore(data.length === messageLimit);
+        } else {
+          setMessages(typedMessages.reverse());
+          setHasMore(data.length === messageLimit);
+          setTimeout(scrollToBottom, 100);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast.error('Failed to load messages');
     }
 
     if (loadMore) setIsLoadingMore(false);
@@ -347,10 +450,20 @@ const Messages = () => {
   };
 
   const sendMessage = async () => {
-    if ((!newMessage.trim() && !selectedImage) || !currentUser || !selectedConversation || !selectedRoomId) return;
+    if ((!newMessage.trim() && !selectedImage) || !currentUser || !selectedConversation) return;
 
     setUploading(true);
     try {
+      // Ensure we have a room
+      let roomId = selectedRoomId;
+      if (!roomId) {
+        roomId = await getOrCreateRoom(selectedConversation);
+        if (!roomId) {
+          throw new Error('Failed to create chat room');
+        }
+        setSelectedRoomId(roomId);
+      }
+
       let imageUrl = null;
 
       if (selectedImage) {
@@ -365,7 +478,7 @@ const Messages = () => {
           receiver_id: selectedConversation,
           message: newMessage.trim() || null,
           image_url: imageUrl,
-          room_id: selectedRoomId
+          room_id: roomId
         } as any);
 
       if (error) throw error;
@@ -376,15 +489,24 @@ const Messages = () => {
       fetchConversations();
       setTimeout(scrollToBottom, 100);
     } catch (error) {
+      console.error('Error sending message:', error);
       toast.error("Failed to send message");
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSelectConversation = (userId: string, roomId: string) => {
+  const handleSelectConversation = async (userId: string, roomId: string | null) => {
     setSelectedConversation(userId);
-    setSelectedRoomId(roomId);
+    
+    // If no roomId provided, try to get or create one
+    if (!roomId) {
+      const newRoomId = await getOrCreateRoom(userId);
+      setSelectedRoomId(newRoomId);
+    } else {
+      setSelectedRoomId(roomId);
+    }
+    
     setShowConversations(false);
   };
 

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_rooms: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           comment_text: string
@@ -58,7 +82,9 @@ export type Database = {
           id: string
           image_url: string | null
           message: string | null
+          read_at: string | null
           receiver_id: string
+          room_id: string | null
           sender_id: string
         }
         Insert: {
@@ -66,7 +92,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           message?: string | null
+          read_at?: string | null
           receiver_id: string
+          room_id?: string | null
           sender_id: string
         }
         Update: {
@@ -74,7 +102,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           message?: string | null
+          read_at?: string | null
           receiver_id?: string
+          room_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -83,6 +113,13 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
             referencedColumns: ["id"]
           },
           {
@@ -236,6 +273,35 @@ export type Database = {
             columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_participants: {
+        Row: {
+          id: string
+          joined_at: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
             referencedColumns: ["id"]
           },
         ]
