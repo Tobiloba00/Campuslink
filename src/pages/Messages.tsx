@@ -579,7 +579,7 @@ const Messages = () => {
             Back to Feed
           </Button>
         </div>
-        <div className="grid md:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-12rem)] md:h-[600px]">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-200px)]">
           <Card className={`shadow-card p-4 ${showConversations ? 'block' : 'hidden md:block'}`}>
             <h2 className="font-bold text-lg mb-4">Conversations</h2>
             <ScrollArea className="h-[calc(100vh-12rem)] md:h-[500px]">
@@ -615,7 +615,7 @@ const Messages = () => {
             </ScrollArea>
           </Card>
 
-          <Card className={`md:col-span-2 shadow-card flex flex-col ${showConversations ? 'hidden md:flex' : 'flex'}`}>
+          <Card className={`md:col-span-2 shadow-card flex flex-col h-full ${showConversations ? 'hidden md:flex' : 'flex'}`}>
             {selectedConversation ? (
               <>
                 <div className="p-3 md:p-4 border-b flex items-center gap-3">
@@ -654,7 +654,7 @@ const Messages = () => {
                     ) : null}
                   </div>
                 </div>
-                <ScrollArea ref={scrollAreaRef} className="flex-1 p-3 md:p-4" onScrollCapture={handleScroll}>
+                <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-3 md:p-4" onScrollCapture={handleScroll}>
                   {isLoadingMore && (
                     <div className="text-center text-sm text-muted-foreground py-2">
                       Loading older messages...
@@ -673,7 +673,7 @@ const Messages = () => {
                     </div>
                   )}
 
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="space-y-4 pb-4">
                     {messages.map((msg) => (
                       <div
                         key={msg.id}
@@ -691,10 +691,10 @@ const Messages = () => {
                         )}
                         <div className="flex flex-col">
                           <div
-                            className={`max-w-[75%] md:max-w-[70%] p-2 md:p-3 transition-all ${
+                            className={`max-w-[85%] sm:max-w-[75%] md:max-w-md p-3 transition-all ${
                               msg.sender_id === currentUser?.id
-                                ? "bg-gradient-primary text-primary-foreground rounded-[18px] rounded-br-md shadow-primary"
-                                : "bg-secondary rounded-[18px] rounded-bl-md shadow-sm hover:shadow-md"
+                                ? "bg-gradient-primary text-primary-foreground rounded-2xl rounded-br-md shadow-md"
+                                : "bg-secondary rounded-2xl rounded-bl-md shadow-sm hover:shadow-md"
                             }`}
                           >
                             {msg.message && <p className="text-sm md:text-base">{msg.message}</p>}
