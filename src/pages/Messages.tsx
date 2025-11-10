@@ -253,70 +253,124 @@ const Messages = () => {
   };
 
   const fetchConversations = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('fetchConversations: No current user');
+      return;
+    }
+
+    console.log('fetchConversations: Starting for user:', currentUser.id);
 
     try {
-      // Get all rooms the user participates in
-      const { data: roomData, error: roomError } = await supabase
+      // Step 1: Get room IDs for current user (avoids nested join that causes RLS circular dependency)
+      const { data: userRooms, error: userRoomsError } = await supabase
         .from('room_participants')
-        .select(`
-          room_id,
-          chat_rooms!inner(id, created_at, updated_at)
-        `)
+        .select('room_id')
         .eq('user_id', currentUser.id);
 
-      if (roomError) throw roomError;
-      if (!roomData || roomData.length === 0) {
+      if (userRoomsError) {
+        console.error('fetchConversations: Error fetching user rooms:', userRoomsError);
+        throw userRoomsError;
+      }
+
+      console.log('fetchConversations: User rooms:', userRooms);
+
+      if (!userRooms || userRooms.length === 0) {
+        console.log('fetchConversations: No rooms found');
         setConversations([]);
         return;
       }
 
-      const roomIds = roomData.map(r => r.room_id);
+      const roomIds = userRooms.map(r => r.room_id);
+      console.log('fetchConversations: Room IDs:', roomIds);
 
-      // Get the other participants in each room
-      const { data: participantsData, error: participantsError } = await supabase
+      // Step 2: Get chat_rooms data separately
+      const { data: chatRooms, error: chatRoomsError } = await supabase
+        .from('chat_rooms')
+        .select('id, created_at, updated_at')
+        .in('id', roomIds);
+
+      if (chatRoomsError) {
+        console.error('fetchConversations: Error fetching chat rooms:', chatRoomsError);
+        throw chatRoomsError;
+      }
+
+      console.log('fetchConversations: Chat rooms:', chatRooms);
+
+      // Step 3: Get other participants and their profiles separately
+      const { data: otherParticipants, error: participantsError } = await supabase
         .from('room_participants')
-        .select(`
-          room_id,
-          user_id,
-          profiles!inner(id, name, profile_picture)
-        `)
+        .select('room_id, user_id')
         .in('room_id', roomIds)
         .neq('user_id', currentUser.id);
 
-      if (participantsError) throw participantsError;
+      if (participantsError) {
+        console.error('fetchConversations: Error fetching participants:', participantsError);
+        throw participantsError;
+      }
 
-      // Get the last message for each room
-      const { data: lastMessages, error: messagesError } = await supabase
+      console.log('fetchConversations: Other participants:', otherParticipants);
+
+      if (!otherParticipants || otherParticipants.length === 0) {
+        console.log('fetchConversations: No other participants found');
+        setConversations([]);
+        return;
+      }
+
+      // Step 4: Get profiles for other participants
+      const otherUserIds = otherParticipants.map(p => p.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, profile_picture')
+        .in('id', otherUserIds);
+
+      if (profilesError) {
+        console.error('fetchConversations: Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('fetchConversations: Profiles:', profiles);
+
+      // Step 5: Get last messages for each room
+      const { data: allMessages, error: messagesError } = await supabase
         .from('messages')
         .select('room_id, message, image_url, created_at')
         .in('room_id', roomIds)
         .order('created_at', { ascending: false });
 
-      if (messagesError) throw messagesError;
+      if (messagesError) {
+        console.error('fetchConversations: Error fetching messages:', messagesError);
+        throw messagesError;
+      }
 
-      // Build conversations map
+      console.log('fetchConversations: All messages:', allMessages);
+
+      // Step 6: Combine results in frontend
       const conversationMap = new Map<string, Conversation>();
 
-      participantsData?.forEach((participant: any) => {
-        const roomId = participant.room_id;
-        const lastMsg = lastMessages?.find(m => m.room_id === roomId);
+      otherParticipants.forEach((participant) => {
+        const profile = profiles?.find(p => p.id === participant.user_id);
+        if (!profile) return;
+
+        const lastMsg = allMessages?.find(m => m.room_id === participant.room_id);
         
         if (!conversationMap.has(participant.user_id)) {
           conversationMap.set(participant.user_id, {
             userId: participant.user_id,
-            userName: participant.profiles.name,
+            userName: profile.name,
             lastMessage: lastMsg?.message || (lastMsg?.image_url ? '📷 Image' : 'No messages yet'),
             timestamp: lastMsg?.created_at || new Date().toISOString(),
-            profilePicture: participant.profiles.profile_picture,
-            roomId: roomId
+            profilePicture: profile.profile_picture,
+            roomId: participant.room_id
           });
         }
       });
 
-      setConversations(Array.from(conversationMap.values()));
+      const conversationsArray = Array.from(conversationMap.values());
+      console.log('fetchConversations: Final conversations array:', conversationsArray);
+      
+      setConversations(conversationsArray);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('fetchConversations: Fatal error:', error);
       toast.error('Failed to load conversations');
     }
   };
