@@ -565,9 +565,9 @@ const Messages = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <Navbar />
-      <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="container mx-auto px-4 py-4 flex flex-col h-full overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
           <Button 
@@ -579,10 +579,10 @@ const Messages = () => {
             Back to Feed
           </Button>
         </div>
-        <div className="grid md:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-200px)]">
-          <Card className={`shadow-card p-4 ${showConversations ? 'block' : 'hidden md:block'}`}>
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 flex-1 overflow-hidden">
+          <Card className={`shadow-card p-4 flex flex-col h-full overflow-hidden ${showConversations ? 'block' : 'hidden md:block'}`}>
             <h2 className="font-bold text-lg mb-4">Conversations</h2>
-            <ScrollArea className="h-[calc(100vh-12rem)] md:h-[500px]">
+            <ScrollArea className="h-full">
               {conversations.map((conv) => (
                 <div
                   key={conv.userId}
@@ -615,7 +615,7 @@ const Messages = () => {
             </ScrollArea>
           </Card>
 
-          <Card className={`md:col-span-2 shadow-card flex flex-col h-full ${showConversations ? 'hidden md:flex' : 'flex'}`}>
+          <Card className={`md:col-span-2 shadow-card flex flex-col h-full overflow-hidden bg-gradient-to-br from-card to-card/95 ${showConversations ? 'hidden md:flex' : 'flex'}`}>
             {selectedConversation ? (
               <>
                 <div className="p-3 md:p-4 border-b flex items-center gap-3">
@@ -654,7 +654,14 @@ const Messages = () => {
                     ) : null}
                   </div>
                 </div>
-                <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-3 md:p-4" onScrollCapture={handleScroll}>
+                <ScrollArea 
+                  ref={scrollAreaRef} 
+                  className="flex-1 overflow-y-auto p-3 md:p-4 bg-gradient-to-b from-secondary/5 via-background/50 to-secondary/5" 
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 20px, hsl(var(--secondary) / 0.03) 20px, hsl(var(--secondary) / 0.03) 40px)`
+                  }}
+                  onScrollCapture={handleScroll}
+                >
                   {isLoadingMore && (
                     <div className="text-center text-sm text-muted-foreground py-2">
                       Loading older messages...
