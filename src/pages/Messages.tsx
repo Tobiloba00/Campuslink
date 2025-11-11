@@ -20,6 +20,7 @@ type Message = {
   created_at: string;
   room_id: string | null;
   read_at: string | null;
+  reactions?: { emoji: string; user_id: string }[];
 };
 
 type Conversation = {
@@ -52,6 +53,7 @@ const Messages = () => {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
     if (!currentUser) return null;
@@ -152,7 +154,18 @@ const Messages = () => {
             table: 'messages',
             filter: `room_id=eq.${selectedRoomId}`
           },
-          () => fetchMessages()
+          (payload) => {
+            const newMessage = payload.new as Message;
+            setMessages(prev => {
+              if (prev.find(m => m.id === newMessage.id)) return prev;
+              return [...prev, newMessage];
+            });
+            scrollToBottom();
+            playNotificationSound(newMessage.sender_id !== currentUser?.id);
+            if (newMessage.sender_id !== currentUser?.id) {
+              markMessagesAsRead(selectedRoomId);
+            }
+          }
         )
         .on(
           'postgres_changes',
@@ -411,16 +424,24 @@ const Messages = () => {
       if (error) throw error;
 
       if (data) {
-        const typedMessages = (data as any[]).map(msg => ({
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          message: msg.message,
-          image_url: msg.image_url,
-          created_at: msg.created_at,
-          room_id: msg.room_id,
-          read_at: msg.read_at
-        })) as Message[];
+        const typedMessages = await Promise.all((data as any[]).map(async (msg) => {
+          const { data: reactions } = await supabase
+            .from('message_reactions')
+            .select('emoji, user_id')
+            .eq('message_id', msg.id);
+          
+          return {
+            id: msg.id,
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            message: msg.message,
+            image_url: msg.image_url,
+            created_at: msg.created_at,
+            room_id: msg.room_id,
+            read_at: msg.read_at,
+            reactions: reactions || []
+          } as Message;
+        }));
 
         if (loadMore) {
           setMessages([...typedMessages.reverse(), ...messages]);
@@ -428,7 +449,7 @@ const Messages = () => {
         } else {
           setMessages(typedMessages.reverse());
           setHasMore(data.length === messageLimit);
-          setTimeout(scrollToBottom, 100);
+          setTimeout(() => scrollToBottom(true), 100);
         }
       }
     } catch (error) {
@@ -441,22 +462,70 @@ const Messages = () => {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const element = e.currentTarget;
+    const threshold = 100;
+    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+    setIsAtBottom(isNearBottom);
+    
     if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
       const previousScrollHeight = element.scrollHeight;
       fetchMessages(true).then(() => {
-        // Maintain scroll position
         const newScrollHeight = element.scrollHeight;
         element.scrollTop = newScrollHeight - previousScrollHeight;
       });
     }
   };
 
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
+  const scrollToBottom = (force = false) => {
+    if (scrollAreaRef.current && (isAtBottom || force)) {
       const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollElement) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
+    }
+  };
+
+  const playNotificationSound = (shouldPlay: boolean) => {
+    if (!shouldPlay) return;
+    
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(err => console.log('Could not play sound:', err));
+    } catch (error) {
+      console.log('Audio not supported');
+    }
+  };
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const { data: existing } = await supabase
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', currentUser.id)
+        .eq('emoji', emoji)
+        .single();
+      
+      if (existing) {
+        await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: currentUser.id,
+            emoji
+          });
+      }
+      
+      fetchMessages();
+    } catch (error) {
+      console.error('Error toggling reaction:', error);
     }
   };
 
@@ -541,7 +610,7 @@ const Messages = () => {
       clearImage();
       fetchMessages();
       fetchConversations();
-      setTimeout(scrollToBottom, 100);
+      setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error("Failed to send message");
@@ -656,9 +725,17 @@ const Messages = () => {
                 </div>
                 <ScrollArea 
                   ref={scrollAreaRef} 
-                  className="flex-1 overflow-y-auto p-3 md:p-4 bg-gradient-to-b from-secondary/5 via-background/50 to-secondary/5" 
+                  className="flex-1 overflow-y-auto p-3 md:p-4" 
                   style={{
-                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 20px, hsl(var(--secondary) / 0.03) 20px, hsl(var(--secondary) / 0.03) 40px)`
+                    background: `
+                      linear-gradient(135deg, hsl(var(--secondary) / 0.03) 25%, transparent 25%),
+                      linear-gradient(225deg, hsl(var(--secondary) / 0.03) 25%, transparent 25%),
+                      linear-gradient(45deg, hsl(var(--secondary) / 0.03) 25%, transparent 25%),
+                      linear-gradient(315deg, hsl(var(--secondary) / 0.03) 25%, hsl(var(--background)) 25%)
+                    `,
+                    backgroundPosition: '10px 0, 10px 0, 0 0, 0 0',
+                    backgroundSize: '20px 20px',
+                    backgroundColor: 'hsl(var(--background))'
                   }}
                   onScrollCapture={handleScroll}
                 >
@@ -684,7 +761,7 @@ const Messages = () => {
                     {messages.map((msg) => (
                       <div
                         key={msg.id}
-                        className={`flex gap-2 ${
+                        className={`flex gap-2 group ${
                           msg.sender_id === currentUser?.id ? "justify-end" : "justify-start"
                         }`}
                       >
@@ -704,15 +781,46 @@ const Messages = () => {
                                 : "bg-secondary rounded-2xl rounded-bl-md shadow-sm hover:shadow-md"
                             }`}
                           >
-                            {msg.message && <p className="text-sm md:text-base">{msg.message}</p>}
                             {msg.image_url && (
                               <img 
                                 src={msg.image_url} 
                                 alt="Message attachment" 
-                                className="mt-2 rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                className="rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                 onClick={() => window.open(msg.image_url!, '_blank')}
                               />
                             )}
+                            {msg.message && <p className={`text-sm md:text-base ${msg.image_url ? 'mt-2' : ''}`}>{msg.message}</p>}
+                            
+                            {msg.reactions && msg.reactions.length > 0 && (
+                              <div className="flex gap-1 mt-2 flex-wrap">
+                                {Object.entries(
+                                  msg.reactions.reduce((acc, r) => {
+                                    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                                    return acc;
+                                  }, {} as Record<string, number>)
+                                ).map(([emoji, count]) => (
+                                  <button
+                                    key={emoji}
+                                    className="px-2 py-0.5 text-xs rounded-full bg-secondary/50 hover:bg-secondary transition-colors"
+                                    onClick={() => toggleReaction(msg.id, emoji)}
+                                  >
+                                    {emoji} {count}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            
+                            <div className="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {['❤️', '😂', '👍', '🔥', '😮'].map(emoji => (
+                                <button
+                                  key={emoji}
+                                  className="text-xs hover:scale-125 transition-transform"
+                                  onClick={() => toggleReaction(msg.id, emoji)}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                           {msg.sender_id === currentUser?.id && (
                             <div className="flex items-center gap-1 mt-1 justify-end">

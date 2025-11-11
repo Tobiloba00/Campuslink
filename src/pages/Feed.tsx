@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, BookOpen, Users, ShoppingCart, Star, MessageCircle, Search } from "lucide-react";
+import { Plus, BookOpen, Users, ShoppingCart, Star, MessageCircle, Search, RefreshCw } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -47,6 +47,8 @@ const Feed = () => {
   const [filter, setFilter] = useState<string>("all");
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [hasNewPosts, setHasNewPosts] = useState(false);
+  const [lastSeenPostId, setLastSeenPostId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -74,7 +76,30 @@ const Feed = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts'
+        },
+        (payload) => {
+          const newPost = payload.new;
+          if (lastSeenPostId && newPost.id !== lastSeenPostId) {
+            setHasNewPosts(true);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'posts'
+        },
+        () => fetchPosts()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
           schema: 'public',
           table: 'posts'
         },
@@ -85,7 +110,7 @@ const Feed = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [filter]);
+  }, [filter, lastSeenPostId]);
 
   const fetchPosts = async () => {
     let query = supabase
@@ -121,6 +146,18 @@ const Feed = () => {
     }
 
     setPosts(data || []);
+    
+    if (data && data.length > 0) {
+      const topPostId = data[0].id;
+      setLastSeenPostId(topPostId);
+      
+      const seenPosts = JSON.parse(localStorage.getItem('seenPosts') || '[]');
+      if (!seenPosts.includes(topPostId)) {
+        seenPosts.push(topPostId);
+        if (seenPosts.length > 100) seenPosts.shift();
+        localStorage.setItem('seenPosts', JSON.stringify(seenPosts));
+      }
+    }
   };
 
   const filteredPosts = posts.filter(post => {
@@ -136,6 +173,23 @@ const Feed = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      
+      {hasNewPosts && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top">
+          <Button
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              setHasNewPosts(false);
+              fetchPosts();
+            }}
+            className="shadow-lg"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            New posts available
+          </Button>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
