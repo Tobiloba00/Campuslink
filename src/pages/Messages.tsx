@@ -185,6 +185,58 @@ const Messages = () => {
     }
   }, [selectedConversation, currentUser, selectedRoomId]);
 
+  // Realtime subscription for reactions
+  useEffect(() => {
+    if (!selectedRoomId) return;
+
+    const reactionsChannel = supabase
+      .channel('reactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reactions'
+        },
+        async (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newReaction = payload.new as any;
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === newReaction.message_id) {
+                const alreadyExists = msg.reactions?.some(
+                  r => r.emoji === newReaction.emoji && r.user_id === newReaction.user_id
+                );
+                if (alreadyExists) return msg;
+                return {
+                  ...msg,
+                  reactions: [...(msg.reactions || []), { emoji: newReaction.emoji, user_id: newReaction.user_id }]
+                };
+              }
+              return msg;
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedReaction = payload.old as any;
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === deletedReaction.message_id) {
+                return {
+                  ...msg,
+                  reactions: msg.reactions?.filter(r => 
+                    !(r.emoji === deletedReaction.emoji && r.user_id === deletedReaction.user_id)
+                  )
+                };
+              }
+              return msg;
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(reactionsChannel);
+    };
+  }, [selectedRoomId]);
+
   // Presence tracking (online status)
   useEffect(() => {
     if (!selectedRoomId || !currentUser) return;
@@ -513,6 +565,17 @@ const Messages = () => {
           .from('message_reactions')
           .delete()
           .eq('id', existing.id);
+        
+        // Remove reaction from state
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === messageId) {
+            return {
+              ...msg,
+              reactions: msg.reactions?.filter(r => !(r.emoji === emoji && r.user_id === currentUser.id))
+            };
+          }
+          return msg;
+        }));
       } else {
         await supabase
           .from('message_reactions')
@@ -521,9 +584,18 @@ const Messages = () => {
             user_id: currentUser.id,
             emoji
           });
+        
+        // Add reaction to state
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === messageId) {
+            return {
+              ...msg,
+              reactions: [...(msg.reactions || []), { emoji, user_id: currentUser.id }]
+            };
+          }
+          return msg;
+        }));
       }
-      
-      fetchMessages();
     } catch (error) {
       console.error('Error toggling reaction:', error);
     }
@@ -773,7 +845,7 @@ const Messages = () => {
                             </AvatarFallback>
                           </Avatar>
                         )}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col max-w-[85%]">
                           <div
                             className={`max-w-[85%] sm:max-w-[75%] md:max-w-md p-3 transition-all ${
                               msg.sender_id === currentUser?.id
@@ -785,43 +857,57 @@ const Messages = () => {
                               <img 
                                 src={msg.image_url} 
                                 alt="Message attachment" 
-                                className="rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                className="rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity mb-2"
                                 onClick={() => window.open(msg.image_url!, '_blank')}
                               />
                             )}
                             {msg.message && <p className={`text-sm md:text-base ${msg.image_url ? 'mt-2' : ''}`}>{msg.message}</p>}
-                            
-                            {msg.reactions && msg.reactions.length > 0 && (
-                              <div className="flex gap-1 mt-2 flex-wrap">
-                                {Object.entries(
-                                  msg.reactions.reduce((acc, r) => {
-                                    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-                                    return acc;
-                                  }, {} as Record<string, number>)
-                                ).map(([emoji, count]) => (
+                          </div>
+                          
+                          {/* Reactions display - OUTSIDE bubble */}
+                          {msg.reactions && msg.reactions.length > 0 && (
+                            <div className={`flex gap-1 mt-1 flex-wrap ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
+                              {Object.entries(
+                                msg.reactions.reduce((acc, r) => {
+                                  if (!acc[r.emoji]) acc[r.emoji] = [];
+                                  acc[r.emoji].push(r.user_id);
+                                  return acc;
+                                }, {} as Record<string, string[]>)
+                              ).map(([emoji, userIds]) => {
+                                const count = userIds.length;
+                                const hasReacted = userIds.includes(currentUser?.id || '');
+                                return (
                                   <button
                                     key={emoji}
-                                    className="px-2 py-0.5 text-xs rounded-full bg-secondary/50 hover:bg-secondary transition-colors"
+                                    className={`px-2 py-1 text-sm rounded-full transition-all hover:scale-110 ${
+                                      hasReacted
+                                        ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/50'
+                                        : 'bg-secondary/80 hover:bg-secondary'
+                                    }`}
                                     onClick={() => toggleReaction(msg.id, emoji)}
+                                    title={hasReacted ? 'Remove reaction' : 'React'}
                                   >
-                                    {emoji} {count}
+                                    {emoji} {count > 1 ? count : ''}
                                   </button>
-                                ))}
-                              </div>
-                            )}
-                            
-                            <div className="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {['❤️', '😂', '👍', '🔥', '😮'].map(emoji => (
-                                <button
-                                  key={emoji}
-                                  className="text-xs hover:scale-125 transition-transform"
-                                  onClick={() => toggleReaction(msg.id, emoji)}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
+                                );
+                              })}
                             </div>
+                          )}
+                          
+                          {/* Quick reaction buttons - OUTSIDE bubble, show on hover */}
+                          <div className={`flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
+                            {['❤️', '😂', '👍', '🔥', '😮'].map(emoji => (
+                              <button
+                                key={emoji}
+                                className="text-base hover:scale-125 transition-transform bg-background/90 rounded-full w-7 h-7 flex items-center justify-center shadow-sm hover:shadow-md border border-border/50"
+                                onClick={() => toggleReaction(msg.id, emoji)}
+                                title={`React with ${emoji}`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
                           </div>
+                          
                           {msg.sender_id === currentUser?.id && (
                             <div className="flex items-center gap-1 mt-1 justify-end">
                               {msg.read_at ? (
