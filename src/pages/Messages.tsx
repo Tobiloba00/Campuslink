@@ -20,7 +20,6 @@ type Message = {
   created_at: string;
   room_id: string | null;
   read_at: string | null;
-  reactions?: { emoji: string; user_id: string }[];
 };
 
 type Conversation = {
@@ -160,7 +159,6 @@ const Messages = () => {
               if (prev.find(m => m.id === newMessage.id)) return prev;
               return [...prev, newMessage];
             });
-            scrollToBottom();
             playNotificationSound(newMessage.sender_id !== currentUser?.id);
             if (newMessage.sender_id !== currentUser?.id) {
               markMessagesAsRead(selectedRoomId);
@@ -175,7 +173,12 @@ const Messages = () => {
             table: 'messages',
             filter: `room_id=eq.${selectedRoomId}`
           },
-          () => fetchMessages()
+          (payload) => {
+            const updatedMessage = payload.new as Message;
+            setMessages(prev => prev.map(msg => 
+              msg.id === updatedMessage.id ? updatedMessage : msg
+            ));
+          }
         )
         .subscribe();
 
@@ -185,57 +188,6 @@ const Messages = () => {
     }
   }, [selectedConversation, currentUser, selectedRoomId]);
 
-  // Realtime subscription for reactions
-  useEffect(() => {
-    if (!selectedRoomId) return;
-
-    const reactionsChannel = supabase
-      .channel('reactions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'message_reactions'
-        },
-        async (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newReaction = payload.new as any;
-            setMessages(prev => prev.map(msg => {
-              if (msg.id === newReaction.message_id) {
-                const alreadyExists = msg.reactions?.some(
-                  r => r.emoji === newReaction.emoji && r.user_id === newReaction.user_id
-                );
-                if (alreadyExists) return msg;
-                return {
-                  ...msg,
-                  reactions: [...(msg.reactions || []), { emoji: newReaction.emoji, user_id: newReaction.user_id }]
-                };
-              }
-              return msg;
-            }));
-          } else if (payload.eventType === 'DELETE') {
-            const deletedReaction = payload.old as any;
-            setMessages(prev => prev.map(msg => {
-              if (msg.id === deletedReaction.message_id) {
-                return {
-                  ...msg,
-                  reactions: msg.reactions?.filter(r => 
-                    !(r.emoji === deletedReaction.emoji && r.user_id === deletedReaction.user_id)
-                  )
-                };
-              }
-              return msg;
-            }));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(reactionsChannel);
-    };
-  }, [selectedRoomId]);
 
   // Presence tracking (online status)
   useEffect(() => {
@@ -476,24 +428,16 @@ const Messages = () => {
       if (error) throw error;
 
       if (data) {
-        const typedMessages = await Promise.all((data as any[]).map(async (msg) => {
-          const { data: reactions } = await supabase
-            .from('message_reactions')
-            .select('emoji, user_id')
-            .eq('message_id', msg.id);
-          
-          return {
-            id: msg.id,
-            sender_id: msg.sender_id,
-            receiver_id: msg.receiver_id,
-            message: msg.message,
-            image_url: msg.image_url,
-            created_at: msg.created_at,
-            room_id: msg.room_id,
-            read_at: msg.read_at,
-            reactions: reactions || []
-          } as Message;
-        }));
+        const typedMessages = (data as any[]).map((msg) => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          message: msg.message,
+          image_url: msg.image_url,
+          created_at: msg.created_at,
+          room_id: msg.room_id,
+          read_at: msg.read_at,
+        } as Message));
 
         if (loadMore) {
           setMessages([...typedMessages.reverse(), ...messages]);
@@ -514,7 +458,7 @@ const Messages = () => {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const element = e.currentTarget;
-    const threshold = 100;
+    const threshold = 20;
     const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
     setIsAtBottom(isNearBottom);
     
@@ -548,58 +492,6 @@ const Messages = () => {
     }
   };
 
-  const toggleReaction = async (messageId: string, emoji: string) => {
-    if (!currentUser) return;
-    
-    try {
-      const { data: existing } = await supabase
-        .from('message_reactions')
-        .select('id')
-        .eq('message_id', messageId)
-        .eq('user_id', currentUser.id)
-        .eq('emoji', emoji)
-        .single();
-      
-      if (existing) {
-        await supabase
-          .from('message_reactions')
-          .delete()
-          .eq('id', existing.id);
-        
-        // Remove reaction from state
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === messageId) {
-            return {
-              ...msg,
-              reactions: msg.reactions?.filter(r => !(r.emoji === emoji && r.user_id === currentUser.id))
-            };
-          }
-          return msg;
-        }));
-      } else {
-        await supabase
-          .from('message_reactions')
-          .insert({
-            message_id: messageId,
-            user_id: currentUser.id,
-            emoji
-          });
-        
-        // Add reaction to state
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === messageId) {
-            return {
-              ...msg,
-              reactions: [...(msg.reactions || []), { emoji, user_id: currentUser.id }]
-            };
-          }
-          return msg;
-        }));
-      }
-    } catch (error) {
-      console.error('Error toggling reaction:', error);
-    }
-  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -728,27 +620,36 @@ const Messages = () => {
                 <div
                   key={conv.userId}
                   onClick={() => handleSelectConversation(conv.userId, conv.roomId)}
-                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer mb-2 transition-all hover:scale-[1.02] ${
+                  className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer mb-1.5 transition-all duration-200 ${
                     selectedConversation === conv.userId
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:bg-secondary/80"
+                      ? "bg-primary/10 border border-primary/20 shadow-sm"
+                      : "hover:bg-secondary/60 active:scale-[0.98]"
                   }`}
                 >
-                  <div className="relative">
-                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
                       <AvatarImage src={conv.profilePicture || ""} />
-                      <AvatarFallback className="text-sm font-semibold">
+                      <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/10">
                         {conv.userName?.charAt(0) || "?"}
                       </AvatarFallback>
                     </Avatar>
                     {onlineUsers.has(conv.userId) && (
-                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-background shadow-sm" />
+                      <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success border-2 border-background shadow-md" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm">{conv.userName}</div>
-                    <div className="text-xs truncate opacity-80">
-                      {conv.lastMessage || "📷 Image"}
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="font-semibold text-sm truncate">{conv.userName}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                        {new Date(conv.timestamp).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        })}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {conv.lastMessage || "📷 Photo"}
                     </div>
                   </div>
                 </div>
@@ -759,11 +660,11 @@ const Messages = () => {
           <Card className={`md:col-span-2 shadow-card flex flex-col h-full overflow-hidden bg-gradient-to-br from-card to-card/95 ${showConversations ? 'hidden md:flex' : 'flex'}`}>
             {selectedConversation ? (
               <>
-                <div className="p-3 md:p-4 border-b flex items-center gap-3">
+                <div className="p-3 sm:p-4 border-b bg-card/50 backdrop-blur-sm flex items-center gap-3">
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="md:hidden"
+                    className="md:hidden hover:bg-secondary/80"
                     onClick={() => {
                       setShowConversations(true);
                       setSelectedConversation(null);
@@ -772,41 +673,33 @@ const Messages = () => {
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
                   <div className="relative">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-11 w-11 ring-2 ring-primary/10 shadow-sm">
                       <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 font-semibold">
                         {selectedUserProfile?.name?.charAt(0) || "?"}
                       </AvatarFallback>
                     </Avatar>
                     {selectedConversation && onlineUsers.has(selectedConversation) && (
-                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-background shadow-sm" />
+                      <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success border-2 border-background shadow-md animate-pulse" />
                     )}
                   </div>
-                  <div>
-                    <h2 className="font-bold text-base md:text-lg">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-semibold text-base sm:text-lg truncate">
                       {selectedUserProfile?.name || "User"}
                     </h2>
                     {selectedConversation && onlineUsers.has(selectedConversation) ? (
-                      <p className="text-xs text-success font-medium">Online</p>
+                      <p className="text-xs text-success font-medium">Active now</p>
                     ) : selectedUserProfile?.rating > 0 ? (
                       <p className="text-xs text-muted-foreground">
-                        Rating: {selectedUserProfile.rating.toFixed(1)} ⭐
+                        ⭐ {selectedUserProfile.rating.toFixed(1)} rating
                       </p>
                     ) : null}
                   </div>
                 </div>
                 <ScrollArea 
                   ref={scrollAreaRef} 
-                  className="flex-1 overflow-y-auto p-3 md:p-4" 
+                  className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6" 
                   style={{
-                    background: `
-                      linear-gradient(135deg, hsl(var(--secondary) / 0.03) 25%, transparent 25%),
-                      linear-gradient(225deg, hsl(var(--secondary) / 0.03) 25%, transparent 25%),
-                      linear-gradient(45deg, hsl(var(--secondary) / 0.03) 25%, transparent 25%),
-                      linear-gradient(315deg, hsl(var(--secondary) / 0.03) 25%, hsl(var(--background)) 25%)
-                    `,
-                    backgroundPosition: '10px 0, 10px 0, 0 0, 0 0',
-                    backgroundSize: '20px 20px',
                     backgroundColor: 'hsl(var(--background))'
                   }}
                   onScrollCapture={handleScroll}
@@ -817,13 +710,11 @@ const Messages = () => {
                     </div>
                   )}
                   
-                  {/* System Privacy Message */}
                   {messages.length > 0 && (
-                    <div className="flex justify-center mb-6">
-                      <div className="bg-muted/50 border border-border rounded-xl p-3 max-w-md text-center">
-                        <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                          <span className="text-amber-500">⚠️</span>
-                          <span>CampusLink may review messages for safety and quality. Keep conversations respectful and academic.</span>
+                    <div className="flex justify-center mb-8">
+                      <div className="bg-muted/30 backdrop-blur-sm border border-border/50 rounded-2xl px-4 py-2.5 max-w-sm text-center">
+                        <p className="text-[11px] sm:text-xs text-muted-foreground/80">
+                          🔒 End-to-end conversations • Keep it respectful
                         </p>
                       </div>
                     </div>
@@ -838,91 +729,52 @@ const Messages = () => {
                         }`}
                       >
                         {msg.sender_id !== currentUser?.id && (
-                          <Avatar className="h-8 w-8 mt-1">
+                          <Avatar className="h-9 w-9 ring-2 ring-background shadow-sm">
                             <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
-                            <AvatarFallback className="text-xs">
+                            <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10">
                               {selectedUserProfile?.name?.charAt(0) || "?"}
                             </AvatarFallback>
                           </Avatar>
                         )}
-                        <div className="flex flex-col max-w-[85%]">
+                        <div className="flex flex-col max-w-[70%] sm:max-w-[65%]">
                           <div
-                            className={`max-w-[85%] sm:max-w-[75%] md:max-w-md p-3 transition-all ${
+                            className={`p-3 sm:p-3.5 rounded-2xl transition-all duration-200 ${
                               msg.sender_id === currentUser?.id
-                                ? "bg-gradient-primary text-primary-foreground rounded-2xl rounded-br-md shadow-md"
-                                : "bg-secondary rounded-2xl rounded-bl-md shadow-sm hover:shadow-md"
+                                ? "bg-primary text-primary-foreground rounded-br-sm shadow-md hover:shadow-lg"
+                                : "bg-secondary/80 rounded-bl-sm shadow-sm hover:shadow-md hover:bg-secondary"
                             }`}
                           >
                             {msg.image_url && (
                               <img 
                                 src={msg.image_url} 
                                 alt="Message attachment" 
-                                className="rounded-lg max-w-[250px] md:max-w-[300px] max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity mb-2"
+                                className="rounded-xl max-w-full sm:max-w-[280px] max-h-60 object-cover cursor-pointer hover:opacity-95 transition-all mb-2"
                                 onClick={() => window.open(msg.image_url!, '_blank')}
                               />
                             )}
-                            {msg.message && <p className={`text-sm md:text-base ${msg.image_url ? 'mt-2' : ''}`}>{msg.message}</p>}
+                            {msg.message && (
+                              <p className={`text-sm sm:text-[15px] leading-relaxed ${msg.image_url ? 'mt-2' : ''}`}>
+                                {msg.message}
+                              </p>
+                            )}
                           </div>
                           
-                          {/* Reactions display - OUTSIDE bubble */}
-                          {msg.reactions && msg.reactions.length > 0 && (
-                            <div className={`flex gap-1 mt-1 flex-wrap ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
-                              {Object.entries(
-                                msg.reactions.reduce((acc, r) => {
-                                  if (!acc[r.emoji]) acc[r.emoji] = [];
-                                  acc[r.emoji].push(r.user_id);
-                                  return acc;
-                                }, {} as Record<string, string[]>)
-                              ).map(([emoji, userIds]) => {
-                                const count = userIds.length;
-                                const hasReacted = userIds.includes(currentUser?.id || '');
-                                return (
-                                  <button
-                                    key={emoji}
-                                    className={`px-2 py-1 text-sm rounded-full transition-all hover:scale-110 ${
-                                      hasReacted
-                                        ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/50'
-                                        : 'bg-secondary/80 hover:bg-secondary'
-                                    }`}
-                                    onClick={() => toggleReaction(msg.id, emoji)}
-                                    title={hasReacted ? 'Remove reaction' : 'React'}
-                                  >
-                                    {emoji} {count > 1 ? count : ''}
-                                  </button>
-                                );
+                          <div className={`flex items-center gap-1.5 mt-1 ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">
+                              {new Date(msg.created_at).toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
                               })}
-                            </div>
-                          )}
-                          
-                          {/* Quick reaction buttons - OUTSIDE bubble, show on hover */}
-                          <div className={`flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
-                            {['❤️', '😂', '👍', '🔥', '😮'].map(emoji => (
-                              <button
-                                key={emoji}
-                                className="text-base hover:scale-125 transition-transform bg-background/90 rounded-full w-7 h-7 flex items-center justify-center shadow-sm hover:shadow-md border border-border/50"
-                                onClick={() => toggleReaction(msg.id, emoji)}
-                                title={`React with ${emoji}`}
-                              >
-                                {emoji}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {msg.sender_id === currentUser?.id && (
-                            <div className="flex items-center gap-1 mt-1 justify-end">
-                              {msg.read_at ? (
-                                <>
-                                  <CheckCheck className="h-3 w-3 text-primary" />
-                                  <span className="text-xs text-primary font-medium">Read</span>
-                                </>
+                            </span>
+                            {msg.sender_id === currentUser?.id && (
+                              msg.read_at ? (
+                                <CheckCheck className="h-3.5 w-3.5 text-primary" />
                               ) : (
-                                <>
-                                  <Check className="h-3 w-3 text-muted-foreground" />
-                                  <span className="text-xs text-muted-foreground">Delivered</span>
-                                </>
-                              )}
-                            </div>
-                          )}
+                                <Check className="h-3.5 w-3.5 text-muted-foreground/70" />
+                              )
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -954,7 +806,7 @@ const Messages = () => {
                     </div>
                   </div>
                 )}
-                <div className="p-3 md:p-4 border-t flex gap-2 bg-background">
+                <div className="p-3 sm:p-4 border-t bg-card/30 backdrop-blur-sm flex items-end gap-2">
                   <input
                     type="file"
                     id="message-image"
@@ -966,7 +818,7 @@ const Messages = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full hover:bg-secondary"
+                    className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors h-10 w-10 flex-shrink-0"
                     onClick={() => document.getElementById('message-image')?.click()}
                     disabled={uploading}
                   >
@@ -978,17 +830,16 @@ const Messages = () => {
                       setNewMessage(e.target.value);
                       handleTyping();
                     }}
-                    placeholder="Type a message..."
+                    placeholder="Message..."
                     onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                     disabled={uploading}
-                    className="flex-1 rounded-full border-2 focus-visible:ring-offset-0 shadow-sm focus:shadow-md transition-shadow"
+                    className="flex-1 rounded-full bg-secondary/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50 px-4 py-2 h-10 placeholder:text-muted-foreground/60"
                   />
                   <Button 
                     onClick={sendMessage} 
                     disabled={uploading || (!newMessage.trim() && !selectedImage)}
-                    className="rounded-full h-10 w-10 p-0 shadow-primary hover:shadow-lg"
+                    className="rounded-full h-10 w-10 p-0 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex-shrink-0"
                     size="icon"
-                    variant="default"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
