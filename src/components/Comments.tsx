@@ -5,9 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { MessageSquare, Image as ImageIcon, Loader2, Edit, Trash } from "lucide-react";
+import { MessageSquare, Image as ImageIcon, Loader2, Edit, Trash, Bot } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { ImageUpload } from "./ImageUpload";
 import { uploadImage, deleteImage } from "@/lib/imageUpload";
 
 interface Comment {
@@ -17,6 +16,7 @@ interface Comment {
   created_at: string;
   updated_at: string;
   user_id: string;
+  is_ai?: boolean;
   profiles?: {
     name: string;
     profile_picture: string | null;
@@ -25,9 +25,11 @@ interface Comment {
 
 interface CommentsProps {
   postId: string;
+  postTitle?: string;
+  postDescription?: string;
 }
 
-export const Comments = ({ postId }: CommentsProps) => {
+export const Comments = ({ postId, postTitle = "", postDescription = "" }: CommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -35,6 +37,7 @@ export const Comments = ({ postId }: CommentsProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isAiResponding, setIsAiResponding] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -72,7 +75,7 @@ export const Comments = ({ postId }: CommentsProps) => {
       .from("comments")
       .select("*")
       .eq("post_id", postId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (error) {
       console.error("Error fetching comments:", error);
@@ -89,12 +92,44 @@ export const Comments = ({ postId }: CommentsProps) => {
 
       const commentsWithProfiles = data.map(comment => ({
         ...comment,
-        profiles: profiles?.find(p => p.id === comment.user_id)
+        profiles: profiles?.find(p => p.id === comment.user_id),
+        is_ai: comment.comment_text.startsWith('🤖 CampusLink AI:')
       }));
 
       setComments(commentsWithProfiles as any);
     } else {
       setComments([]);
+    }
+  };
+
+  const checkForMention = (text: string): string | null => {
+    const mentionRegex = /@campuslink\s+(.+)/i;
+    const match = text.match(mentionRegex);
+    return match ? match[1].trim() : null;
+  };
+
+  const getAiResponse = async (question: string, originalComment: string) => {
+    try {
+      setIsAiResponding(true);
+      
+      const { data, error } = await supabase.functions.invoke('ai-comment-reply', {
+        body: {
+          postTitle,
+          postDescription,
+          commentText: originalComment,
+          question
+        }
+      });
+
+      if (error) throw error;
+      
+      return data.response;
+    } catch (error: any) {
+      console.error('Error getting AI response:', error);
+      toast.error('Failed to get AI response');
+      return null;
+    } finally {
+      setIsAiResponding(false);
     }
   };
 
@@ -140,6 +175,21 @@ export const Comments = ({ postId }: CommentsProps) => {
 
         if (error) throw error;
         toast.success("Comment added");
+
+        // Check for @campuslink mention
+        const question = checkForMention(newComment);
+        if (question) {
+          const aiResponse = await getAiResponse(question, newComment);
+          if (aiResponse) {
+            // Post AI response as a comment
+            await supabase.from("comments").insert({
+              post_id: postId,
+              user_id: currentUser?.id, // Using same user since we don't have a system user
+              comment_text: `🤖 CampusLink AI: ${aiResponse}`,
+              image_url: null,
+            });
+          }
+        }
       }
 
       setNewComment("");
@@ -191,13 +241,21 @@ export const Comments = ({ postId }: CommentsProps) => {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              rows={3}
-              className="resize-none"
-            />
+            <div className="relative">
+              <Textarea
+                placeholder="Write a comment... Use @campuslink to ask AI a question!"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={3}
+                className="resize-none pr-4"
+              />
+              {newComment.toLowerCase().includes('@campuslink') && (
+                <div className="absolute bottom-2 right-2 flex items-center gap-1 text-xs text-primary">
+                  <Bot className="h-3 w-3" />
+                  AI will respond
+                </div>
+              )}
+            </div>
 
             {/* Image Upload */}
             <div>
@@ -225,32 +283,33 @@ export const Comments = ({ postId }: CommentsProps) => {
               )}
             </div>
 
-            <Button type="submit" disabled={isSubmitting || isUploading}>
-              {isSubmitting || isUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isUploading ? "Uploading..." : "Posting..."}
-                </>
-              ) : editingId ? (
-                "Update Comment"
-              ) : (
-                "Post Comment"
-              )}
-            </Button>
-            {editingId && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEditingId(null);
-                  setNewComment("");
-                  setSelectedImage(null);
-                }}
-                className="ml-2"
-              >
-                Cancel
+            <div className="flex gap-2">
+              <Button type="submit" disabled={isSubmitting || isUploading || isAiResponding}>
+                {isSubmitting || isUploading || isAiResponding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isUploading ? "Uploading..." : isAiResponding ? "AI responding..." : "Posting..."}
+                  </>
+                ) : editingId ? (
+                  "Update Comment"
+                ) : (
+                  "Post Comment"
+                )}
               </Button>
-            )}
+              {editingId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(null);
+                    setNewComment("");
+                    setSelectedImage(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -258,31 +317,37 @@ export const Comments = ({ postId }: CommentsProps) => {
       {/* Comments List */}
       <div className="space-y-4">
         {comments.map((comment) => (
-          <Card key={comment.id}>
+          <Card key={comment.id} className={comment.is_ai ? 'border-primary/30 bg-primary/5' : ''}>
             <CardContent className="pt-6">
               <div className="flex gap-4">
-                <Avatar>
-                  <AvatarImage src={comment.profiles?.profile_picture || ""} />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {comment.profiles?.name?.charAt(0).toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
+                {comment.is_ai ? (
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-primary" />
+                  </div>
+                ) : (
+                  <Avatar>
+                    <AvatarImage src={comment.profiles?.profile_picture || ""} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {comment.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
 
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-medium text-foreground">
-                        {comment.profiles?.name || "Unknown User"}
+                      <p className={`font-medium ${comment.is_ai ? 'text-primary' : 'text-foreground'}`}>
+                        {comment.is_ai ? 'CampusLink AI' : comment.profiles?.name || "Unknown User"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(comment.created_at), {
                           addSuffix: true,
                         })}
-                        {comment.updated_at !== comment.created_at && " (edited)"}
+                        {comment.updated_at !== comment.created_at && !comment.is_ai && " (edited)"}
                       </p>
                     </div>
 
-                    {currentUser?.id === comment.user_id && (
+                    {currentUser?.id === comment.user_id && !comment.is_ai && (
                       <div className="flex gap-2">
                         <Button
                           variant="ghost"
@@ -302,7 +367,12 @@ export const Comments = ({ postId }: CommentsProps) => {
                     )}
                   </div>
 
-                  <p className="text-foreground mt-2">{comment.comment_text}</p>
+                  <p className="text-foreground mt-2">
+                    {comment.is_ai 
+                      ? comment.comment_text.replace('🤖 CampusLink AI: ', '')
+                      : comment.comment_text
+                    }
+                  </p>
 
                   {comment.image_url && (
                     <img

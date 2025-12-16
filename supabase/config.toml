@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.ai-conversation-starters]
 verify_jwt = false
+
+[functions.ai-comment-reply]
+verify_jwt = false
