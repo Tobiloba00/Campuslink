@@ -264,7 +264,7 @@ const PostDetail = () => {
         </Card>
 
         {/* Comments Section */}
-        <Comments postId={id!} />
+        <Comments postId={id!} postTitle={post?.title} postDescription={post?.description} />
       </div>
     </div>
   );

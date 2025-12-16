@@ -53,6 +53,7 @@ const Messages = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const isInitialLoadRef = useRef(true);
 
   const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
     if (!currentUser) return null;
@@ -445,7 +446,11 @@ const Messages = () => {
         } else {
           setMessages(typedMessages.reverse());
           setHasMore(data.length === messageLimit);
-          setTimeout(() => scrollToBottom(true), 100);
+          // Only scroll to bottom on initial load of a conversation
+          if (isInitialLoadRef.current) {
+            setTimeout(() => scrollToBottom(true), 100);
+            isInitialLoadRef.current = false;
+          }
         }
       }
     } catch (error) {
@@ -572,8 +577,9 @@ const Messages = () => {
 
       setNewMessage("");
       clearImage();
-      fetchMessages();
+      // Don't call fetchMessages() - realtime will handle new message
       fetchConversations();
+      // User sent a message, so scroll to bottom
       setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -584,6 +590,8 @@ const Messages = () => {
   };
 
   const handleSelectConversation = async (userId: string, roomId: string | null) => {
+    // Reset initial load flag when switching conversations
+    isInitialLoadRef.current = true;
     setSelectedConversation(userId);
     
     // If no roomId provided, try to get or create one
