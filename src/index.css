@@ -41,6 +41,11 @@ All colors MUST be HSL.
     --warning: 38 92% 50%; /* #F59E0B - Amber */
     --error: 0 84% 60%; /* #EF4444 - Red */
 
+    /* Category Colors */
+    --category-academic: 221 83% 53%; /* Blue */
+    --category-tutoring: 142 71% 45%; /* Green */
+    --category-marketplace: 24 95% 53%; /* Orange */
+
     --border: 220 13% 91%; /* #E5E7EB - Light Gray */
     --input: 220 13% 91%;
     --ring: 221 83% 53%;
@@ -96,6 +101,11 @@ All colors MUST be HSL.
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
     --error: 0 84% 60%;
+
+    /* Category Colors - Dark Mode */
+    --category-academic: 217 91% 60%;
+    --category-tutoring: 142 71% 50%;
+    --category-marketplace: 24 95% 62%;
 
     --border: 217 33% 24%;
     --input: 217 33% 24%;
