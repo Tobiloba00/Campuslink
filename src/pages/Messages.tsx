@@ -52,7 +52,7 @@ const Messages = () => {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottomRef = useRef(true);
   const isInitialLoadRef = useRef(true);
 
   const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
@@ -461,11 +461,12 @@ const Messages = () => {
     if (loadMore) setIsLoadingMore(false);
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const element = e.currentTarget;
     const threshold = 20;
     const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
-    setIsAtBottom(isNearBottom);
+    // Use ref instead of state to prevent re-renders
+    isAtBottomRef.current = isNearBottom;
     
     if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
       const previousScrollHeight = element.scrollHeight;
@@ -474,16 +475,16 @@ const Messages = () => {
         element.scrollTop = newScrollHeight - previousScrollHeight;
       });
     }
-  };
+  }, [hasMore, isLoadingMore, fetchMessages]);
 
-  const scrollToBottom = (force = false) => {
-    if (scrollAreaRef.current && (isAtBottom || force)) {
+  const scrollToBottom = useCallback((force = false) => {
+    if (scrollAreaRef.current && (isAtBottomRef.current || force)) {
       const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollElement) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
     }
-  };
+  }, []);
 
   const playNotificationSound = (shouldPlay: boolean) => {
     if (!shouldPlay) return;
@@ -710,7 +711,7 @@ const Messages = () => {
                   style={{
                     backgroundColor: 'hsl(var(--background))'
                   }}
-                  onScrollCapture={handleScroll}
+                  onScroll={handleScroll}
                 >
                   {isLoadingMore && (
                     <div className="text-center text-sm text-muted-foreground py-2">

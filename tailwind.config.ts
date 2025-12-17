@@ -52,6 +52,11 @@ export default {
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         error: "hsl(var(--error))",
+        category: {
+          academic: "hsl(var(--category-academic))",
+          tutoring: "hsl(var(--category-tutoring))",
+          marketplace: "hsl(var(--category-marketplace))",
+        },
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
