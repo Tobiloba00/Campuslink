@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { uploadImage } from "@/lib/imageUpload";
+import { ConversationListSkeleton } from "@/components/ui/skeleton-loaders";
+import BottomNav from "@/components/BottomNav";
 
 type Message = {
   id: string;
@@ -46,6 +48,7 @@ const Messages = () => {
   const [showConversations, setShowConversations] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const messageLimit = 10;
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -59,7 +62,6 @@ const Messages = () => {
     if (!currentUser) return null;
 
     try {
-      // Check if a room already exists between these two users
       const { data: existingRooms, error: searchError } = await supabase
         .from('room_participants')
         .select('room_id')
@@ -70,7 +72,6 @@ const Messages = () => {
       if (existingRooms && existingRooms.length > 0) {
         const roomIds = existingRooms.map(r => r.room_id);
         
-        // Check which of these rooms also has the other user
         const { data: otherUserRooms, error: otherError } = await supabase
           .from('room_participants')
           .select('room_id')
@@ -84,7 +85,6 @@ const Messages = () => {
         }
       }
 
-      // Create new room
       const { data: newRoom, error: roomError } = await supabase
         .from('chat_rooms')
         .insert({ type: 'direct' })
@@ -93,7 +93,6 @@ const Messages = () => {
 
       if (roomError) throw roomError;
 
-      // Add both participants
       const { error: participantsError } = await supabase
         .from('room_participants')
         .insert([
@@ -119,7 +118,6 @@ const Messages = () => {
       if (user) {
         const userId = searchParams.get('userId');
         if (userId) {
-          // Delay to ensure currentUser is set for getOrCreateRoom
           setTimeout(async () => {
             const roomId = await getOrCreateRoom(userId);
             setSelectedConversation(userId);
@@ -255,6 +253,42 @@ const Messages = () => {
     };
   }, [selectedRoomId, currentUser]);
 
+  // Attach scroll handler to the correct viewport element
+  useEffect(() => {
+    if (!scrollAreaRef.current) return;
+    
+    const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    let scrollTimeout: NodeJS.Timeout;
+    
+    const handleScrollEvent = (e: Event) => {
+      // Debounce scroll handler
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const element = e.target as HTMLDivElement;
+        const threshold = 50;
+        const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+        isAtBottomRef.current = isNearBottom;
+        
+        // Infinite scroll for older messages
+        if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
+          const previousScrollHeight = element.scrollHeight;
+          fetchMessages(true).then(() => {
+            const newScrollHeight = element.scrollHeight;
+            element.scrollTop = newScrollHeight - previousScrollHeight;
+          });
+        }
+      }, 50);
+    };
+
+    viewport.addEventListener('scroll', handleScrollEvent);
+    return () => {
+      viewport.removeEventListener('scroll', handleScrollEvent);
+      clearTimeout(scrollTimeout);
+    };
+  }, [hasMore, isLoadingMore, selectedRoomId]);
+
   const markMessagesAsRead = async (roomId: string) => {
     if (!currentUser) return;
     
@@ -271,98 +305,57 @@ const Messages = () => {
   };
 
   const fetchConversations = async () => {
-    if (!currentUser) {
-      console.log('fetchConversations: No current user');
-      return;
-    }
+    if (!currentUser) return;
 
-    console.log('fetchConversations: Starting for user:', currentUser.id);
+    setIsLoadingConversations(true);
 
     try {
-      // Step 1: Get room IDs for current user (avoids nested join that causes RLS circular dependency)
+      // Step 1: Get room IDs for current user
       const { data: userRooms, error: userRoomsError } = await supabase
         .from('room_participants')
         .select('room_id')
         .eq('user_id', currentUser.id);
 
-      if (userRoomsError) {
-        console.error('fetchConversations: Error fetching user rooms:', userRoomsError);
-        throw userRoomsError;
-      }
-
-      console.log('fetchConversations: User rooms:', userRooms);
+      if (userRoomsError) throw userRoomsError;
 
       if (!userRooms || userRooms.length === 0) {
-        console.log('fetchConversations: No rooms found');
         setConversations([]);
+        setIsLoadingConversations(false);
         return;
       }
 
       const roomIds = userRooms.map(r => r.room_id);
-      console.log('fetchConversations: Room IDs:', roomIds);
 
-      // Step 2: Get chat_rooms data separately
-      const { data: chatRooms, error: chatRoomsError } = await supabase
-        .from('chat_rooms')
-        .select('id, created_at, updated_at')
-        .in('id', roomIds);
+      // OPTIMIZED: Parallel queries instead of sequential
+      const [chatRoomsResult, otherParticipantsResult, allMessagesResult] = await Promise.all([
+        supabase.from('chat_rooms').select('id, created_at, updated_at').in('id', roomIds),
+        supabase.from('room_participants').select('room_id, user_id').in('room_id', roomIds).neq('user_id', currentUser.id),
+        supabase.from('messages').select('room_id, message, image_url, created_at').in('room_id', roomIds).order('created_at', { ascending: false })
+      ]);
 
-      if (chatRoomsError) {
-        console.error('fetchConversations: Error fetching chat rooms:', chatRoomsError);
-        throw chatRoomsError;
-      }
+      if (chatRoomsResult.error) throw chatRoomsResult.error;
+      if (otherParticipantsResult.error) throw otherParticipantsResult.error;
+      if (allMessagesResult.error) throw allMessagesResult.error;
 
-      console.log('fetchConversations: Chat rooms:', chatRooms);
-
-      // Step 3: Get other participants and their profiles separately
-      const { data: otherParticipants, error: participantsError } = await supabase
-        .from('room_participants')
-        .select('room_id, user_id')
-        .in('room_id', roomIds)
-        .neq('user_id', currentUser.id);
-
-      if (participantsError) {
-        console.error('fetchConversations: Error fetching participants:', participantsError);
-        throw participantsError;
-      }
-
-      console.log('fetchConversations: Other participants:', otherParticipants);
+      const otherParticipants = otherParticipantsResult.data;
+      const allMessages = allMessagesResult.data;
 
       if (!otherParticipants || otherParticipants.length === 0) {
-        console.log('fetchConversations: No other participants found');
         setConversations([]);
+        setIsLoadingConversations(false);
         return;
       }
 
-      // Step 4: Get profiles for other participants
+      // Fetch profiles for other participants
       const otherUserIds = otherParticipants.map(p => p.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, profile_picture')
         .in('id', otherUserIds);
 
-      if (profilesError) {
-        console.error('fetchConversations: Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
+      if (profilesError) throw profilesError;
 
-      console.log('fetchConversations: Profiles:', profiles);
-
-      // Step 5: Get last messages for each room
-      const { data: allMessages, error: messagesError } = await supabase
-        .from('messages')
-        .select('room_id, message, image_url, created_at')
-        .in('room_id', roomIds)
-        .order('created_at', { ascending: false });
-
-      if (messagesError) {
-        console.error('fetchConversations: Error fetching messages:', messagesError);
-        throw messagesError;
-      }
-
-      console.log('fetchConversations: All messages:', allMessages);
-
-      // Step 6: Combine results in frontend
+      // Combine results
       const conversationMap = new Map<string, Conversation>();
 
       otherParticipants.forEach((participant) => {
@@ -383,13 +376,12 @@ const Messages = () => {
         }
       });
 
-      const conversationsArray = Array.from(conversationMap.values());
-      console.log('fetchConversations: Final conversations array:', conversationsArray);
-      
-      setConversations(conversationsArray);
+      setConversations(Array.from(conversationMap.values()));
     } catch (error) {
-      console.error('fetchConversations: Fatal error:', error);
+      console.error('fetchConversations error:', error);
       toast.error('Failed to load conversations');
+    } finally {
+      setIsLoadingConversations(false);
     }
   };
 
@@ -446,7 +438,7 @@ const Messages = () => {
         } else {
           setMessages(typedMessages.reverse());
           setHasMore(data.length === messageLimit);
-          // Only scroll to bottom on initial load of a conversation
+          // Only scroll to bottom on initial load
           if (isInitialLoadRef.current) {
             setTimeout(() => scrollToBottom(true), 100);
             isInitialLoadRef.current = false;
@@ -460,22 +452,6 @@ const Messages = () => {
 
     if (loadMore) setIsLoadingMore(false);
   };
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const element = e.currentTarget;
-    const threshold = 20;
-    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
-    // Use ref instead of state to prevent re-renders
-    isAtBottomRef.current = isNearBottom;
-    
-    if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
-      const previousScrollHeight = element.scrollHeight;
-      fetchMessages(true).then(() => {
-        const newScrollHeight = element.scrollHeight;
-        element.scrollTop = newScrollHeight - previousScrollHeight;
-      });
-    }
-  }, [hasMore, isLoadingMore, fetchMessages]);
 
   const scrollToBottom = useCallback((force = false) => {
     if (scrollAreaRef.current && (isAtBottomRef.current || force)) {
@@ -497,7 +473,6 @@ const Messages = () => {
       console.log('Audio not supported');
     }
   };
-
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -547,7 +522,6 @@ const Messages = () => {
 
     setUploading(true);
     try {
-      // Ensure we have a room
       let roomId = selectedRoomId;
       if (!roomId) {
         roomId = await getOrCreateRoom(selectedConversation);
@@ -578,7 +552,6 @@ const Messages = () => {
 
       setNewMessage("");
       clearImage();
-      // Don't call fetchMessages() - realtime will handle new message
       fetchConversations();
       // User sent a message, so scroll to bottom
       setTimeout(() => scrollToBottom(true), 100);
@@ -591,11 +564,9 @@ const Messages = () => {
   };
 
   const handleSelectConversation = async (userId: string, roomId: string | null) => {
-    // Reset initial load flag when switching conversations
     isInitialLoadRef.current = true;
     setSelectedConversation(userId);
     
-    // If no roomId provided, try to get or create one
     if (!roomId) {
       const newRoomId = await getOrCreateRoom(userId);
       setSelectedRoomId(newRoomId);
@@ -609,13 +580,14 @@ const Messages = () => {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <Navbar />
-      <div className="container mx-auto px-4 py-4 flex flex-col h-full overflow-hidden">
+      <div className="container mx-auto px-4 py-4 flex flex-col flex-1 overflow-hidden pb-20 lg:pb-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => navigate('/feed')}
+            className="hidden lg:flex"
           >
             <Home className="h-4 w-4 mr-2" />
             Back to Feed
@@ -625,44 +597,53 @@ const Messages = () => {
           <Card className={`shadow-card p-4 flex flex-col h-full overflow-hidden ${showConversations ? 'block' : 'hidden md:block'}`}>
             <h2 className="font-bold text-lg mb-4">Conversations</h2>
             <ScrollArea className="h-full">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.userId}
-                  onClick={() => handleSelectConversation(conv.userId, conv.roomId)}
-                  className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer mb-1.5 transition-all duration-200 ${
-                    selectedConversation === conv.userId
-                      ? "bg-primary/10 border border-primary/20 shadow-sm"
-                      : "hover:bg-secondary/60 active:scale-[0.98]"
-                  }`}
-                >
-                  <div className="relative flex-shrink-0">
-                    <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
-                      <AvatarImage src={conv.profilePicture || ""} />
-                      <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/10">
-                        {conv.userName?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    {onlineUsers.has(conv.userId) && (
-                      <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success border-2 border-background shadow-md" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-semibold text-sm truncate">{conv.userName}</span>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                        {new Date(conv.timestamp).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
-                          minute: '2-digit',
-                          hour12: true 
-                        })}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {conv.lastMessage || "📷 Photo"}
-                    </div>
-                  </div>
+              {isLoadingConversations ? (
+                <ConversationListSkeleton />
+              ) : conversations.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <p>No conversations yet</p>
+                  <p className="text-sm mt-1">Start messaging someone!</p>
                 </div>
-              ))}
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.userId}
+                    onClick={() => handleSelectConversation(conv.userId, conv.roomId)}
+                    className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer mb-1.5 transition-all duration-200 ${
+                      selectedConversation === conv.userId
+                        ? "bg-primary/10 border border-primary/20 shadow-sm"
+                        : "hover:bg-secondary/60 active:scale-[0.98]"
+                    }`}
+                  >
+                    <div className="relative flex-shrink-0">
+                      <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+                        <AvatarImage src={conv.profilePicture || ""} />
+                        <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/10">
+                          {conv.userName?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      {onlineUsers.has(conv.userId) && (
+                        <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success border-2 border-background shadow-md" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-semibold text-sm truncate">{conv.userName}</span>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                          {new Date(conv.timestamp).toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {conv.lastMessage || "📷 Photo"}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </ScrollArea>
           </Card>
 
@@ -711,7 +692,6 @@ const Messages = () => {
                   style={{
                     backgroundColor: 'hsl(var(--background))'
                   }}
-                  onScroll={handleScroll}
                 >
                   {isLoadingMore && (
                     <div className="text-center text-sm text-muted-foreground py-2">
@@ -862,6 +842,7 @@ const Messages = () => {
           </Card>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 };

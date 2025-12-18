@@ -10,12 +10,14 @@ import {
   Plus, Search, RefreshCw, MessageCircle, Heart, Share2, 
   MoreHorizontal, Copy, Flag, EyeOff, Trash, Edit, 
   BookOpen, GraduationCap, ShoppingBag, TrendingUp, Users, Sparkles,
-  MessageSquare, Bookmark
+  MessageSquare, Bookmark, ChevronDown, ChevronUp
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { FeedSkeleton } from "@/components/ui/skeleton-loaders";
+import BottomNav from "@/components/BottomNav";
 
 type Post = {
   id: string;
@@ -47,6 +49,8 @@ const Feed = () => {
   const [lastSeenPostId, setLastSeenPostId] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [showTrending, setShowTrending] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -96,6 +100,7 @@ const Feed = () => {
   };
 
   const fetchPosts = async () => {
+    setIsLoading(true);
     let query = supabase
       .from('posts')
       .select(`id, title, description, category, optional_price, ai_summary, image_url, created_at, user_id, tags, campus_highlight, engagement_count, profiles (name, rating, profile_picture)`)
@@ -106,7 +111,7 @@ const Feed = () => {
     }
 
     const { data, error } = await query;
-    if (error) { toast.error("Failed to load posts"); return; }
+    if (error) { toast.error("Failed to load posts"); setIsLoading(false); return; }
 
     setPosts(data || []);
     
@@ -120,6 +125,7 @@ const Feed = () => {
       }
       setLastSeenPostId(data[0].id);
     }
+    setIsLoading(false);
   };
 
   const toggleLike = async (postId: string, e: React.MouseEvent) => {
@@ -222,7 +228,7 @@ const Feed = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0">
       <Navbar />
       
       {hasNewPosts && (
@@ -236,7 +242,92 @@ const Feed = () => {
         </div>
       )}
       
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-4 lg:py-6">
+        {/* Mobile Category Pills - Horizontal Scroll */}
+        <div className="lg:hidden mb-4 -mx-4 px-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full whitespace-nowrap flex-shrink-0"
+              onClick={() => setFilter('all')}
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              All
+            </Button>
+            <Button
+              variant={filter === 'Academic Help' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full whitespace-nowrap flex-shrink-0"
+              onClick={() => setFilter(filter === 'Academic Help' ? 'all' : 'Academic Help')}
+            >
+              <BookOpen className="h-3.5 w-3.5 mr-1.5 text-category-academic" />
+              Academic
+            </Button>
+            <Button
+              variant={filter === 'Tutoring' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full whitespace-nowrap flex-shrink-0"
+              onClick={() => setFilter(filter === 'Tutoring' ? 'all' : 'Tutoring')}
+            >
+              <GraduationCap className="h-3.5 w-3.5 mr-1.5 text-category-tutoring" />
+              Tutoring
+            </Button>
+            <Button
+              variant={filter === 'Buy & Sell' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full whitespace-nowrap flex-shrink-0"
+              onClick={() => setFilter(filter === 'Buy & Sell' ? 'all' : 'Buy & Sell')}
+            >
+              <ShoppingBag className="h-3.5 w-3.5 mr-1.5 text-category-marketplace" />
+              Marketplace
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Trending Bar - Collapsible */}
+        <div className="lg:hidden mb-4">
+          <button
+            onClick={() => setShowTrending(!showTrending)}
+            className="w-full flex items-center justify-between p-3 bg-accent/10 rounded-xl"
+          >
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-accent" />
+              <span className="font-medium text-sm">Campus Pulse</span>
+              <Badge variant="secondary" className="text-[10px]">3 trending</Badge>
+            </div>
+            {showTrending ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          
+          {showTrending && (
+            <Card className="mt-2 p-3 animate-in slide-in-from-top-2">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Trending</p>
+                    <p className="font-semibold text-sm">#FinalExams</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">1.2K</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Hot</p>
+                    <p className="font-semibold text-sm">#TextbookDeals</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">856</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Popular</p>
+                    <p className="font-semibold text-sm">#MathHelp</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">432</span>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+
         <div className="flex gap-6">
           {/* Left Sidebar - Desktop Only */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
@@ -318,18 +409,8 @@ const Feed = () => {
           </aside>
 
           {/* Main Feed */}
-          <main className="flex-1 min-w-0 max-w-2xl">
-            {/* Mobile Header */}
-            <div className="lg:hidden mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h1 className="text-xl font-bold">Campus Feed</h1>
-                <Button size="sm" className="rounded-full" asChild>
-                  <Link to="/create-post"><Plus className="h-4 w-4" /></Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Search & Filter Bar */}
+          <main className="flex-1 min-w-0 max-w-2xl mx-auto lg:mx-0">
+            {/* Search Bar */}
             <Card className="p-3 mb-4 shadow-card">
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -341,206 +422,212 @@ const Feed = () => {
                     className="pl-9 rounded-full border-muted"
                   />
                 </div>
-                <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-32 rounded-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Posts</SelectItem>
-                    <SelectItem value="Academic Help">Academic</SelectItem>
-                    <SelectItem value="Tutoring">Tutoring</SelectItem>
-                    <SelectItem value="Buy & Sell">Marketplace</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="hidden sm:block">
+                  <Select value={filter} onValueChange={setFilter}>
+                    <SelectTrigger className="w-32 rounded-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Posts</SelectItem>
+                      <SelectItem value="Academic Help">Academic</SelectItem>
+                      <SelectItem value="Tutoring">Tutoring</SelectItem>
+                      <SelectItem value="Buy & Sell">Marketplace</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </Card>
 
             {/* Posts */}
-            <div className="space-y-4">
-              {filteredPosts.map((post) => {
-                const actionBtn = getActionButton(post.category);
-                return (
-                  <Card 
-                    key={post.id} 
-                    className="overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 cursor-pointer group"
-                    onClick={() => navigate(`/post/${post.id}`)}
-                  >
-                    {/* Category Accent Strip */}
-                    <div className={`h-1 ${getCategoryColor(post.category)}`} />
-                    
-                    <div className="p-4">
-                      {/* Header Row */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
-                            <AvatarImage src={post.profiles.profile_picture || ""} />
-                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 font-semibold">
-                              {post.profiles.name?.charAt(0) || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-sm">{post.profiles.name}</span>
-                              {post.profiles.rating > 0 && (
-                                <span className="text-xs text-amber-500">⭐{post.profiles.rating.toFixed(1)}</span>
-                              )}
+            {isLoading ? (
+              <FeedSkeleton />
+            ) : (
+              <div className="space-y-4">
+                {filteredPosts.map((post) => {
+                  const actionBtn = getActionButton(post.category);
+                  return (
+                    <Card 
+                      key={post.id} 
+                      className="overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 cursor-pointer group"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                    >
+                      {/* Category Accent Strip */}
+                      <div className={`h-1 ${getCategoryColor(post.category)}`} />
+                      
+                      <div className="p-4">
+                        {/* Header Row */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+                              <AvatarImage src={post.profiles.profile_picture || ""} />
+                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 font-semibold">
+                                {post.profiles.name?.charAt(0) || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm">{post.profiles.name}</span>
+                                {post.profiles.rating > 0 && (
+                                  <span className="text-xs text-amber-500">⭐{post.profiles.rating.toFixed(1)}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{formatTimestamp(post.created_at)}</span>
+                                <span>•</span>
+                                <Badge variant="secondary" className="h-5 px-2 text-[10px] font-medium gap-1">
+                                  {getCategoryIcon(post.category)}
+                                  <span className="hidden sm:inline">{post.category}</span>
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{formatTimestamp(post.created_at)}</span>
-                              <span>•</span>
-                              <Badge variant="secondary" className="h-5 px-2 text-[10px] font-medium gap-1">
-                                {getCategoryIcon(post.category)}
-                                {post.category}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {post.optional_price && (
+                              <Badge className="bg-accent text-accent-foreground font-bold px-3">
+                                ₦{post.optional_price.toLocaleString('en-NG')}
                               </Badge>
-                            </div>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); copyToClipboard(`${window.location.origin}/post/${post.id}`); }}>
+                                  <Copy className="h-4 w-4 mr-2" /> Copy link
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Saved to bookmarks"); }}>
+                                  <Bookmark className="h-4 w-4 mr-2" /> Save post
+                                </DropdownMenuItem>
+                                {user?.id === post.user_id ? (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/edit-post/${post.id}`); }}>
+                                      <Edit className="h-4 w-4 mr-2" /> Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => handleDeletePost(post.id, e as any)} className="text-destructive focus:text-destructive">
+                                      <Trash className="h-4 w-4 mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Post hidden"); }}>
+                                      <EyeOff className="h-4 w-4 mr-2" /> Hide
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Thanks for reporting"); }}>
+                                      <Flag className="h-4 w-4 mr-2" /> Report
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {post.optional_price && (
-                            <Badge className="bg-accent text-accent-foreground font-bold px-3">
-                              ₦{post.optional_price.toLocaleString('en-NG')}
-                            </Badge>
-                          )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); copyToClipboard(`${window.location.origin}/post/${post.id}`); }}>
-                                <Copy className="h-4 w-4 mr-2" /> Copy link
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Saved to bookmarks"); }}>
-                                <Bookmark className="h-4 w-4 mr-2" /> Save post
-                              </DropdownMenuItem>
-                              {user?.id === post.user_id ? (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/edit-post/${post.id}`); }}>
-                                    <Edit className="h-4 w-4 mr-2" /> Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => handleDeletePost(post.id, e as any)} className="text-destructive focus:text-destructive">
-                                    <Trash className="h-4 w-4 mr-2" /> Delete
-                                  </DropdownMenuItem>
-                                </>
-                              ) : (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Post hidden"); }}>
-                                    <EyeOff className="h-4 w-4 mr-2" /> Hide
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Thanks for reporting"); }}>
-                                    <Flag className="h-4 w-4 mr-2" /> Report
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        {/* Content */}
+                        <div className="mb-3">
+                          <h2 className="font-semibold text-base mb-1 line-clamp-2">{post.title}</h2>
+                          <p className="text-sm text-muted-foreground line-clamp-3">{post.description}</p>
                         </div>
-                      </div>
 
-                      {/* Content */}
-                      <div className="mb-3">
-                        <h2 className="font-semibold text-base mb-1 line-clamp-2">{post.title}</h2>
-                        <p className="text-sm text-muted-foreground line-clamp-3">{post.description}</p>
-                      </div>
+                        {/* Tags */}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {post.tags.slice(0, 4).map((tag, idx) => (
+                              <span key={idx} className="text-xs text-primary font-medium hover:underline cursor-pointer">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
-                      {/* Tags */}
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {post.tags.slice(0, 4).map((tag, idx) => (
-                            <span key={idx} className="text-xs text-primary font-medium hover:underline cursor-pointer">
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                        {/* Campus Highlight */}
+                        {post.campus_highlight && (
+                          <div className="bg-accent/10 border border-accent/30 rounded-lg px-3 py-2 mb-3">
+                            <p className="text-xs font-medium flex items-center gap-2">
+                              <Sparkles className="h-3.5 w-3.5 text-accent" />
+                              {post.campus_highlight}
+                            </p>
+                          </div>
+                        )}
 
-                      {/* Campus Highlight */}
-                      {post.campus_highlight && (
-                        <div className="bg-accent/10 border border-accent/30 rounded-lg px-3 py-2 mb-3">
-                          <p className="text-xs font-medium flex items-center gap-2">
-                            <Sparkles className="h-3.5 w-3.5 text-accent" />
-                            {post.campus_highlight}
-                          </p>
-                        </div>
-                      )}
+                        {/* Image */}
+                        {post.image_url && (
+                          <div className="rounded-xl overflow-hidden border border-border mb-3">
+                            <img 
+                              src={post.image_url} 
+                              alt={post.title}
+                              className="w-full max-h-80 object-cover"
+                            />
+                          </div>
+                        )}
 
-                      {/* Image */}
-                      {post.image_url && (
-                        <div className="rounded-xl overflow-hidden border border-border mb-3">
-                          <img 
-                            src={post.image_url} 
-                            alt={post.title}
-                            className="w-full max-h-80 object-cover"
-                          />
-                        </div>
-                      )}
+                        {/* Action Bar */}
+                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-9 px-2 sm:px-3 rounded-full hover:bg-primary/10 hover:text-primary gap-1 sm:gap-2"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}#comments`); }}
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              <span className="text-xs hidden sm:inline">Comment</span>
+                            </Button>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={`h-9 px-2 sm:px-3 rounded-full gap-1 sm:gap-2 transition-all ${
+                                likedPosts.has(post.id) 
+                                  ? 'text-rose-500 hover:bg-rose-500/10' 
+                                  : 'hover:bg-rose-500/10 hover:text-rose-500'
+                              }`}
+                              onClick={(e) => toggleLike(post.id, e)}
+                            >
+                              <Heart className={`h-4 w-4 transition-transform ${likedPosts.has(post.id) ? 'fill-current scale-110' : ''}`} />
+                              {likeCounts[post.id] > 0 && <span className="text-xs">{likeCounts[post.id]}</span>}
+                            </Button>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-9 px-2 sm:px-3 rounded-full hover:bg-green-500/10 hover:text-green-500 gap-1 sm:gap-2"
+                              onClick={(e) => handleShare(post, e)}
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </div>
 
-                      {/* Action Bar */}
-                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-1">
+                          {/* Context-Aware Action Button */}
                           <Button 
-                            variant="ghost" 
                             size="sm" 
-                            className="h-9 px-3 rounded-full hover:bg-primary/10 hover:text-primary gap-2"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}#comments`); }}
+                            variant="outline"
+                            className="h-9 rounded-full border-primary/30 hover:bg-primary hover:text-primary-foreground gap-1 sm:gap-2"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}`); }}
                           >
-                            <MessageCircle className="h-4 w-4" />
-                            <span className="text-xs">Comment</span>
-                          </Button>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className={`h-9 px-3 rounded-full gap-2 transition-all ${
-                              likedPosts.has(post.id) 
-                                ? 'text-rose-500 hover:bg-rose-500/10' 
-                                : 'hover:bg-rose-500/10 hover:text-rose-500'
-                            }`}
-                            onClick={(e) => toggleLike(post.id, e)}
-                          >
-                            <Heart className={`h-4 w-4 transition-transform ${likedPosts.has(post.id) ? 'fill-current scale-110' : ''}`} />
-                            {likeCounts[post.id] > 0 && <span className="text-xs">{likeCounts[post.id]}</span>}
-                          </Button>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-9 px-3 rounded-full hover:bg-green-500/10 hover:text-green-500 gap-2"
-                            onClick={(e) => handleShare(post, e)}
-                          >
-                            <Share2 className="h-4 w-4" />
+                            {actionBtn.icon}
+                            <span className="text-xs font-medium hidden sm:inline">{actionBtn.text}</span>
                           </Button>
                         </div>
-
-                        {/* Context-Aware Action Button */}
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="h-9 rounded-full border-primary/30 hover:bg-primary hover:text-primary-foreground gap-2"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}`); }}
-                        >
-                          {actionBtn.icon}
-                          <span className="text-xs font-medium">{actionBtn.text}</span>
-                        </Button>
                       </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
 
-            {filteredPosts.length === 0 && posts.length > 0 && (
+            {!isLoading && filteredPosts.length === 0 && posts.length > 0 && (
               <Card className="p-12 text-center shadow-card">
                 <Search className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">No posts match your search.</p>
               </Card>
             )}
 
-            {posts.length === 0 && (
+            {!isLoading && posts.length === 0 && (
               <Card className="p-12 text-center shadow-card">
                 <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground mb-4">No posts yet. Be the first to create one!</p>
@@ -612,6 +699,9 @@ const Feed = () => {
           </aside>
         </div>
       </div>
+      
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
     </div>
   );
 };
