@@ -328,9 +328,9 @@ const Feed = () => {
           )}
         </div>
 
-        <div className="flex gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] xl:grid-cols-[300px_1fr_300px] gap-6">
           {/* Left Sidebar - Desktop Only */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
+          <aside className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
               {/* Quick Nav */}
               <Card className="p-4 shadow-card">
@@ -409,7 +409,7 @@ const Feed = () => {
           </aside>
 
           {/* Main Feed */}
-          <main className="flex-1 min-w-0 max-w-2xl mx-auto lg:mx-0">
+          <main className="min-w-0">
             {/* Search Bar */}
             <Card className="p-3 mb-4 shadow-card">
               <div className="flex gap-2">
@@ -639,7 +639,7 @@ const Feed = () => {
           </main>
 
           {/* Right Sidebar - Desktop Only */}
-          <aside className="hidden xl:block w-72 flex-shrink-0">
+          <aside className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
               {/* Campus Pulse */}
               <Card className="p-4 shadow-card">
@@ -693,7 +693,7 @@ const Feed = () => {
               </Card>
 
               <p className="text-xs text-muted-foreground text-center">
-                © 2024 CampusLink
+                © {new Date().getFullYear()} CampusLink
               </p>
             </div>
           </aside>

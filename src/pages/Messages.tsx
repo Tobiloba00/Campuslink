@@ -48,7 +48,8 @@ const Messages = () => {
   const [showConversations, setShowConversations] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const isInitialConversationLoadRef = useRef(true);
   const messageLimit = 10;
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -307,7 +308,10 @@ const Messages = () => {
   const fetchConversations = async () => {
     if (!currentUser) return;
 
-    setIsLoadingConversations(true);
+    // Only show skeleton on initial load, not refetches
+    if (isInitialConversationLoadRef.current) {
+      setIsLoadingConversations(true);
+    }
 
     try {
       // Step 1: Get room IDs for current user
@@ -382,6 +386,7 @@ const Messages = () => {
       toast.error('Failed to load conversations');
     } finally {
       setIsLoadingConversations(false);
+      isInitialConversationLoadRef.current = false;
     }
   };
 
