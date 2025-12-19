@@ -62,29 +62,29 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
+    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 shadow-sm">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="h-9 w-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-primary group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-xl">CampusLink</span>
+          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">CampusLink</span>
         </Link>
 
         <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
           {user ? (
             <>
-              <Button variant="ghost" size="sm" asChild className="hidden md:flex">
+              <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                 <Link to="/users">
                   <Users className="h-4 w-4 mr-2" />
                   Find Users
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" asChild className="px-2 md:px-3">
+              <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                 <Link to="/messages">
-                  <MessageSquare className="h-4 w-4 md:mr-2" />
-                  <span className="hidden sm:inline">Messages</span>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Messages
                 </Link>
               </Button>
               {isAdmin && (
@@ -109,12 +109,6 @@ export const Navbar = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
                     <Link to="/profile">View Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="md:hidden">
-                    <Link to="/users">
-                      <Users className="h-4 w-4 mr-2" />
-                      Find Users
-                    </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem asChild className="lg:hidden">
