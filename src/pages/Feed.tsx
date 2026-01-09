@@ -333,35 +333,35 @@ const Feed = () => {
           <aside className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
               {/* Quick Nav */}
-              <Card className="p-4 shadow-card">
-                <nav className="space-y-1">
-                  <Button variant="ghost" className="w-full justify-start gap-3 h-11 font-medium" onClick={() => navigate('/feed')}>
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-primary" />
+              <Card className="p-3">
+                <nav className="space-y-0.5">
+                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9 font-medium" onClick={() => navigate('/feed')}>
+                    <div className="h-7 w-7 rounded bg-primary/10 flex items-center justify-center">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
                     </div>
                     Feed
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => navigate('/user-search')}>
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <Search className="h-4 w-4" />
+                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/user-search')}>
+                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
+                      <Search className="h-3.5 w-3.5" />
                     </div>
                     Discover
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => navigate('/messages')}>
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <MessageCircle className="h-4 w-4" />
+                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/messages')}>
+                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
+                      <MessageCircle className="h-3.5 w-3.5" />
                     </div>
                     Messages
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => navigate('/leaderboard')}>
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <TrendingUp className="h-4 w-4" />
+                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/leaderboard')}>
+                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
+                      <TrendingUp className="h-3.5 w-3.5" />
                     </div>
                     Leaderboard
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => navigate('/profile')}>
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4" />
+                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/profile')}>
+                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
+                      <Users className="h-3.5 w-3.5" />
                     </div>
                     Profile
                   </Button>
@@ -369,38 +369,38 @@ const Feed = () => {
               </Card>
 
               {/* Create Post CTA */}
-              <Button className="w-full h-12 rounded-xl shadow-primary font-semibold" asChild>
+              <Button className="w-full h-9 font-medium" asChild>
                 <Link to="/create-post">
-                  <Plus className="h-5 w-5 mr-2" /> Create Post
+                  <Plus className="h-4 w-4 mr-1.5" /> Create Post
                 </Link>
               </Button>
 
               {/* Category Quick Filters */}
-              <Card className="p-4 shadow-card">
-                <h3 className="font-semibold text-sm mb-3 text-muted-foreground">CATEGORIES</h3>
-                <div className="space-y-2">
+              <Card className="p-3">
+                <h3 className="font-medium text-xs mb-2 text-muted-foreground uppercase tracking-wide">Categories</h3>
+                <div className="space-y-0.5">
                   <Button 
                     variant={filter === 'Academic Help' ? 'default' : 'ghost'} 
-                    className="w-full justify-start gap-2 h-10"
+                    className="w-full justify-start gap-2 h-8 text-sm"
                     onClick={() => setFilter(filter === 'Academic Help' ? 'all' : 'Academic Help')}
                   >
-                    <BookOpen className="h-4 w-4 text-category-academic" />
+                    <BookOpen className="h-3.5 w-3.5 text-category-academic" />
                     Academic Help
                   </Button>
                   <Button 
                     variant={filter === 'Tutoring' ? 'default' : 'ghost'} 
-                    className="w-full justify-start gap-2 h-10"
+                    className="w-full justify-start gap-2 h-8 text-sm"
                     onClick={() => setFilter(filter === 'Tutoring' ? 'all' : 'Tutoring')}
                   >
-                    <GraduationCap className="h-4 w-4 text-category-tutoring" />
+                    <GraduationCap className="h-3.5 w-3.5 text-category-tutoring" />
                     Tutoring
                   </Button>
                   <Button 
                     variant={filter === 'Buy & Sell' ? 'default' : 'ghost'} 
-                    className="w-full justify-start gap-2 h-10"
+                    className="w-full justify-start gap-2 h-8 text-sm"
                     onClick={() => setFilter(filter === 'Buy & Sell' ? 'all' : 'Buy & Sell')}
                   >
-                    <ShoppingBag className="h-4 w-4 text-category-marketplace" />
+                    <ShoppingBag className="h-3.5 w-3.5 text-category-marketplace" />
                     Buy & Sell
                   </Button>
                 </div>
@@ -411,20 +411,20 @@ const Feed = () => {
           {/* Main Feed */}
           <main className="min-w-0">
             {/* Search Bar */}
-            <Card className="p-3 mb-4 shadow-card">
+            <Card className="p-2.5 mb-3">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Search posts, users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 rounded-full border-muted"
+                    className="pl-8 h-8"
                   />
                 </div>
                 <div className="hidden sm:block">
                   <Select value={filter} onValueChange={setFilter}>
-                    <SelectTrigger className="w-32 rounded-full">
+                    <SelectTrigger className="w-28 h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -442,39 +442,39 @@ const Feed = () => {
             {isLoading ? (
               <FeedSkeleton />
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredPosts.map((post) => {
                   const actionBtn = getActionButton(post.category);
                   return (
                     <Card 
                       key={post.id} 
-                      className="overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 cursor-pointer group"
+                      className="overflow-hidden cursor-pointer group hover-lift"
                       onClick={() => navigate(`/post/${post.id}`)}
                     >
                       {/* Category Accent Strip */}
-                      <div className={`h-1 ${getCategoryColor(post.category)}`} />
+                      <div className={`h-0.5 ${getCategoryColor(post.category)}`} />
                       
-                      <div className="p-4">
+                      <div className="p-3">
                         {/* Header Row */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <Avatar className="h-9 w-9">
                               <AvatarImage src={post.profiles.profile_picture || ""} />
-                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 font-semibold">
+                              <AvatarFallback className="bg-muted text-xs font-medium">
                                 {post.profiles.name?.charAt(0) || "?"}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm">{post.profiles.name}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium text-sm">{post.profiles.name}</span>
                                 {post.profiles.rating > 0 && (
-                                  <span className="text-xs text-amber-500">⭐{post.profiles.rating.toFixed(1)}</span>
+                                  <span className="text-[11px] text-amber-500">⭐{post.profiles.rating.toFixed(1)}</span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                 <span>{formatTimestamp(post.created_at)}</span>
-                                <span>•</span>
-                                <Badge variant="secondary" className="h-5 px-2 text-[10px] font-medium gap-1">
+                                <span>·</span>
+                                <Badge variant="secondary" className="h-4 px-1.5 text-[10px] gap-0.5">
                                   {getCategoryIcon(post.category)}
                                   <span className="hidden sm:inline">{post.category}</span>
                                 </Badge>
@@ -482,16 +482,16 @@ const Feed = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             {post.optional_price && (
-                              <Badge className="bg-accent text-accent-foreground font-bold px-3">
+                              <Badge className="bg-accent text-accent-foreground font-medium text-[11px] px-2">
                                 ₦{post.optional_price.toLocaleString('en-NG')}
                               </Badge>
                             )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <MoreHorizontal className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
@@ -528,16 +528,16 @@ const Feed = () => {
                         </div>
 
                         {/* Content */}
-                        <div className="mb-3">
-                          <h2 className="font-semibold text-base mb-1 line-clamp-2">{post.title}</h2>
-                          <p className="text-sm text-muted-foreground line-clamp-3">{post.description}</p>
+                        <div className="mb-2">
+                          <h2 className="font-display font-semibold text-[15px] mb-0.5 line-clamp-2">{post.title}</h2>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{post.description}</p>
                         </div>
 
                         {/* Tags */}
                         {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-3">
+                          <div className="flex flex-wrap gap-1 mb-2">
                             {post.tags.slice(0, 4).map((tag, idx) => (
-                              <span key={idx} className="text-xs text-primary font-medium hover:underline cursor-pointer">
+                              <span key={idx} className="text-[11px] text-primary font-medium hover:underline cursor-pointer">
                                 #{tag}
                               </span>
                             ))}
@@ -546,9 +546,9 @@ const Feed = () => {
 
                         {/* Campus Highlight */}
                         {post.campus_highlight && (
-                          <div className="bg-accent/10 border border-accent/30 rounded-lg px-3 py-2 mb-3">
-                            <p className="text-xs font-medium flex items-center gap-2">
-                              <Sparkles className="h-3.5 w-3.5 text-accent" />
+                          <div className="bg-accent/5 border border-accent/20 rounded px-2.5 py-1.5 mb-2">
+                            <p className="text-[11px] font-medium flex items-center gap-1.5">
+                              <Sparkles className="h-3 w-3 text-accent" />
                               {post.campus_highlight}
                             </p>
                           </div>
@@ -556,49 +556,49 @@ const Feed = () => {
 
                         {/* Image */}
                         {post.image_url && (
-                          <div className="rounded-xl overflow-hidden border border-border mb-3">
+                          <div className="rounded overflow-hidden border border-border/60 mb-2">
                             <img 
                               src={post.image_url} 
                               alt={post.title}
-                              className="w-full max-h-80 object-cover"
+                              className="w-full max-h-72 object-cover"
                             />
                           </div>
                         )}
 
                         {/* Action Bar */}
-                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                          <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                          <div className="flex items-center gap-0.5">
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-9 px-2 sm:px-3 rounded-full hover:bg-primary/10 hover:text-primary gap-1 sm:gap-2"
+                              className="h-7 px-2 hover:bg-primary/5 hover:text-primary gap-1"
                               onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}#comments`); }}
                             >
-                              <MessageCircle className="h-4 w-4" />
-                              <span className="text-xs hidden sm:inline">Comment</span>
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              <span className="text-[11px] hidden sm:inline">Comment</span>
                             </Button>
                             
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className={`h-9 px-2 sm:px-3 rounded-full gap-1 sm:gap-2 transition-all ${
+                              className={`h-7 px-2 gap-1 ${
                                 likedPosts.has(post.id) 
-                                  ? 'text-rose-500 hover:bg-rose-500/10' 
-                                  : 'hover:bg-rose-500/10 hover:text-rose-500'
+                                  ? 'text-rose-500 hover:bg-rose-500/5' 
+                                  : 'hover:bg-rose-500/5 hover:text-rose-500'
                               }`}
                               onClick={(e) => toggleLike(post.id, e)}
                             >
-                              <Heart className={`h-4 w-4 transition-transform ${likedPosts.has(post.id) ? 'fill-current scale-110' : ''}`} />
-                              {likeCounts[post.id] > 0 && <span className="text-xs">{likeCounts[post.id]}</span>}
+                              <Heart className={`h-3.5 w-3.5 transition-transform ${likedPosts.has(post.id) ? 'fill-current scale-105' : ''}`} />
+                              {likeCounts[post.id] > 0 && <span className="text-[11px]">{likeCounts[post.id]}</span>}
                             </Button>
                             
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-9 px-2 sm:px-3 rounded-full hover:bg-green-500/10 hover:text-green-500 gap-1 sm:gap-2"
+                              className="h-7 px-2 hover:bg-green-500/5 hover:text-green-600"
                               onClick={(e) => handleShare(post, e)}
                             >
-                              <Share2 className="h-4 w-4" />
+                              <Share2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
 
@@ -606,11 +606,11 @@ const Feed = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            className="h-9 rounded-full border-primary/30 hover:bg-primary hover:text-primary-foreground gap-1 sm:gap-2"
+                            className="h-7 text-[11px] border-primary/20 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-1"
                             onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}`); }}
                           >
                             {actionBtn.icon}
-                            <span className="text-xs font-medium hidden sm:inline">{actionBtn.text}</span>
+                            <span className="hidden sm:inline">{actionBtn.text}</span>
                           </Button>
                         </div>
                       </div>
@@ -621,18 +621,18 @@ const Feed = () => {
             )}
 
             {!isLoading && filteredPosts.length === 0 && posts.length > 0 && (
-              <Card className="p-12 text-center shadow-card">
-                <Search className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">No posts match your search.</p>
+              <Card className="p-8 text-center">
+                <Search className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">No posts match your search.</p>
               </Card>
             )}
 
             {!isLoading && posts.length === 0 && (
-              <Card className="p-12 text-center shadow-card">
-                <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground mb-4">No posts yet. Be the first to create one!</p>
-                <Button asChild>
-                  <Link to="/create-post"><Plus className="h-4 w-4 mr-2" /> Create Post</Link>
+              <Card className="p-8 text-center">
+                <Sparkles className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">No posts yet. Be the first to create one!</p>
+                <Button asChild size="sm">
+                  <Link to="/create-post"><Plus className="h-3.5 w-3.5 mr-1.5" /> Create Post</Link>
                 </Button>
               </Card>
             )}
@@ -642,52 +642,52 @@ const Feed = () => {
           <aside className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
               {/* Campus Pulse */}
-              <Card className="p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-accent" />
-                  <h3 className="font-bold">Campus Pulse</h3>
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                  <h3 className="font-display font-semibold text-sm">Campus Pulse</h3>
                 </div>
-                <div className="space-y-3">
-                  <div className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                    <p className="text-xs text-muted-foreground">Trending in Academic</p>
-                    <p className="font-semibold text-sm">#FinalExams</p>
-                    <p className="text-xs text-muted-foreground">1.2K discussions</p>
+                <div className="space-y-1">
+                  <div className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
+                    <p className="text-[10px] text-muted-foreground">Trending in Academic</p>
+                    <p className="font-medium text-sm">#FinalExams</p>
+                    <p className="text-[10px] text-muted-foreground">1.2K discussions</p>
                   </div>
-                  <div className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                    <p className="text-xs text-muted-foreground">Hot in Marketplace</p>
-                    <p className="font-semibold text-sm">#TextbookDeals</p>
-                    <p className="text-xs text-muted-foreground">856 posts</p>
+                  <div className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
+                    <p className="text-[10px] text-muted-foreground">Hot in Marketplace</p>
+                    <p className="font-medium text-sm">#TextbookDeals</p>
+                    <p className="text-[10px] text-muted-foreground">856 posts</p>
                   </div>
-                  <div className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                    <p className="text-xs text-muted-foreground">Popular Tutoring</p>
-                    <p className="font-semibold text-sm">#MathHelp</p>
-                    <p className="text-xs text-muted-foreground">432 requests</p>
+                  <div className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
+                    <p className="text-[10px] text-muted-foreground">Popular Tutoring</p>
+                    <p className="font-medium text-sm">#MathHelp</p>
+                    <p className="text-[10px] text-muted-foreground">432 requests</p>
                   </div>
                 </div>
               </Card>
 
               {/* Top Helpers */}
-              <Card className="p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-4">
-                  <Users className="h-5 w-5 text-primary" />
-                  <h3 className="font-bold">Top Helpers</h3>
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Users className="h-4 w-4 text-primary" />
+                  <h3 className="font-display font-semibold text-sm">Top Helpers</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-1">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-xs font-semibold">
+                    <div key={i} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-muted text-xs font-medium">
                           {String.fromCharCode(64 + i)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">Helper {i}</p>
-                        <p className="text-xs text-muted-foreground">⭐ 4.{9 - i} rating</p>
+                        <p className="text-[10px] text-muted-foreground">⭐ 4.{9 - i} rating</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <Button variant="ghost" className="w-full mt-2 text-sm" onClick={() => navigate('/leaderboard')}>
+                <Button variant="ghost" className="w-full mt-2 h-7 text-xs" onClick={() => navigate('/leaderboard')}>
                   View Leaderboard
                 </Button>
               </Card>

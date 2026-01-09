@@ -62,35 +62,35 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 shadow-sm">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="h-9 w-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-primary group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
+    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/85 backdrop-blur-[12px] supports-[backdrop-filter]:bg-card/80">
+      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="h-8 w-8 rounded bg-gradient-primary flex items-center justify-center shadow-inner-glow transition-transform duration-200 ease-spring group-hover:scale-105">
+            <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">CampusLink</span>
+          <span className="font-display font-semibold text-lg tracking-tight">CampusLink</span>
         </Link>
 
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           {user ? (
             <>
               <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                 <Link to="/users">
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="h-4 w-4 mr-1.5" />
                   Find Users
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                 <Link to="/messages">
-                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <MessageSquare className="h-4 w-4 mr-1.5" />
                   Messages
                 </Link>
               </Button>
               {isAdmin && (
                 <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                   <Link to="/admin">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    <LayoutDashboard className="h-4 w-4 mr-1.5" />
                     Admin
                   </Link>
                 </Button>
@@ -98,10 +98,10 @@ export const Navbar = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="p-1">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-7 w-7">
                       <AvatarImage src={userProfile?.profile_picture || ""} />
                       <AvatarFallback className="text-xs">
-                        {userProfile?.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
+                        {userProfile?.name?.charAt(0) || <UserIcon className="h-3.5 w-3.5" />}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -113,20 +113,20 @@ export const Navbar = () => {
                   {isAdmin && (
                     <DropdownMenuItem asChild className="lg:hidden">
                       <Link to="/admin">
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        <LayoutDashboard className="h-4 w-4 mr-1.5" />
                         Admin
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 mr-2" />
+                    <LogOut className="h-4 w-4 mr-1.5" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <Button asChild>
+            <Button asChild size="sm">
               <Link to="/auth">Sign In</Link>
             </Button>
           )}

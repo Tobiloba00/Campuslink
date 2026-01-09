@@ -5,24 +5,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-200 ease-smooth focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-gradient-primary text-primary-foreground shadow-primary hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-primary",
-        accent: "bg-gradient-accent text-accent-foreground shadow-accent hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md hover:shadow-lg",
-        outline: "border-2 border-border bg-background/50 backdrop-blur-sm hover:bg-primary/5 hover:border-primary/50 hover:text-primary",
-        secondary: "bg-secondary/80 backdrop-blur-sm text-secondary-foreground hover:bg-secondary shadow-sm hover:shadow-md",
-        ghost: "hover:bg-primary/5 hover:text-primary",
+        default: "bg-gradient-primary text-primary-foreground shadow-inner-glow hover:opacity-90 active:scale-[0.98]",
+        accent: "bg-gradient-accent text-accent-foreground shadow-inner-glow hover:opacity-90 active:scale-[0.98]",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-[0.98]",
+        outline: "border border-border bg-background hover:bg-muted/50 hover:border-primary/30 active:scale-[0.98]",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98]",
+        ghost: "hover:bg-muted/50 active:scale-[0.98]",
         link: "text-primary underline-offset-4 hover:underline",
-        glass: "bg-card/50 backdrop-blur-md border border-border/50 text-foreground hover:bg-card/80 hover:shadow-md",
+        glass: "bg-card/80 backdrop-blur-sm border border-border/50 hover:bg-card hover:border-border active:scale-[0.98]",
       },
       size: {
-        default: "h-10 px-5 py-2",
-        sm: "h-9 rounded-lg px-4 text-xs",
-        lg: "h-12 rounded-xl px-8 text-base",
-        icon: "h-10 w-10 rounded-lg",
+        default: "h-8 px-4 py-1.5 rounded",
+        sm: "h-7 rounded px-3 text-xs",
+        lg: "h-10 rounded px-6",
+        icon: "h-8 w-8 rounded",
       },
     },
     defaultVariants: {
