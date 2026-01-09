@@ -16,9 +16,11 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* CampusLink Design System - Professional Refinement
+ * All colors MUST be HSL.
+ * Typography: Inter (body) + Playfair Display (headings)
+ * Border Radius: Sharp 4px for bespoke software look
+ */
 
 @layer base {
   :root {
@@ -61,33 +63,38 @@ All colors MUST be HSL.
     --category-marketplace: 24 95% 53%;
 
     --border: 220 13% 91%;
+    --border-subtle: 220 13% 94%;
     --input: 220 13% 91%;
     --ring: 221 83% 53%;
 
-    --radius: 0.75rem;
+    /* Sharp 4px radius for bespoke software look */
+    --radius: 0.25rem;
 
-    /* Glassmorphism */
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 100% / 0.2;
-    --glass-blur: 20px;
+    /* Glassmorphism - Refined */
+    --glass-bg: 0 0% 100% / 0.85;
+    --glass-border: 220 13% 91% / 0.6;
+    --glass-blur: 12px;
 
     /* Custom gradients */
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(217 91% 60%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(24 95% 45%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(217 91% 60%) 100%);
-    --gradient-elegant: linear-gradient(135deg, hsl(221 83% 53% / 0.1) 0%, hsl(24 95% 53% / 0.1) 100%);
-    --gradient-shine: linear-gradient(110deg, transparent 25%, hsl(0 0% 100% / 0.1) 50%, transparent 75%);
+    --gradient-elegant: linear-gradient(135deg, hsl(221 83% 53% / 0.05) 0%, hsl(24 95% 53% / 0.05) 100%);
 
-    /* 3D Shadow System - Premium */
-    --shadow-sm: 0 1px 3px hsl(222 47% 11% / 0.04), 0 1px 2px hsl(222 47% 11% / 0.06);
-    --shadow-md: 0 4px 6px hsl(222 47% 11% / 0.04), 0 2px 4px hsl(222 47% 11% / 0.06);
-    --shadow-lg: 0 10px 15px hsl(222 47% 11% / 0.05), 0 4px 6px hsl(222 47% 11% / 0.05);
-    --shadow-xl: 0 20px 25px hsl(222 47% 11% / 0.06), 0 8px 10px hsl(222 47% 11% / 0.04);
-    --shadow-card: 0 2px 8px hsl(222 47% 11% / 0.05), 0 1px 3px hsl(222 47% 11% / 0.08);
-    --shadow-hover: 0 8px 25px hsl(222 47% 11% / 0.08), 0 4px 10px hsl(222 47% 11% / 0.06);
-    --shadow-primary: 0 4px 14px hsl(221 83% 53% / 0.25), 0 2px 6px hsl(221 83% 53% / 0.15);
-    --shadow-accent: 0 4px 14px hsl(24 95% 53% / 0.25), 0 2px 6px hsl(24 95% 53% / 0.15);
-    --shadow-glow: 0 0 20px hsl(221 83% 53% / 0.2);
+    /* Subtle Shadow System - Premium & Refined */
+    --shadow-xs: 0 1px 2px hsl(222 47% 11% / 0.03);
+    --shadow-sm: 0 1px 3px hsl(222 47% 11% / 0.04);
+    --shadow-md: 0 2px 6px hsl(222 47% 11% / 0.04);
+    --shadow-lg: 0 4px 12px hsl(222 47% 11% / 0.05);
+    --shadow-xl: 0 8px 24px hsl(222 47% 11% / 0.06);
+    --shadow-card: none;
+    --shadow-hover: 0 2px 8px hsl(222 47% 11% / 0.04);
+    --shadow-primary: 0 2px 8px hsl(221 83% 53% / 0.15);
+    --shadow-accent: 0 2px 8px hsl(24 95% 53% / 0.15);
+
+    /* Spring transition for micro-interactions */
+    --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -130,28 +137,28 @@ All colors MUST be HSL.
     --category-marketplace: 24 95% 62%;
 
     --border: 217 33% 20%;
+    --border-subtle: 217 33% 16%;
     --input: 217 33% 20%;
     --ring: 217 91% 60%;
 
     /* Glassmorphism - Dark */
-    --glass-bg: 217 33% 12% / 0.8;
-    --glass-border: 217 33% 30% / 0.3;
-    --glass-blur: 20px;
+    --glass-bg: 217 33% 12% / 0.9;
+    --glass-border: 217 33% 25% / 0.5;
+    --glass-blur: 12px;
 
     /* Gradients - Dark */
-    --gradient-elegant: linear-gradient(135deg, hsl(217 91% 60% / 0.15) 0%, hsl(24 95% 62% / 0.1) 100%);
-    --gradient-shine: linear-gradient(110deg, transparent 25%, hsl(0 0% 100% / 0.05) 50%, transparent 75%);
+    --gradient-elegant: linear-gradient(135deg, hsl(217 91% 60% / 0.08) 0%, hsl(24 95% 62% / 0.05) 100%);
 
-    /* Shadows for dark mode - Deeper */
-    --shadow-sm: 0 1px 3px hsl(222 47% 5% / 0.3), 0 1px 2px hsl(222 47% 5% / 0.2);
-    --shadow-md: 0 4px 6px hsl(222 47% 5% / 0.3), 0 2px 4px hsl(222 47% 5% / 0.2);
-    --shadow-lg: 0 10px 15px hsl(222 47% 5% / 0.4), 0 4px 6px hsl(222 47% 5% / 0.2);
-    --shadow-xl: 0 20px 25px hsl(222 47% 5% / 0.5), 0 8px 10px hsl(222 47% 5% / 0.3);
-    --shadow-card: 0 2px 8px hsl(222 47% 5% / 0.4), 0 4px 12px hsl(217 91% 60% / 0.05);
-    --shadow-hover: 0 8px 25px hsl(222 47% 5% / 0.5), 0 4px 10px hsl(217 91% 60% / 0.1);
-    --shadow-primary: 0 4px 14px hsl(217 91% 60% / 0.35), 0 2px 6px hsl(217 91% 60% / 0.2);
-    --shadow-accent: 0 4px 14px hsl(24 95% 62% / 0.35), 0 2px 6px hsl(24 95% 62% / 0.2);
-    --shadow-glow: 0 0 30px hsl(217 91% 60% / 0.25);
+    /* Shadows for dark mode - Subtle */
+    --shadow-xs: 0 1px 2px hsl(222 47% 5% / 0.2);
+    --shadow-sm: 0 1px 3px hsl(222 47% 5% / 0.25);
+    --shadow-md: 0 2px 6px hsl(222 47% 5% / 0.25);
+    --shadow-lg: 0 4px 12px hsl(222 47% 5% / 0.3);
+    --shadow-xl: 0 8px 24px hsl(222 47% 5% / 0.35);
+    --shadow-card: none;
+    --shadow-hover: 0 2px 8px hsl(222 47% 5% / 0.3);
+    --shadow-primary: 0 2px 8px hsl(217 91% 60% / 0.2);
+    --shadow-accent: 0 2px 8px hsl(24 95% 62% / 0.2);
   }
 }
 
@@ -163,24 +170,30 @@ All colors MUST be HSL.
   html, body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.02em;
     overflow-x: hidden;
     max-width: 100vw;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 700;
-    @apply tracking-tight;
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Global icon stroke refinement - Light/Thin weight */
+  svg.lucide {
+    stroke-width: 1.5px;
   }
 }
 
 @layer utilities {
-  /* Glassmorphism utility */
+  /* Glassmorphism utility - Refined */
   .glass {
     background: hsl(var(--glass-bg));
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid hsl(var(--glass-border));
+    border: 0.5px solid hsl(var(--border-subtle));
   }
 
   /* Elegant gradient background */
@@ -188,43 +201,49 @@ All colors MUST be HSL.
     background: var(--gradient-elegant);
   }
 
-  /* Shine animation overlay */
-  .shine {
-    position: relative;
-    overflow: hidden;
-  }
-  .shine::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--gradient-shine);
-    animation: shine 3s ease-in-out infinite;
-  }
-
-  /* Glow effect */
-  .glow {
-    box-shadow: var(--shadow-glow);
-  }
-  .glow-hover:hover {
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* Premium lift effect */
+  /* Premium lift effect with spring transition */
   .hover-lift {
-    @apply transition-all duration-300;
+    transition: transform 0.3s var(--transition-spring), 
+                background-color 0.3s var(--transition-smooth),
+                box-shadow 0.3s var(--transition-smooth);
   }
   .hover-lift:hover {
-    @apply -translate-y-1;
-    box-shadow: var(--shadow-hover);
+    transform: scale(1.005);
+    background-color: hsl(var(--muted) / 0.3);
+  }
+  .hover-lift:active {
+    transform: scale(0.98);
   }
 
   /* Smooth focus ring */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 focus:ring-offset-background;
+    @apply focus:outline-none focus:ring-1 focus:ring-primary/30 focus:ring-offset-1 focus:ring-offset-background;
+  }
+
+  /* Button inner glow for premium 3D feel */
+  .inner-glow {
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.12);
+  }
+
+  /* Dense/compact utilities for data-rich layouts */
+  .compact {
+    @apply p-2 gap-2;
   }
 }
 
 @layer components {
+  /* Subtle border card style (replaces heavy shadows) */
+  .card-refined {
+    @apply border border-border/60 bg-card;
+    transition: border-color 0.3s var(--transition-smooth),
+                background-color 0.3s var(--transition-smooth),
+                transform 0.3s var(--transition-spring);
+  }
+  .card-refined:hover {
+    @apply border-border bg-card;
+    transform: scale(1.003);
+  }
+
   /* Animated gradient border */
   .gradient-border {
     position: relative;
@@ -239,7 +258,7 @@ All colors MUST be HSL.
     border-radius: calc(var(--radius) + 1px);
     z-index: -1;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s var(--transition-smooth);
   }
   .gradient-border:hover::before {
     opacity: 1;
@@ -247,19 +266,10 @@ All colors MUST be HSL.
 }
 
 /* Keyframe animations */
-@keyframes shine {
-  0% {
-    transform: translateX(-100%);
-  }
-  50%, 100% {
-    transform: translateX(100%);
-  }
-}
-
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -279,7 +289,7 @@ All colors MUST be HSL.
 @keyframes scale-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
@@ -290,7 +300,7 @@ All colors MUST be HSL.
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -303,15 +313,6 @@ All colors MUST be HSL.
     opacity: 1;
   }
   50% {
-    opacity: 0.7;
-  }
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 20px hsl(221 83% 53% / 0.2);
-  }
-  50% {
-    box-shadow: 0 0 30px hsl(221 83% 53% / 0.4);
+    opacity: 0.8;
   }
 }
