@@ -1,193 +1,288 @@
 
-
-# Design Refinement Plan: Poppins Font + iOS-Slick Marketplace Aesthetic
-
-## Overview
-This plan transforms CampusLink from a Twitter-like social network layout into a sleek, iOS-inspired marketplace feed with Poppins font throughout. The structure remains the same, but the visual identity shifts to feel more like a premium marketplace/social hybrid.
-
----
-
-## Issues to Fix
-
-### 1. Chat Room Error
-**Problem:** "Failed to create chat room" error appearing on the feed page.
-**Root Cause:** The action button on posts (e.g., "Make Offer") navigates to `/messages?userId=...`, which triggers `getOrCreateRoom()`. If the current user context isn't ready, it fails.
-**Solution:** Add a guard to check if user is authenticated before attempting to create rooms, and show a friendlier loading state.
-
-### 2. Font Change: Inter/Playfair → Poppins
-**Files:** `index.html`, `src/index.css`, `tailwind.config.ts`
-- Replace Google Fonts link from Inter + Playfair Display to Poppins
-- Update CSS to use Poppins for both body and headings
-- Result: Clean, modern, iOS-like typography
-
-### 3. Remove Twitter-Like Left Sidebar Navigation
-**File:** `src/pages/Feed.tsx`
-**Current:** Left sidebar with Feed, Discover, Messages, Leaderboard, Profile navigation
-**Problem:** This mirrors Twitter's layout exactly
-**Solution:** 
-- Remove the navigation-style sidebar
-- Keep only the "Create Post" CTA and Category filters (these are marketplace-relevant)
-- Make the layout more content-focused like Instagram's explore or a marketplace browse
-
----
-
-## Implementation Details
-
-### Phase 1: Typography - Poppins Font
-
-**index.html:**
-```html
-<!-- Replace current Inter + Playfair fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-```
-
-**src/index.css:**
-```css
-html, body {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.01em;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 600;
-}
-```
-
-**tailwind.config.ts:**
-```typescript
-fontFamily: {
-  sans: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-  display: ['Poppins', 'sans-serif'],
-}
-```
-
----
-
-### Phase 2: Remove Twitter-Like Sidebar
-
-**Current Left Sidebar (to be removed):**
-```
-┌────────────────────────┐
-│ ✨ Feed                │  ← Twitter-like nav
-│ 🔍 Discover            │
-│ 💬 Messages            │
-│ 📊 Leaderboard         │
-│ 👤 Profile             │
-├────────────────────────┤
-│ [+ Create Post]        │  ← Keep this
-├────────────────────────┤
-│ CATEGORIES             │  ← Keep this
-│ Academic Help          │
-│ Tutoring               │
-│ Buy & Sell             │
-└────────────────────────┘
-```
-
-**New Left Sidebar (marketplace-focused):**
-```
-┌────────────────────────┐
-│ [+ Create Post]        │  ← Primary CTA
-├────────────────────────┤
-│ FILTER BY CATEGORY     │
-│ [All]                  │
-│ [Academic Help]        │
-│ [Tutoring]             │
-│ [Buy & Sell]           │
-├────────────────────────┤
-│ SORT BY                │  ← New: Sort options
-│ ○ Latest               │
-│ ○ Popular              │
-│ ○ Price: Low-High      │
-└────────────────────────┘
-```
-
-This removes the social-network navigation (users already have the bottom nav and navbar for that) and focuses on marketplace filtering.
-
----
-
-### Phase 3: iOS-Slick Polish
-
-**Visual refinements:**
-1. **Rounder corners** (increase to 8-12px for cards) - iOS uses softer radius
-2. **Lighter font weights** - Poppins 400 for body, 500 for medium, 600 for headings
-3. **Increased whitespace** - iOS uses generous padding
-4. **Subtle shadows** - Very soft, almost invisible elevation
-5. **Cleaner borders** - Reduce border opacity for softer look
-6. **Smoother transitions** - iOS uses 0.3s ease-in-out
-
-**Component updates:**
-- Cards: `rounded-xl` (12px), lighter border
-- Buttons: More rounded, softer shadows
-- Inputs: Higher padding, rounder corners
-- Typography: Lighter letter-spacing with Poppins
-
----
-
-### Phase 4: Fix Chat Room Error
-
-**File:** `src/pages/Messages.tsx`
-
-Add authentication guard before room creation:
-```typescript
-const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
-  if (!currentUser) {
-    // Wait for user to be authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error('Please log in to send messages');
-      return null;
-    }
-    setCurrentUser(user);
-  }
-  // ... rest of function
-}, [currentUser]);
-```
-
-Also add a retry mechanism in case of transient failures.
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `index.html` | Replace fonts with Poppins |
-| `src/index.css` | Update font-family, adjust letter-spacing, softer borders |
-| `tailwind.config.ts` | Update fontFamily config |
-| `src/pages/Feed.tsx` | Remove Twitter-like nav from left sidebar, keep filters |
-| `src/pages/Messages.tsx` | Add auth guard for chat room creation |
-| `src/components/ui/card.tsx` | Increase border-radius for iOS feel |
-| `src/components/ui/button.tsx` | Rounder corners, softer styling |
-| `src/components/ui/input.tsx` | Rounder corners |
-
----
-
-## What Stays the Same
-- Color scheme (blue primary, orange accent)
-- Core layout structure (header, 3-column grid, bottom nav)
-- All functionality
-- Right sidebar (Campus Pulse, Top Helpers)
-- Mobile layout and navigation
-
----
-
-## Technical Notes
-
-- Poppins is a geometric sans-serif that's very similar to iOS's San Francisco font
-- The key to iOS aesthetic is generous whitespace + soft shadows + round corners
-- Removing the left nav doesn't break any functionality since BottomNav provides all navigation
-- The chat room error fix adds defensive coding without changing the flow
-
----
+# Comprehensive CampusLink Intelligence Upgrade Plan
 
 ## Summary
+This plan transforms CampusLink into an extremely smart, AI-powered campus platform with:
+1. Fixed chat functionality for new users
+2. Removal of all dummy/hardcoded data
+3. Meta-style AI integration (search helper, personalization, platform assistant)
+4. AI assistant icon on feed for direct AI conversations
+5. Modern, slick responsive design overhaul (iOS-style, not template-y)
+6. Premium bottom navigation redesign
 
-This refinement:
-1. **Changes font to Poppins** for a modern, iOS-like feel
-2. **Removes Twitter-esque navigation sidebar** to focus on marketplace/content
-3. **Adds iOS polish** with rounder corners and softer styling  
-4. **Fixes the chat room error** with proper authentication guards
+---
 
-The result will be a slick, marketplace-social hybrid that feels premium and unique rather than a Twitter clone.
+## Issues Identified
 
+### Critical Bugs
+1. **Route Mismatch**: BottomNav uses `/user-search` but App.tsx has `/users` - causes 404
+2. **New User Chat Issue**: When a new user clicks "Message" from UserSearch, the `getOrCreateRoom` may fail if auth context isn't ready
+
+### Dummy/Hardcoded Data to Remove
+- **Feed.tsx Lines 303-327**: Hardcoded "Campus Pulse" trending items (#FinalExams, #TextbookDeals, #MathHelp with fake counts)
+- **Feed.tsx Lines 617-638**: Desktop sidebar duplicate of hardcoded trending
+- **Feed.tsx Lines 647-661**: Hardcoded "Top Helpers" with generic "Helper 1, 2, 3"
+- **Index.tsx Lines 119-133**: Fake stats (500+ Active Students, 1,200+ Posts, 850+ Connections)
+
+### AI Integration Gaps
+- Existing AI functions use direct Gemini API instead of Lovable AI Gateway
+- No AI-powered search
+- No personalized feed algorithm
+- No dedicated AI assistant chat
+
+---
+
+## Implementation Plan
+
+### Phase 1: Fix Critical Bugs
+
+**1.1 Fix Route Mismatch**
+- **File**: `src/App.tsx`
+- Add route `/user-search` pointing to `UserSearch` component (keep `/users` as alias)
+
+**1.2 Fix New User Chat Flow**
+- **File**: `src/pages/UserSearch.tsx`
+- Add authentication check before navigating to messages
+- Show toast if user not logged in
+
+**1.3 Strengthen Messages Auth Guard**
+- **File**: `src/pages/Messages.tsx`
+- Add more robust auth initialization with retry logic
+- Wait for user context before attempting room operations
+
+---
+
+### Phase 2: Remove Dummy Data & Add Real Data
+
+**2.1 Replace Hardcoded Trending with Real Data**
+- **File**: `src/pages/Feed.tsx`
+- Query actual post tags/categories from database
+- Count real engagement metrics
+- Show "No trending yet" if no data
+
+**2.2 Replace Hardcoded Top Helpers with Real Leaderboard**
+- **File**: `src/pages/Feed.tsx`
+- Query top 3 users by rating from profiles table
+- Display real names, ratings, and avatars
+
+**2.3 Replace Fake Stats with Real Counts**
+- **File**: `src/pages/Index.tsx`
+- Query actual counts from Supabase:
+  - Count profiles for "Active Students"
+  - Count posts for "Posts Created"
+  - Count messages for "Connections Made"
+- Show loading skeleton while fetching
+
+---
+
+### Phase 3: AI Intelligence Upgrade (Meta-style)
+
+**3.1 Create Unified AI Chat Function**
+- **New File**: `supabase/functions/ai-assistant/index.ts`
+- Use Lovable AI Gateway (google/gemini-3-flash-preview)
+- System prompt includes full CampusLink context:
+  - Platform features (posts, messaging, ratings, categories)
+  - How to use the app
+  - Academic help guidance
+  - Search assistance
+- Handles multiple AI use cases:
+  - General questions about CampusLink
+  - Search suggestions
+  - Content recommendations
+  - Help with posts
+
+**3.2 Create AI Search Helper Function**
+- **New File**: `supabase/functions/ai-search/index.ts`
+- Takes user query, returns:
+  - Suggested search terms
+  - Category recommendations
+  - Related topics
+- Powers the smart search bar
+
+**3.3 Update Existing AI Functions to Use Lovable AI Gateway**
+- **Files**: 
+  - `supabase/functions/ai-conversation-starters/index.ts`
+  - `supabase/functions/ai-post-analysis/index.ts`
+- Replace direct Gemini API calls with Lovable AI Gateway
+- Use `google/gemini-3-flash-preview` model
+
+---
+
+### Phase 4: AI Assistant UI
+
+**4.1 Create AI Assistant Chat Component**
+- **New File**: `src/components/AIAssistant.tsx`
+- Features:
+  - Floating action button (FAB) on feed
+  - Opens slide-up drawer/modal
+  - Chat interface with message history
+  - Pre-suggested questions
+  - Streaming responses
+- Mobile: Full-screen drawer from bottom
+- Desktop: Slide-in panel from right
+
+**4.2 Add AI Search Enhancement to Feed**
+- **File**: `src/pages/Feed.tsx`
+- When user types in search:
+  - Show AI-powered suggestions
+  - "Ask AI about this" option
+  - Smart category detection
+
+**4.3 Add AI Icon to Search Bar**
+- Sparkles icon next to search input
+- Clicking opens AI assistant with search context
+
+---
+
+### Phase 5: Responsive Design Overhaul (iOS-Slick)
+
+**5.1 Bottom Navigation Redesign**
+- **File**: `src/components/BottomNav.tsx`
+- Current: Generic template look with floating center button
+- New design:
+  - Cleaner, thinner profile (h-16 with safe area)
+  - No floating center button - uniform icon row
+  - Active state: filled icon + label color
+  - Subtle backdrop blur
+  - Remove labels for cleaner look (icons only with active indicator)
+  - Add subtle haptic-style scale animation on tap
+
+**5.2 Mobile Feed Improvements**
+- **File**: `src/pages/Feed.tsx`
+- Remove "Campus Pulse" collapsible (cluttered on mobile)
+- Cleaner card layout with less visual noise
+- Full-width cards on mobile (no horizontal padding)
+- Pull-to-refresh styling
+- Floating AI button (bottom-right, above nav)
+
+**5.3 Global Responsive Polish**
+- **File**: `src/index.css`
+- Add iOS-style spring animations
+- Smoother transitions
+- Better touch targets (min 44px)
+- Safe area insets for notched devices
+
+**5.4 Desktop vs Mobile Content**
+- Hide right sidebar trending/helpers on tablet (<1024px)
+- Show simplified filter chips on mobile
+- Desktop gets full 3-column layout
+- Mobile gets single-column, content-first
+
+---
+
+## Technical Implementation Details
+
+### New Edge Function: ai-assistant
+```text
+Endpoint: /functions/v1/ai-assistant
+Method: POST
+Body: { message: string, conversationHistory?: array, context?: string }
+Response: { response: string }
+
+System Prompt includes:
+- CampusLink is a university student marketplace/social platform
+- Features: Academic Help, Tutoring, Buy & Sell categories
+- Users can create posts, message each other, rate peers
+- AI helps with: platform questions, search, recommendations
+```
+
+### New Edge Function: ai-search  
+```text
+Endpoint: /functions/v1/ai-search
+Method: POST
+Body: { query: string, currentFilter?: string }
+Response: { suggestions: string[], category?: string, relatedTopics: string[] }
+```
+
+### Real Data Queries
+```sql
+-- Trending tags (actual post tags)
+SELECT unnest(tags) as tag, count(*) 
+FROM posts 
+WHERE created_at > now() - interval '7 days'
+GROUP BY tag ORDER BY count DESC LIMIT 5
+
+-- Top helpers (real users)
+SELECT id, name, profile_picture, rating 
+FROM profiles 
+WHERE rating > 0 
+ORDER BY rating DESC LIMIT 3
+
+-- Platform stats
+SELECT 
+  (SELECT count(*) FROM profiles) as users,
+  (SELECT count(*) FROM posts) as posts,
+  (SELECT count(DISTINCT room_id) FROM messages) as connections
+```
+
+---
+
+## Files to Create
+1. `supabase/functions/ai-assistant/index.ts` - Main AI chat function
+2. `supabase/functions/ai-search/index.ts` - Smart search function
+3. `src/components/AIAssistant.tsx` - AI chat UI component
+4. `src/hooks/useAIAssistant.ts` - AI chat state management
+
+## Files to Modify
+1. `src/App.tsx` - Add /user-search route
+2. `src/pages/Feed.tsx` - Remove dummy data, add real queries, AI button
+3. `src/pages/Index.tsx` - Real stats from database
+4. `src/pages/Messages.tsx` - Strengthen auth guards
+5. `src/pages/UserSearch.tsx` - Auth check before messaging
+6. `src/components/BottomNav.tsx` - Modern iOS redesign
+7. `src/index.css` - Add spring animations, better transitions
+8. `supabase/functions/ai-conversation-starters/index.ts` - Use Lovable AI
+9. `supabase/functions/ai-post-analysis/index.ts` - Use Lovable AI
+
+---
+
+## Bottom Navigation New Design
+
+Current (template-y):
+```text
+┌─────────────────────────────────────┐
+│  Home   Search  [+Post]  Msgs  User │
+│   🏠      🔍      ⬆️      💬    👤   │
+│  Home   Search         Messages Profile
+└─────────────────────────────────────┘
+```
+
+New (iOS-slick):
+```text
+┌─────────────────────────────────────┐
+│   ●       ○        ○       ○     ○  │  (dot indicator above active)
+│   🏠      🔍       ➕      💬    👤   │  (uniform icon row)
+└─────────────────────────────────────┘
+```
+
+Features:
+- No floating button - cleaner, more professional
+- Dot indicator above active icon (like iOS)
+- Icons only, no labels (cleaner)
+- Lighter icon weight (strokeWidth: 1.5)
+- Subtle scale animation on tap
+- Thin top border with glass effect
+
+---
+
+## What This Achieves
+
+1. **Fixed Bugs**: Chat works for new users, routes are correct
+2. **Real Data**: No more fake trending/stats - everything from database
+3. **Smart AI**: Meta-style AI that knows the platform, helps with search
+4. **AI Assistant**: Dedicated chat to ask questions about CampusLink
+5. **Modern Design**: iOS-slick aesthetic, not template-y
+6. **Responsive**: Works beautifully on all devices
+7. **Professional**: Looks like high-end custom software
+
+---
+
+## Rollout Order (Safe Implementation)
+
+1. Fix routes and auth bugs (critical, low risk)
+2. Update existing AI functions to Lovable Gateway
+3. Create new AI assistant function + UI
+4. Remove dummy data, add real queries
+5. Redesign bottom nav
+6. Polish responsive design
+7. Test end-to-end on mobile and desktop
