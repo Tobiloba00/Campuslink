@@ -10,7 +10,7 @@ import {
   Plus, Search, RefreshCw, MessageCircle, Heart, Share2, 
   MoreHorizontal, Copy, Flag, EyeOff, Trash, Edit, 
   BookOpen, GraduationCap, ShoppingBag, TrendingUp, Users, Sparkles,
-  MessageSquare, Bookmark, ChevronDown, ChevronUp
+  MessageSquare, Bookmark
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { toast } from "sonner";
 import { FeedSkeleton } from "@/components/ui/skeleton-loaders";
 import BottomNav from "@/components/BottomNav";
+import { AIAssistant } from "@/components/AIAssistant";
 
 type Post = {
   id: string;
@@ -39,6 +40,18 @@ type Post = {
   };
 };
 
+type TrendingTag = {
+  tag: string;
+  count: number;
+};
+
+type TopHelper = {
+  id: string;
+  name: string;
+  rating: number;
+  profile_picture: string | null;
+};
+
 const Feed = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -50,7 +63,8 @@ const Feed = () => {
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [showTrending, setShowTrending] = useState(false);
+  const [trendingTags, setTrendingTags] = useState<TrendingTag[]>([]);
+  const [topHelpers, setTopHelpers] = useState<TopHelper[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -74,6 +88,8 @@ const Feed = () => {
     if (user) {
       fetchPosts();
       fetchUserLikes();
+      fetchTrendingTags();
+      fetchTopHelpers();
     }
 
     const channel = supabase
@@ -96,6 +112,58 @@ const Feed = () => {
     const { data, error } = await supabase.from('post_likes').select('post_id').eq('user_id', user.id);
     if (!error && data) {
       setLikedPosts(new Set(data.map(like => like.post_id)));
+    }
+  };
+
+  const fetchTrendingTags = async () => {
+    try {
+      // Get posts from the last 7 days with tags
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: posts } = await supabase
+        .from('posts')
+        .select('tags')
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .not('tags', 'is', null);
+
+      if (posts && posts.length > 0) {
+        // Count tag occurrences
+        const tagCounts: Record<string, number> = {};
+        posts.forEach(post => {
+          post.tags?.forEach((tag: string) => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
+        });
+
+        // Convert to array and sort by count
+        const sortedTags = Object.entries(tagCounts)
+          .map(([tag, count]) => ({ tag, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        setTrendingTags(sortedTags);
+      }
+    } catch (error) {
+      console.error('Error fetching trending tags:', error);
+    }
+  };
+
+  const fetchTopHelpers = async () => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, rating, profile_picture')
+        .not('rating', 'is', null)
+        .gt('rating', 0)
+        .order('rating', { ascending: false })
+        .limit(3);
+
+      if (data) {
+        setTopHelpers(data);
+      }
+    } catch (error) {
+      console.error('Error fetching top helpers:', error);
     }
   };
 
@@ -285,49 +353,6 @@ const Feed = () => {
           </div>
         </div>
 
-        {/* Mobile Trending Bar - Collapsible */}
-        <div className="lg:hidden mb-4">
-          <button
-            onClick={() => setShowTrending(!showTrending)}
-            className="w-full flex items-center justify-between p-3 bg-accent/10 rounded-xl"
-          >
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-accent" />
-              <span className="font-medium text-sm">Campus Pulse</span>
-              <Badge variant="secondary" className="text-[10px]">3 trending</Badge>
-            </div>
-            {showTrending ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-          
-          {showTrending && (
-            <Card className="mt-2 p-3 animate-in slide-in-from-top-2">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Trending</p>
-                    <p className="font-semibold text-sm">#FinalExams</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">1.2K</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Hot</p>
-                    <p className="font-semibold text-sm">#TextbookDeals</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">856</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Popular</p>
-                    <p className="font-semibold text-sm">#MathHelp</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">432</span>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] xl:grid-cols-[300px_1fr_300px] gap-6">
           {/* Left Sidebar - Desktop Only */}
           <aside className="hidden lg:block">
@@ -427,176 +452,160 @@ const Feed = () => {
                       <div className={`h-0.5 ${getCategoryColor(post.category)}`} />
                       
                       <div className="p-3">
-                        {/* Header Row */}
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={post.profiles.profile_picture || ""} />
-                              <AvatarFallback className="bg-muted text-xs font-medium">
-                                {post.profiles.name?.charAt(0) || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-medium text-sm">{post.profiles.name}</span>
-                                {post.profiles.rating > 0 && (
-                                  <span className="text-[11px] text-amber-500">⭐{post.profiles.rating.toFixed(1)}</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                <span>{formatTimestamp(post.created_at)}</span>
-                                <span>·</span>
-                                <Badge variant="secondary" className="h-4 px-1.5 text-[10px] gap-0.5">
-                                  {getCategoryIcon(post.category)}
-                                  <span className="hidden sm:inline">{post.category}</span>
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            {post.optional_price && (
-                              <Badge className="bg-accent text-accent-foreground font-medium text-[11px] px-2">
-                                ₦{post.optional_price.toLocaleString('en-NG')}
+                        {/* Header */}
+                        <div className="flex items-start gap-2.5 mb-2">
+                          <Avatar className="h-9 w-9 ring-2 ring-border">
+                            <AvatarImage src={post.profiles.profile_picture || ""} alt={post.profiles.name} />
+                            <AvatarFallback className="text-xs font-medium bg-muted">
+                              {post.profiles.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-sm truncate">{post.profiles.name}</span>
+                              <span className="text-xs text-muted-foreground">·</span>
+                              <span className="text-xs text-muted-foreground">{formatTimestamp(post.created_at)}</span>
+                              <Badge 
+                                variant="secondary" 
+                                className={`${getCategoryColor(post.category)} text-white text-[10px] px-1.5 py-0 h-4 font-medium`}
+                              >
+                                {getCategoryIcon(post.category)}
+                                <span className="ml-0.5 hidden sm:inline">{post.category}</span>
                               </Badge>
+                            </div>
+                            {post.profiles.rating > 0 && (
+                              <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                <span className="text-accent">⭐</span>
+                                <span>{post.profiles.rating.toFixed(1)}</span>
+                              </div>
                             )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <MoreHorizontal className="h-3.5 w-3.5" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); copyToClipboard(`${window.location.origin}/post/${post.id}`); }}>
-                                  <Copy className="h-4 w-4 mr-2" /> Copy link
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Saved to bookmarks"); }}>
-                                  <Bookmark className="h-4 w-4 mr-2" /> Save post
-                                </DropdownMenuItem>
-                                {user?.id === post.user_id ? (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/edit-post/${post.id}`); }}>
-                                      <Edit className="h-4 w-4 mr-2" /> Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => handleDeletePost(post.id, e as any)} className="text-destructive focus:text-destructive">
-                                      <Trash className="h-4 w-4 mr-2" /> Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                ) : (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Post hidden"); }}>
-                                      <EyeOff className="h-4 w-4 mr-2" /> Hide
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info("Thanks for reporting"); }}>
-                                      <Flag className="h-4 w-4 mr-2" /> Report
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); copyToClipboard(`${window.location.origin}/post/${post.id}`); }}>
+                                <Copy className="mr-2 h-3.5 w-3.5" /> Copy link
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                                <Bookmark className="mr-2 h-3.5 w-3.5" /> Save post
+                              </DropdownMenuItem>
+                              {post.user_id !== user?.id && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="text-muted-foreground">
+                                    <EyeOff className="mr-2 h-3.5 w-3.5" /> Not interested
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="text-destructive">
+                                    <Flag className="mr-2 h-3.5 w-3.5" /> Report
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {post.user_id === user?.id && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/edit-post/${post.id}`); }}>
+                                    <Edit className="mr-2 h-3.5 w-3.5" /> Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => handleDeletePost(post.id, e)} className="text-destructive">
+                                    <Trash className="mr-2 h-3.5 w-3.5" /> Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
 
                         {/* Content */}
                         <div className="mb-2">
-                          <h2 className="font-display font-semibold text-[15px] mb-0.5 line-clamp-2">{post.title}</h2>
+                          <h3 className="font-semibold text-sm mb-1 line-clamp-2">{post.title}</h3>
                           <p className="text-sm text-muted-foreground line-clamp-2">{post.description}</p>
                         </div>
 
-                        {/* Tags */}
-                        {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {post.tags.slice(0, 4).map((tag, idx) => (
-                              <span key={idx} className="text-[11px] text-primary font-medium hover:underline cursor-pointer">
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
                         {/* Campus Highlight */}
                         {post.campus_highlight && (
-                          <div className="bg-accent/5 border border-accent/20 rounded px-2.5 py-1.5 mb-2">
-                            <p className="text-[11px] font-medium flex items-center gap-1.5">
-                              <Sparkles className="h-3 w-3 text-accent" />
-                              {post.campus_highlight}
-                            </p>
+                          <div className="mb-2 px-2 py-1.5 bg-accent/10 rounded-lg border border-accent/20">
+                            <p className="text-xs text-accent-foreground">{post.campus_highlight}</p>
                           </div>
                         )}
 
                         {/* Image */}
                         {post.image_url && (
-                          <div className="rounded overflow-hidden border border-border/60 mb-2">
+                          <div className="mb-2 rounded-lg overflow-hidden border border-border/50">
                             <img 
                               src={post.image_url} 
-                              alt={post.title}
-                              className="w-full max-h-72 object-cover"
+                              alt={post.title} 
+                              className="w-full max-h-64 object-cover"
                             />
                           </div>
                         )}
 
-                        {/* Action Bar */}
-                        <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                          <div className="flex items-center gap-0.5">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 px-2 hover:bg-primary/5 hover:text-primary gap-1"
-                              onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}#comments`); }}
-                            >
-                              <MessageCircle className="h-3.5 w-3.5" />
-                              <span className="text-[11px] hidden sm:inline">Comment</span>
-                            </Button>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`h-7 px-2 gap-1 ${
-                                likedPosts.has(post.id) 
-                                  ? 'text-rose-500 hover:bg-rose-500/5' 
-                                  : 'hover:bg-rose-500/5 hover:text-rose-500'
-                              }`}
+                        {/* Price Tag */}
+                        {post.optional_price && (
+                          <div className="mb-2">
+                            <Badge variant="outline" className="font-semibold text-primary border-primary/30">
+                              ${post.optional_price.toFixed(2)}
+                            </Badge>
+                          </div>
+                        )}
+
+                        {/* Tags */}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {post.tags.slice(0, 3).map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-muted/50">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-8 px-2 gap-1.5 ${likedPosts.has(post.id) ? 'text-red-500' : ''}`}
                               onClick={(e) => toggleLike(post.id, e)}
                             >
-                              <Heart className={`h-3.5 w-3.5 transition-transform ${likedPosts.has(post.id) ? 'fill-current scale-105' : ''}`} />
-                              {likeCounts[post.id] > 0 && <span className="text-[11px]">{likeCounts[post.id]}</span>}
+                              <Heart className={`h-4 w-4 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
+                              <span className="text-xs">{likeCounts[post.id] || 0}</span>
                             </Button>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 px-2 hover:bg-green-500/5 hover:text-green-600"
-                              onClick={(e) => handleShare(post, e)}
-                            >
-                              <Share2 className="h-3.5 w-3.5" />
+                            <Button variant="ghost" size="sm" className="h-8 px-2 gap-1.5" onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}`); }}>
+                              <MessageCircle className="h-4 w-4" />
+                              <span className="text-xs">{post.engagement_count || 0}</span>
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => handleShare(post, e)}>
+                              <Share2 className="h-4 w-4" />
                             </Button>
                           </div>
-
-                          {/* Context-Aware Action Button */}
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="h-7 text-[11px] border-primary/20 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-1"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}`); }}
-                          >
-                            {actionBtn.icon}
-                            <span className="hidden sm:inline">{actionBtn.text}</span>
-                          </Button>
+                          {post.user_id !== user?.id && (
+                            <Button 
+                              size="sm" 
+                              className="h-8 text-xs gap-1.5 rounded-lg"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}`); }}
+                            >
+                              {actionBtn.icon}
+                              <span className="hidden sm:inline">{actionBtn.text}</span>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </Card>
                   );
                 })}
-              </div>
-            )}
 
-            {!isLoading && filteredPosts.length === 0 && posts.length > 0 && (
-              <Card className="p-8 text-center">
-                <Search className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">No posts match your search.</p>
-              </Card>
+                {filteredPosts.length === 0 && !isLoading && searchQuery && (
+                  <Card className="p-6 text-center">
+                    <Search className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">No posts matching "{searchQuery}"</p>
+                  </Card>
+                )}
+              </div>
             )}
 
             {!isLoading && posts.length === 0 && (
@@ -613,51 +622,66 @@ const Feed = () => {
           {/* Right Sidebar - Desktop Only */}
           <aside className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-              {/* Campus Pulse */}
+              {/* Campus Pulse - Real Data */}
               <Card className="p-3">
                 <div className="flex items-center gap-1.5 mb-3">
                   <TrendingUp className="h-4 w-4 text-accent" />
                   <h3 className="font-display font-semibold text-sm">Campus Pulse</h3>
                 </div>
                 <div className="space-y-1">
-                  <div className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
-                    <p className="text-[10px] text-muted-foreground">Trending in Academic</p>
-                    <p className="font-medium text-sm">#FinalExams</p>
-                    <p className="text-[10px] text-muted-foreground">1.2K discussions</p>
-                  </div>
-                  <div className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
-                    <p className="text-[10px] text-muted-foreground">Hot in Marketplace</p>
-                    <p className="font-medium text-sm">#TextbookDeals</p>
-                    <p className="text-[10px] text-muted-foreground">856 posts</p>
-                  </div>
-                  <div className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
-                    <p className="text-[10px] text-muted-foreground">Popular Tutoring</p>
-                    <p className="font-medium text-sm">#MathHelp</p>
-                    <p className="text-[10px] text-muted-foreground">432 requests</p>
-                  </div>
+                  {trendingTags.length > 0 ? (
+                    trendingTags.map((item, index) => (
+                      <div 
+                        key={item.tag} 
+                        className="p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200"
+                        onClick={() => setSearchQuery(item.tag)}
+                      >
+                        <p className="text-[10px] text-muted-foreground">
+                          {index === 0 ? 'Trending' : index === 1 ? 'Hot' : 'Popular'}
+                        </p>
+                        <p className="font-medium text-sm">#{item.tag}</p>
+                        <p className="text-[10px] text-muted-foreground">{item.count} posts</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No trending topics yet
+                    </p>
+                  )}
                 </div>
               </Card>
 
-              {/* Top Helpers */}
+              {/* Top Helpers - Real Data */}
               <Card className="p-3">
                 <div className="flex items-center gap-1.5 mb-3">
                   <Users className="h-4 w-4 text-primary" />
                   <h3 className="font-display font-semibold text-sm">Top Helpers</h3>
                 </div>
                 <div className="space-y-1">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-muted text-xs font-medium">
-                          {String.fromCharCode(64 + i)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">Helper {i}</p>
-                        <p className="text-[10px] text-muted-foreground">⭐ 4.{9 - i} rating</p>
+                  {topHelpers.length > 0 ? (
+                    topHelpers.map((helper) => (
+                      <div 
+                        key={helper.id} 
+                        className="flex items-center gap-2.5 p-1.5 rounded hover:bg-muted/30 cursor-pointer transition-colors duration-200"
+                        onClick={() => navigate(`/messages?userId=${helper.id}`)}
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={helper.profile_picture || ""} alt={helper.name} />
+                          <AvatarFallback className="bg-muted text-xs font-medium">
+                            {helper.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{helper.name}</p>
+                          <p className="text-[10px] text-muted-foreground">⭐ {helper.rating.toFixed(1)} rating</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No top helpers yet
+                    </p>
+                  )}
                 </div>
                 <Button variant="ghost" className="w-full mt-2 h-7 text-xs" onClick={() => navigate('/leaderboard')}>
                   View Leaderboard
@@ -674,6 +698,9 @@ const Feed = () => {
       
       {/* Bottom Navigation for Mobile */}
       <BottomNav />
+      
+      {/* AI Assistant Floating Button */}
+      <AIAssistant />
     </div>
   );
 };

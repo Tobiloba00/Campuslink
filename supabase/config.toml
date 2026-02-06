@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.ai-comment-reply]
 verify_jwt = false
+
+[functions.ai-assistant]
+verify_jwt = false
+
+[functions.ai-search]
+verify_jwt = false

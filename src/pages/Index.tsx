@@ -5,9 +5,16 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, MessageSquare, TrendingUp, Users, ArrowRight, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+type PlatformStats = {
+  users: number;
+  posts: number;
+  connections: number;
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
 
   useEffect(() => {
     // Check auth BEFORE rendering anything
@@ -16,6 +23,7 @@ const Index = () => {
         navigate("/feed", { replace: true });
       } else {
         setLoading(false);
+        fetchStats();
       }
     });
 
@@ -27,6 +35,32 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch real counts from database
+      const [profilesResult, postsResult, messagesResult] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('posts').select('id', { count: 'exact', head: true }),
+        supabase.from('messages').select('room_id', { count: 'exact', head: true }),
+      ]);
+
+      setStats({
+        users: profilesResult.count || 0,
+        posts: postsResult.count || 0,
+        connections: messagesResult.count || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K+`;
+    }
+    return `${num}+`;
+  };
 
   // Show loading spinner while checking auth - prevents flash
   if (loading) {
@@ -113,21 +147,27 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Stats Section - Real Data */}
       <div className="bg-primary/5 py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-primary mb-2">500+</div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {stats ? formatNumber(stats.users) : '...'}
+              </div>
               <div className="text-muted-foreground">Active Students</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-accent mb-2">1,200+</div>
+              <div className="text-4xl font-bold text-accent mb-2">
+                {stats ? formatNumber(stats.posts) : '...'}
+              </div>
               <div className="text-muted-foreground">Posts Created</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-primary mb-2">850+</div>
-              <div className="text-muted-foreground">Successful Connections</div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {stats ? formatNumber(stats.connections) : '...'}
+              </div>
+              <div className="text-muted-foreground">Messages Exchanged</div>
             </div>
           </div>
         </div>
