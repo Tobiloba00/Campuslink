@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, MessageCircle, Star } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -61,11 +63,21 @@ const UserSearch = () => {
       );
     });
 
-  const handleMessage = (userId: string) => {
+  const handleMessage = async (userId: string) => {
+    if (!currentUser) {
+      toast.error("Please log in to send messages");
+      navigate("/auth");
+      return;
+    }
     navigate(`/messages?userId=${userId}`);
   };
 
   const handleRateUser = (userId: string) => {
+    if (!currentUser) {
+      toast.error("Please log in to rate users");
+      navigate("/auth");
+      return;
+    }
     navigate(`/rate-user/${userId}`);
   };
 
@@ -169,6 +181,7 @@ const UserSearch = () => {
           </div>
         )}
       </div>
+      <BottomNav />
     </div>
   );
 };
