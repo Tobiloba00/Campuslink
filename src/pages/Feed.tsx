@@ -332,75 +332,47 @@ const Feed = () => {
           {/* Left Sidebar - Desktop Only */}
           <aside className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-              {/* Quick Nav */}
-              <Card className="p-3">
-                <nav className="space-y-0.5">
-                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9 font-medium" onClick={() => navigate('/feed')}>
-                    <div className="h-7 w-7 rounded bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    Feed
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/user-search')}>
-                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
-                      <Search className="h-3.5 w-3.5" />
-                    </div>
-                    Discover
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/messages')}>
-                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                    </div>
-                    Messages
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/leaderboard')}>
-                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
-                      <TrendingUp className="h-3.5 w-3.5" />
-                    </div>
-                    Leaderboard
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-2.5 h-9" onClick={() => navigate('/profile')}>
-                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center">
-                      <Users className="h-3.5 w-3.5" />
-                    </div>
-                    Profile
-                  </Button>
-                </nav>
-              </Card>
-
               {/* Create Post CTA */}
-              <Button className="w-full h-9 font-medium" asChild>
+              <Button className="w-full h-10 font-medium rounded-xl" asChild>
                 <Link to="/create-post">
-                  <Plus className="h-4 w-4 mr-1.5" /> Create Post
+                  <Plus className="h-4 w-4 mr-2" /> Create Post
                 </Link>
               </Button>
 
-              {/* Category Quick Filters */}
-              <Card className="p-3">
-                <h3 className="font-medium text-xs mb-2 text-muted-foreground uppercase tracking-wide">Categories</h3>
-                <div className="space-y-0.5">
+              {/* Filter by Category */}
+              <Card className="p-4 rounded-xl">
+                <h3 className="font-semibold text-sm mb-3 text-foreground">Filter by Category</h3>
+                <div className="space-y-1">
+                  <Button 
+                    variant={filter === 'all' ? 'default' : 'ghost'} 
+                    className="w-full justify-start gap-3 h-10 text-sm rounded-lg"
+                    onClick={() => setFilter('all')}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    All Posts
+                  </Button>
                   <Button 
                     variant={filter === 'Academic Help' ? 'default' : 'ghost'} 
-                    className="w-full justify-start gap-2 h-8 text-sm"
+                    className="w-full justify-start gap-3 h-10 text-sm rounded-lg"
                     onClick={() => setFilter(filter === 'Academic Help' ? 'all' : 'Academic Help')}
                   >
-                    <BookOpen className="h-3.5 w-3.5 text-category-academic" />
+                    <BookOpen className="h-4 w-4 text-category-academic" />
                     Academic Help
                   </Button>
                   <Button 
                     variant={filter === 'Tutoring' ? 'default' : 'ghost'} 
-                    className="w-full justify-start gap-2 h-8 text-sm"
+                    className="w-full justify-start gap-3 h-10 text-sm rounded-lg"
                     onClick={() => setFilter(filter === 'Tutoring' ? 'all' : 'Tutoring')}
                   >
-                    <GraduationCap className="h-3.5 w-3.5 text-category-tutoring" />
+                    <GraduationCap className="h-4 w-4 text-category-tutoring" />
                     Tutoring
                   </Button>
                   <Button 
                     variant={filter === 'Buy & Sell' ? 'default' : 'ghost'} 
-                    className="w-full justify-start gap-2 h-8 text-sm"
+                    className="w-full justify-start gap-3 h-10 text-sm rounded-lg"
                     onClick={() => setFilter(filter === 'Buy & Sell' ? 'all' : 'Buy & Sell')}
                   >
-                    <ShoppingBag className="h-3.5 w-3.5 text-category-marketplace" />
+                    <ShoppingBag className="h-4 w-4 text-category-marketplace" />
                     Buy & Sell
                   </Button>
                 </div>

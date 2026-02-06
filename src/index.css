@@ -16,10 +16,10 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* CampusLink Design System - Professional Refinement
+/* CampusLink Design System - iOS-Slick Marketplace Aesthetic
  * All colors MUST be HSL.
- * Typography: Inter (body) + Playfair Display (headings)
- * Border Radius: Sharp 4px for bespoke software look
+ * Typography: Poppins (unified, iOS-like)
+ * Border Radius: Soft 12px for iOS feel
  */
 
 @layer base {
@@ -67,8 +67,8 @@
     --input: 220 13% 91%;
     --ring: 221 83% 53%;
 
-    /* Sharp 4px radius for bespoke software look */
-    --radius: 0.25rem;
+    /* Soft 12px radius for iOS-slick look */
+    --radius: 0.75rem;
 
     /* Glassmorphism - Refined */
     --glass-bg: 0 0% 100% / 0.85;
@@ -169,16 +169,16 @@
 
   html, body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.01em;
     overflow-x: hidden;
     max-width: 100vw;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
 
   /* Global icon stroke refinement - Light/Thin weight */

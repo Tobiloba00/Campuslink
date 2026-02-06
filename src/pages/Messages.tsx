@@ -60,13 +60,23 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const isInitialLoadRef = useRef(true);
 
   const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
-    if (!currentUser) return null;
+    // Guard: Ensure user is authenticated before attempting to create rooms
+    let user = currentUser;
+    if (!user) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        toast.error('Please log in to send messages');
+        return null;
+      }
+      user = authUser;
+      setCurrentUser(authUser);
+    }
 
     try {
       const { data: existingRooms, error: searchError } = await supabase
         .from('room_participants')
         .select('room_id')
-        .eq('user_id', currentUser.id);
+        .eq('user_id', user.id);
 
       if (searchError) throw searchError;
 
@@ -97,7 +107,7 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
       const { error: participantsError } = await supabase
         .from('room_participants')
         .insert([
-          { room_id: newRoom.id, user_id: currentUser.id },
+          { room_id: newRoom.id, user_id: user.id },
           { room_id: newRoom.id, user_id: otherUserId }
         ]);
 
@@ -106,7 +116,7 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
       return newRoom.id;
     } catch (error) {
       console.error('Error getting/creating room:', error);
-      toast.error('Failed to create chat room');
+      // Don't show error toast for initial page load - only for user-triggered actions
       return null;
     }
   }, [currentUser]);
