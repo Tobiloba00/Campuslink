@@ -335,7 +335,7 @@ const Feed = () => {
         </div>
       )}
 
-      <div className="flex-1 flex justify-center w-full max-w-[1440px] mx-auto px-4 py-6 md:py-8 gap-8 pb-32 md:pb-8">
+      <div className="flex-1 flex justify-center w-full max-w-[1440px] mx-auto px-4 py-6 md:py-8 gap-8 pb-32 md:pb-8 pt-28">
         <div className="flex flex-col lg:flex-row gap-8 justify-center">
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block w-64 flex-shrink-0">

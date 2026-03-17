@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BookOpen, Users, ShoppingCart, Star, MessageCircle, ArrowLeft, Edit, Trash, Calendar, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Comments } from "@/components/Comments";
+import { ExpandedPostView } from "@/components/ExpandedPostView";
 
 type Post = {
   id: string;
@@ -20,6 +21,10 @@ type Post = {
   image_url: string | null;
   created_at: string;
   user_id: string;
+  view_count: number;
+  likes_count: number;
+  reposts_count: number;
+  bookmarks_count: number;
   profiles: {
     name: string;
     rating: number;
@@ -60,13 +65,19 @@ const PostDetail = () => {
 
   useEffect(() => {
     fetchPost();
+    if (id) {
+      (supabase.rpc as any)('increment_post_view_count', { pid: id })
+        .then(({ error }: any) => {
+          if (error) console.error("Error incrementing post view count:", error);
+        });
+    }
   }, [id]);
 
   const fetchPost = async () => {
     if (!id) return;
 
-    const { data, error } = await supabase
-      .from('posts')
+    const { data, error } = await (supabase
+      .from('posts') as any)
       .select(`
         id,
         title,
@@ -77,6 +88,10 @@ const PostDetail = () => {
         image_url,
         created_at,
         user_id,
+        view_count,
+        likes_count,
+        reposts_count,
+        bookmarks_count,
         profiles (
           name,
           rating,
@@ -144,7 +159,7 @@ const PostDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl pt-28 pb-32">
         <Button
           variant="ghost"
           onClick={() => navigate("/feed")}
@@ -154,127 +169,18 @@ const PostDetail = () => {
           Back to Feed
         </Button>
 
-        <Card className="shadow-card mb-8">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={post.profiles.profile_picture || ""} alt={post.profiles.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                    {post.profiles.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-foreground">{post.profiles.name}</p>
-                  {post.profiles.rating > 0 && (
-                    <div className="flex items-center gap-1 text-sm text-accent">
-                      <Star className="h-3 w-3 fill-current" />
-                      {post.profiles.rating.toFixed(1)}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="gap-1">
-                  {getCategoryIcon(post.category)}
-                  {post.category}
-                </Badge>
-                {post.optional_price && (
-                  <Badge variant="outline" className="text-accent font-bold border-accent">
-                    ₦{post.optional_price.toLocaleString('en-NG')}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            <CardTitle className="text-2xl md:text-3xl text-foreground">{post.title}</CardTitle>
-            <CardDescription className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              Posted {new Date(post.created_at).toLocaleDateString()}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
-            {post.image_url && (
-              <div className="w-full overflow-hidden rounded-lg">
-                <img
-                  src={post.image_url}
-                  alt={post.title}
-                  className="w-full h-auto max-h-96 object-cover rounded-lg"
-                />
-              </div>
-            )}
-
-            {post.ai_summary && (
-              <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
-                <p className="text-sm font-semibold mb-1 text-foreground">AI Summary</p>
-                <p className="text-sm text-foreground/80 italic">{post.ai_summary}</p>
-              </div>
-            )}
-
-            <div>
-              <h3 className="font-semibold mb-2 text-foreground">Description</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">{post.description}</p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              {!isOwner && (
-                <>
-                  <Button
-                    onClick={handleSendMessage}
-                    className="flex-1 md:flex-none"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Send Message
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const offerText = post.optional_price
-                        ? `Hi! I'm interested in your post "${post.title}" listed at ₦${post.optional_price.toLocaleString('en-NG')}. I'd like to make an offer.`
-                        : `Hi! I'm interested in your post "${post.title}". Can we discuss further?`;
-                      navigate(`/messages?userId=${post.user_id}&postId=${post.id}&offer=${encodeURIComponent(offerText)}`);
-                    }}
-                    variant="outline"
-                    className="flex-1 md:flex-none border-accent/40 text-accent hover:bg-accent/10"
-                  >
-                    <Tag className="h-4 w-4 mr-2" />
-                    Make Offer
-                  </Button>
-                  <Button
-                    onClick={handleRateUser}
-                    variant="outline"
-                    className="flex-1 md:flex-none"
-                  >
-                    <Star className="h-4 w-4 mr-2" />
-                    Rate User
-                  </Button>
-                </>
-              )}
-
-              {isOwner && (
-                <>
-                  <Button
-                    onClick={handleEdit}
-                    variant="outline"
-                    className="flex-1 md:flex-none"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Post
-                  </Button>
-                  <Button
-                    onClick={handleDelete}
-                    variant="destructive"
-                    disabled={isDeleting}
-                    className="flex-1 md:flex-none"
-                  >
-                    <Trash className="h-4 w-4 mr-2" />
-                    {isDeleting ? "Deleting..." : "Delete Post"}
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <ExpandedPostView
+          post={post}
+          isOwner={isOwner}
+          onReply={() => document.getElementById('comment-input')?.focus()}
+          onLike={() => {}}
+          onRepost={() => {}}
+          onBookmark={() => {}}
+          onShare={() => {
+            navigator.clipboard.writeText(window.location.href);
+            toast.success("Link copied to clipboard");
+          }}
+        />
 
         {/* Comments Section */}
         <Comments postId={id!} postTitle={post?.title} postDescription={post?.description} />
