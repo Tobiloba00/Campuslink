@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BookOpen, Users, ShoppingCart, Star, MessageCircle, ArrowLeft, Edit, Trash, Calendar } from "lucide-react";
+import { BookOpen, Users, ShoppingCart, Star, MessageCircle, ArrowLeft, Edit, Trash, Calendar, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Comments } from "@/components/Comments";
 
@@ -99,7 +99,7 @@ const PostDetail = () => {
 
   const handleSendMessage = () => {
     if (!post) return;
-    navigate(`/messages?userId=${post.user_id}`);
+    navigate(`/messages?userId=${post.user_id}&postId=${post.id}`);
   };
 
   const handleDelete = async () => {
@@ -145,8 +145,8 @@ const PostDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => navigate("/feed")}
           className="mb-6"
         >
@@ -186,7 +186,7 @@ const PostDetail = () => {
                 )}
               </div>
             </div>
-            
+
             <CardTitle className="text-2xl md:text-3xl text-foreground">{post.title}</CardTitle>
             <CardDescription className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
@@ -220,14 +220,27 @@ const PostDetail = () => {
             <div className="flex flex-wrap gap-3">
               {!isOwner && (
                 <>
-                  <Button 
-                    onClick={handleSendMessage} 
+                  <Button
+                    onClick={handleSendMessage}
                     className="flex-1 md:flex-none"
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>
-                  <Button 
+                  <Button
+                    onClick={() => {
+                      const offerText = post.optional_price
+                        ? `Hi! I'm interested in your post "${post.title}" listed at ₦${post.optional_price.toLocaleString('en-NG')}. I'd like to make an offer.`
+                        : `Hi! I'm interested in your post "${post.title}". Can we discuss further?`;
+                      navigate(`/messages?userId=${post.user_id}&postId=${post.id}&offer=${encodeURIComponent(offerText)}`);
+                    }}
+                    variant="outline"
+                    className="flex-1 md:flex-none border-accent/40 text-accent hover:bg-accent/10"
+                  >
+                    <Tag className="h-4 w-4 mr-2" />
+                    Make Offer
+                  </Button>
+                  <Button
                     onClick={handleRateUser}
                     variant="outline"
                     className="flex-1 md:flex-none"
@@ -237,10 +250,10 @@ const PostDetail = () => {
                   </Button>
                 </>
               )}
-              
+
               {isOwner && (
                 <>
-                  <Button 
+                  <Button
                     onClick={handleEdit}
                     variant="outline"
                     className="flex-1 md:flex-none"
@@ -248,7 +261,7 @@ const PostDetail = () => {
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Post
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleDelete}
                     variant="destructive"
                     disabled={isDeleting}

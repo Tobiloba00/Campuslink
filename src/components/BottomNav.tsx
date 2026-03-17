@@ -17,52 +17,56 @@ const BottomNav = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-      {/* Glass background with blur */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-xl border-t border-border/30" />
-      
-      {/* Safe area padding for notched devices */}
-      <div className="relative flex items-center justify-around h-16 px-2 max-w-lg mx-auto pb-safe">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden w-11/12 max-w-[400px]">
+      <div className="bg-background/85 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl shadow-primary/10 rounded-[2rem] px-2 py-2.5 flex items-center justify-around relative">
         {navItems.map((item) => {
           const active = isActive(item.path);
           const Icon = item.icon;
-          
+          const isCenter = item.label === "Post";
+
+          if (isCenter) {
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="relative flex items-center justify-center -mt-6 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 h-14 w-14 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-background/50"
+              >
+                <Icon className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </button>
+            );
+          }
+
           return (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "relative flex flex-col items-center justify-center flex-1 h-full",
-                "transition-all duration-200 ease-out",
-                "active:scale-95"
+                "relative flex flex-col items-center justify-center flex-1 h-full py-1",
+                "transition-all duration-300 ease-out",
+                "active:scale-95 hover:opacity-80"
               )}
             >
-              {/* Active indicator dot */}
+              {/* Active Glow behind icon */}
               <div className={cn(
-                "absolute top-1 w-1 h-1 rounded-full transition-all duration-200",
-                active ? "bg-primary scale-100" : "scale-0"
+                "absolute bg-primary/20 blur-md rounded-full w-8 h-8 transition-opacity duration-300",
+                active ? "opacity-100" : "opacity-0"
               )} />
-              
-              {/* Icon */}
-              <Icon 
+
+              <Icon
                 className={cn(
-                  "h-6 w-6 transition-all duration-200",
-                  active 
-                    ? "text-primary" 
+                  "h-[22px] w-[22px] transition-all duration-300 relative z-10",
+                  active
+                    ? "text-primary -translate-y-1"
                     : "text-muted-foreground"
                 )}
-                strokeWidth={active ? 2.5 : 1.5}
+                strokeWidth={active ? 2.5 : 2}
               />
-              
-              {/* Label - only show on active */}
-              <span className={cn(
-                "text-[10px] font-medium mt-0.5 transition-all duration-200",
-                active 
-                  ? "text-primary opacity-100" 
-                  : "text-muted-foreground opacity-0 h-0"
-              )}>
-                {item.label}
-              </span>
+
+              {/* Active Dot indicator */}
+              <div className={cn(
+                "absolute bottom-0 w-1 h-1 rounded-full transition-all duration-300 bg-primary",
+                active ? "scale-100 opacity-100" : "scale-0 opacity-0 translate-y-2"
+              )} />
             </button>
           );
         })}

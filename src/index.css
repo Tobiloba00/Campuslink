@@ -6,6 +6,7 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -70,10 +71,15 @@
     /* Soft 12px radius for iOS-slick look */
     --radius: 0.75rem;
 
-    /* Glassmorphism - Refined */
-    --glass-bg: 0 0% 100% / 0.85;
-    --glass-border: 220 13% 91% / 0.6;
+    /* Glassmorphism - Refined Performance */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.5;
     --glass-blur: 12px;
+
+    /* Mesh Background Colors */
+    --mesh-bg-1: 221 83% 53% / 0.15;
+    --mesh-bg-2: 24 95% 53% / 0.15;
+    --mesh-bg-3: 142 71% 45% / 0.1;
 
     /* Custom gradients */
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(217 91% 60%) 100%);
@@ -142,9 +148,14 @@
     --ring: 217 91% 60%;
 
     /* Glassmorphism - Dark */
-    --glass-bg: 217 33% 12% / 0.9;
-    --glass-border: 217 33% 25% / 0.5;
-    --glass-blur: 12px;
+    --glass-bg: 222 47% 7% / 0.7;
+    --glass-border: 210 20% 98% / 0.1;
+    --glass-blur: 24px;
+
+    /* Mesh Background Colors - Dark */
+    --mesh-bg-1: 217 91% 60% / 0.2;
+    --mesh-bg-2: 24 95% 62% / 0.15;
+    --mesh-bg-3: 222 47% 7% / 0.3;
 
     /* Gradients - Dark */
     --gradient-elegant: linear-gradient(135deg, hsl(217 91% 60% / 0.08) 0%, hsl(24 95% 62% / 0.05) 100%);
@@ -167,7 +178,8 @@
     @apply border-border;
   }
 
-  html, body {
+  html,
+  body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     letter-spacing: -0.01em;
@@ -175,7 +187,12 @@
     max-width: 100vw;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -188,12 +205,63 @@
 }
 
 @layer utilities {
+
   /* Glassmorphism utility - Refined */
   .glass {
+    @apply bg-background/70 backdrop-blur-xl border border-white/20 dark:border-white/10;
+  }
+
+  .glass-panel {
     background: hsl(var(--glass-bg));
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 0.5px solid hsl(var(--border-subtle));
+    border: 1px solid hsl(var(--glass-border));
+    @apply shadow-xl rounded-3xl;
+  }
+
+  /* Atmospheric Depth - Mesh Gradient Background */
+  .mesh-background {
+    position: fixed;
+    inset: 0;
+    z-index: -20;
+    overflow: hidden;
+    background: hsl(var(--background));
+  }
+
+  .mesh-background::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background-image:
+      radial-gradient(circle at 20% 30%, hsl(var(--mesh-bg-1)) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--mesh-bg-2)) 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, hsl(var(--mesh-bg-3)) 0%, transparent 50%);
+    filter: blur(80px);
+    opacity: 0.8;
+    animation: mesh-drift 20s ease-in-out infinite alternate;
+  }
+
+  /* Glow Spheres */
+  .glow-sphere {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: -10;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  @keyframes mesh-drift {
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+
+    100% {
+      transform: scale(1.1) rotate(5deg);
+    }
   }
 
   /* Elegant gradient background */
@@ -203,14 +271,16 @@
 
   /* Premium lift effect with spring transition */
   .hover-lift {
-    transition: transform 0.3s var(--transition-spring), 
-                background-color 0.3s var(--transition-smooth),
-                box-shadow 0.3s var(--transition-smooth);
+    transition: transform 0.3s var(--transition-spring),
+      background-color 0.3s var(--transition-smooth),
+      box-shadow 0.3s var(--transition-smooth);
   }
+
   .hover-lift:hover {
     transform: scale(1.005);
     background-color: hsl(var(--muted) / 0.3);
   }
+
   .hover-lift:active {
     transform: scale(0.98);
   }
@@ -232,13 +302,15 @@
 }
 
 @layer components {
+
   /* Subtle border card style (replaces heavy shadows) */
   .card-refined {
     @apply border border-border/60 bg-card;
     transition: border-color 0.3s var(--transition-smooth),
-                background-color 0.3s var(--transition-smooth),
-                transform 0.3s var(--transition-spring);
+      background-color 0.3s var(--transition-smooth),
+      transform 0.3s var(--transition-spring);
   }
+
   .card-refined:hover {
     @apply border-border bg-card;
     transform: scale(1.003);
@@ -250,6 +322,7 @@
     background: hsl(var(--card));
     border-radius: var(--radius);
   }
+
   .gradient-border::before {
     content: '';
     position: absolute;
@@ -260,6 +333,7 @@
     opacity: 0;
     transition: opacity 0.3s var(--transition-smooth);
   }
+
   .gradient-border:hover::before {
     opacity: 1;
   }
@@ -271,6 +345,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -281,6 +356,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -291,6 +367,7 @@
     opacity: 0;
     transform: scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -302,6 +379,7 @@
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -309,10 +387,59 @@
 }
 
 @keyframes pulse-soft {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.8;
   }
+}
+
+/* WhatsApp-style message bubble tails */
+.clip-path-tail-right {
+  clip-path: polygon(0 0, 0% 100%, 100% 0);
+}
+
+.clip-path-tail-left {
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+
+/* Modern Threaded Comments */
+.comment-thread-line {
+  position: absolute;
+  left: 1.25rem;
+  /* Center of avatar */
+  top: 2.5rem;
+  /* Bottom of avatar */
+  bottom: -1rem;
+  width: 2px;
+  background: hsl(var(--border) / 0.5);
+  border-radius: 1px;
+}
+
+.comment-reply-curve {
+  position: absolute;
+  left: 1.25rem;
+  top: 0;
+  height: 1.5rem;
+  width: 1rem;
+  border-left: 2px solid hsl(var(--border) / 0.5);
+  border-bottom: 2px solid hsl(var(--border) / 0.5);
+  border-bottom-left-radius: 0.75rem;
+}
+
+.comment-item-transition {
+  transition: all 0.3s var(--transition-spring);
+}
+
+.comment-input-focus {
+  transition: all 0.2s var(--transition-smooth);
+}
+
+.comment-input-focus:focus-within {
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.3);
 }

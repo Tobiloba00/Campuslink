@@ -1,0 +1,1 @@
+﻿import fetch from 'node-fetch'; async function check() { try { const res = await fetch(process.env.VITE_SUPABASE_URL + '/rest/v1/messages?limit=1', { headers: { 'apikey': process.env.VITE_SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + process.env.VITE_SUPABASE_ANON_KEY }}); const data = await res.json(); console.log(data); } catch(e) { console.error(e); } } check();

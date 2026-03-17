@@ -20,7 +20,7 @@ const Auth = () => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
-    
+
     document.documentElement.classList.toggle("dark", initialTheme === "dark");
   }, []);
 
@@ -60,10 +60,11 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
-      <Card className="w-full max-w-md shadow-hover">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="mesh-background" />
+      <Card className="w-full max-w-md glass-panel border-white/20 shadow-2xl relative z-10 transition-all duration-500 animate-in fade-in zoom-in-95">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center mb-2">
+          <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-primary flex items-center justify-center mb-2 shadow-lg shadow-primary/20">
             <GraduationCap className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl font-bold">
@@ -112,7 +113,7 @@ const Auth = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full h-11 rounded-2xl bg-gradient-primary shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98]" disabled={loading}>
               {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
             </Button>
           </form>

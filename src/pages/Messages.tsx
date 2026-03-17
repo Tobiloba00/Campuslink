@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X, Image as ImageIcon, ArrowLeft, Home, Check, CheckCheck } from "lucide-react";
+import { Send, X, Image as ImageIcon, ArrowLeft, Home, Check, CheckCheck, MessageSquare, Sparkles, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,104 +48,373 @@ const Messages = () => {
   const [showConversations, setShowConversations] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const isInitialConversationLoadRef = useRef(true);
   const messageLimit = 10;
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const broadcastChannelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isAtBottomRef = useRef(true);
   const isInitialLoadRef = useRef(true);
+  const messagesRef = useRef<Message[]>([]);
+  const [postContext, setPostContext] = useState<any>(null);
+
+  const formatMessageDate = (date: Date) => {
+    const now = new Date();
+    const messageDate = new Date(date);
+
+    if (messageDate.toDateString() === now.toDateString()) return 'Today';
+
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    if (messageDate.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+    return messageDate.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: messageDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  };
+
+  const groupedMessages = useMemo(() => {
+    const groups: { date: string, messages: Message[] }[] = [];
+    messages.forEach(msg => {
+      const dateStr = formatMessageDate(new Date(msg.created_at));
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.date === dateStr) {
+        lastGroup.messages.push(msg);
+      } else {
+        groups.push({ date: dateStr, messages: [msg] });
+      }
+    });
+    return groups;
+  }, [messages]);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   const getOrCreateRoom = useCallback(async (otherUserId: string): Promise<string | null> => {
-    // Guard: Ensure user is authenticated before attempting to create rooms
-    let user = currentUser;
-    if (!user) {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        toast.error('Please log in to send messages');
-        return null;
-      }
-      user = authUser;
-      setCurrentUser(authUser);
-    }
-
     try {
-      const { data: existingRooms, error: searchError } = await supabase
-        .from('room_participants')
-        .select('room_id')
-        .eq('user_id', user.id);
+      const { data, error } = await supabase.rpc('get_or_create_conversation_room', {
+        other_user_id: otherUserId
+      });
 
-      if (searchError) throw searchError;
-
-      if (existingRooms && existingRooms.length > 0) {
-        const roomIds = existingRooms.map(r => r.room_id);
-        
-        const { data: otherUserRooms, error: otherError } = await supabase
-          .from('room_participants')
-          .select('room_id')
-          .eq('user_id', otherUserId)
-          .in('room_id', roomIds);
-
-        if (otherError) throw otherError;
-
-        if (otherUserRooms && otherUserRooms.length > 0) {
-          return otherUserRooms[0].room_id;
-        }
-      }
-
-      const { data: newRoom, error: roomError } = await supabase
-        .from('chat_rooms')
-        .insert({ type: 'direct' })
-        .select()
-        .single();
-
-      if (roomError) throw roomError;
-
-      const { error: participantsError } = await supabase
-        .from('room_participants')
-        .insert([
-          { room_id: newRoom.id, user_id: user.id },
-          { room_id: newRoom.id, user_id: otherUserId }
-        ]);
-
-      if (participantsError) throw participantsError;
-
-      return newRoom.id;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error getting/creating room:', error);
-      // Don't show error toast for initial page load - only for user-triggered actions
       return null;
+    }
+  }, []);
+
+  // Main lifecycle effects - will be moved below definitions
+
+  const markMessagesAsRead = useCallback(async (roomId: string) => {
+    if (!currentUser) return;
+
+    try {
+      await (supabase as any)
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('room_id', roomId)
+        .neq('sender_id', currentUser.id)
+        .is('read_at', null);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
     }
   }, [currentUser]);
 
-  useEffect(() => {
-    const initializeChat = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-      
-      if (user) {
-        const userId = searchParams.get('userId');
-        if (userId) {
-          setTimeout(async () => {
-            const roomId = await getOrCreateRoom(userId);
-            setSelectedConversation(userId);
-            setSelectedRoomId(roomId);
-          }, 100);
+  const fetchConversations = useCallback(async () => {
+    if (!currentUser) return;
+
+    if (isInitialConversationLoadRef.current) {
+      setIsLoadingConversations(true);
+    }
+
+    try {
+      const { data: userRooms, error: userRoomsError } = await supabase
+        .from('room_participants')
+        .select('room_id')
+        .eq('user_id', currentUser.id);
+
+      if (userRoomsError) throw userRoomsError;
+
+      if (!userRooms || userRooms.length === 0) {
+        setConversations([]);
+        setIsLoadingConversations(false);
+        return;
+      }
+
+      const roomIds = userRooms.map(r => r.room_id);
+
+      const [chatRoomsResult, otherParticipantsResult, allMessagesResult] = await Promise.all([
+        supabase.from('chat_rooms').select('id, created_at, updated_at').in('id', roomIds),
+        supabase.from('room_participants').select('room_id, user_id').in('room_id', roomIds).neq('user_id', currentUser.id),
+        supabase.from('messages').select('room_id, message, image_url, created_at').in('room_id', roomIds).order('created_at', { ascending: false })
+      ]);
+
+      if (chatRoomsResult.error) throw chatRoomsResult.error;
+      if (otherParticipantsResult.error) throw otherParticipantsResult.error;
+      if (allMessagesResult.error) throw allMessagesResult.error;
+
+      const otherParticipants = otherParticipantsResult.data;
+      const allMessages = allMessagesResult.data;
+
+      if (!otherParticipants || otherParticipants.length === 0) {
+        setConversations([]);
+        setIsLoadingConversations(false);
+        return;
+      }
+
+      const otherUserIds = otherParticipants.map(p => p.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, profile_picture')
+        .in('id', otherUserIds);
+
+      if (profilesError) throw profilesError;
+
+      const conversationMap = new Map<string, Conversation>();
+
+      otherParticipants.forEach((participant) => {
+        const profile = profiles?.find(p => p.id === participant.user_id);
+        if (!profile) return;
+
+        const lastMsg = allMessages?.find(m => m.room_id === participant.room_id);
+
+        if (!conversationMap.has(participant.user_id)) {
+          conversationMap.set(participant.user_id, {
+            userId: participant.user_id,
+            userName: profile.name,
+            lastMessage: lastMsg?.message || (lastMsg?.image_url ? '📷 Image' : 'No messages yet'),
+            timestamp: lastMsg?.created_at || new Date().toISOString(),
+            profilePicture: profile.profile_picture,
+            roomId: participant.room_id
+          });
+        }
+      });
+
+      setConversations(Array.from(conversationMap.values()));
+    } catch (error) {
+      console.error('fetchConversations error:', error);
+    } finally {
+      setIsLoadingConversations(false);
+      isInitialConversationLoadRef.current = false;
+    }
+  }, [currentUser]);
+
+  const fetchUserProfile = useCallback(async () => {
+    if (!selectedConversation) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', selectedConversation)
+      .single();
+
+    setSelectedUserProfile(data);
+  }, [selectedConversation]);
+
+  const scrollToBottom = useCallback((force = false) => {
+    if (scrollAreaRef.current && (isAtBottomRef.current || force)) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
+  }, []);
+
+  const fetchMessages = useCallback(async (loadMore = false) => {
+    if (!currentUser || !selectedRoomId) return;
+    if (loadMore && (!hasMore || isLoadingMore)) return;
+
+    if (loadMore) setIsLoadingMore(true);
+
+    try {
+      let query = supabase
+        .from('messages')
+        .select('*')
+        .eq('room_id', selectedRoomId)
+        .order('created_at', { ascending: false })
+        .limit(messageLimit);
+
+      if (loadMore && messagesRef.current.length > 0) {
+        const oldestMessage = messagesRef.current[0];
+        query = query.lt('created_at', oldestMessage.created_at);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data) {
+        const typedMessages = (data as any[]).map((msg) => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          message: msg.message,
+          image_url: msg.image_url,
+          created_at: msg.created_at,
+          room_id: msg.room_id,
+          read_at: msg.read_at,
+        } as Message));
+
+        if (loadMore) {
+          setMessages(prev => {
+            const newMessages = [...typedMessages.reverse(), ...prev];
+            messagesRef.current = newMessages;
+            return newMessages;
+          });
+          setHasMore(data.length === messageLimit);
+        } else {
+          const reversed = typedMessages.reverse();
+          setMessages(reversed);
+          messagesRef.current = reversed;
+          setHasMore(data.length === messageLimit);
+          if (isInitialLoadRef.current) {
+            setTimeout(() => scrollToBottom(true), 100);
+            isInitialLoadRef.current = false;
+          }
         }
       }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+
+    if (loadMore) setIsLoadingMore(false);
+  }, [currentUser, selectedRoomId, hasMore, isLoadingMore, messageLimit, scrollToBottom]);
+
+  const fetchAiSuggestions = useCallback(async (post: any, receiver: any) => {
+    if (!currentUser || !post || !receiver) return;
+
+    setIsLoadingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-conversation-starters', {
+        body: {
+          postTitle: post.title,
+          postDescription: post.description,
+          postCategory: post.category,
+          senderName: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'A Student',
+          receiverName: receiver.name,
+          receiverCourse: receiver.course
+        }
+      });
+
+      if (error) throw error;
+      if (data?.suggestions) {
+        setAiSuggestions(data.suggestions);
+      }
+    } catch (error) {
+      console.error('Error fetching AI suggestions:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, [currentUser]);
+
+  const fetchPostContext = useCallback(async (postId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          id, title, description, category, user_id,
+          profiles (name, course)
+        `)
+        .eq('id', postId)
+        .single();
+
+      if (error) throw error;
+      setPostContext(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching post context:', error);
+      return null;
+    }
+  }, []);
+
+  const playNotificationSound = useCallback((shouldPlay: boolean) => {
+    if (!shouldPlay) return;
+
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(err => console.log('Could not play sound:', err));
+    } catch (error) {
+      console.log('Audio not supported');
+    }
+  }, []);
+
+  // Lifecycle Effects
+  useEffect(() => {
+    const initSetUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user);
+        const userIdParam = searchParams.get('userId');
+        const postIdParam = searchParams.get('postId');
+        const offerParam = searchParams.get('offer');
+
+        // Pre-fill offer message if coming from Make Offer
+        if (offerParam) {
+          setNewMessage(decodeURIComponent(offerParam));
+        }
+
+        if (userIdParam) {
+          // Eagerly fetch the profile to avoid "User" flicker
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userIdParam)
+            .single()
+            .then(({ data }) => {
+              if (data) setSelectedUserProfile(data);
+            });
+
+          getOrCreateRoom(userIdParam).then(async (roomId) => {
+            setSelectedConversation(userIdParam);
+            setSelectedRoomId(roomId);
+            setShowConversations(false);
+
+            // Refresh conversations so the new room appears in the sidebar
+            setTimeout(() => fetchConversations(), 500);
+
+            if (postIdParam) {
+              const post = await fetchPostContext(postIdParam);
+              // Only show AI suggestions if there's no offer pre-filled and the conversation is empty
+              if (!offerParam) {
+                const { count } = await supabase
+                  .from('messages')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('room_id', roomId);
+
+                if (count === 0 && post) {
+                  const { data: receiver } = await supabase
+                    .from('profiles')
+                    .select('name, course')
+                    .eq('id', userIdParam)
+                    .single();
+
+                  if (receiver) {
+                    fetchAiSuggestions(post, receiver);
+                  }
+                }
+              }
+            }
+          });
+        }
+      } else {
+        navigate('/auth');
+      }
     };
-    
-    initializeChat();
-  }, [searchParams, getOrCreateRoom]);
+    initSetUser();
+  }, [searchParams, getOrCreateRoom, navigate, fetchConversations, fetchAiSuggestions, fetchPostContext]);
 
   useEffect(() => {
     if (currentUser) {
       fetchConversations();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchConversations]);
 
   useEffect(() => {
     if (selectedConversation && currentUser && selectedRoomId) {
@@ -167,7 +436,12 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
             const newMessage = payload.new as Message;
             setMessages(prev => {
               if (prev.find(m => m.id === newMessage.id)) return prev;
-              return [...prev, newMessage];
+              const updated = [...prev, newMessage];
+              messagesRef.current = updated;
+              if (newMessage.sender_id === currentUser.id || isAtBottomRef.current) {
+                setTimeout(() => scrollToBottom(true), 50);
+              }
+              return updated;
             });
             playNotificationSound(newMessage.sender_id !== currentUser?.id);
             if (newMessage.sender_id !== currentUser?.id) {
@@ -185,9 +459,11 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
           },
           (payload) => {
             const updatedMessage = payload.new as Message;
-            setMessages(prev => prev.map(msg => 
-              msg.id === updatedMessage.id ? updatedMessage : msg
-            ));
+            setMessages(prev => {
+              const updated = prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg);
+              messagesRef.current = updated;
+              return updated;
+            });
           }
         )
         .subscribe();
@@ -196,16 +472,18 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
         supabase.removeChannel(channel);
       };
     }
-  }, [selectedConversation, currentUser, selectedRoomId]);
+  }, [selectedConversation, currentUser, selectedRoomId, fetchMessages, fetchUserProfile, markMessagesAsRead, scrollToBottom, playNotificationSound]);
 
-
-  // Presence tracking (online status)
   useEffect(() => {
     if (!selectedRoomId || !currentUser) return;
 
     const presenceChannel = supabase.channel(`room:${selectedRoomId}:presence`, {
       config: { presence: { key: currentUser.id } }
     });
+
+    const broadcast = supabase.channel(`room:${selectedRoomId}:broadcast`);
+    broadcastChannelRef.current = broadcast;
+    broadcast.subscribe();
 
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
@@ -232,22 +510,11 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
         }
       });
 
-    return () => {
-      supabase.removeChannel(presenceChannel);
-    };
-  }, [selectedRoomId, currentUser]);
-
-  // Typing indicator broadcast
-  useEffect(() => {
-    if (!selectedRoomId || !currentUser) return;
-
-    const broadcastChannel = supabase.channel(`room:${selectedRoomId}:broadcast`);
-
-    broadcastChannel
+    broadcast
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload.user_id !== currentUser.id) {
           setTypingUsers(prev => new Set(prev).add(payload.user_id));
-          
+
           setTimeout(() => {
             setTypingUsers(prev => {
               const updated = new Set(prev);
@@ -256,39 +523,47 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
             });
           }, 3000);
         }
-      })
-      .subscribe();
+      });
 
     return () => {
-      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(presenceChannel);
+      if (broadcastChannelRef.current) {
+        supabase.removeChannel(broadcastChannelRef.current);
+        broadcastChannelRef.current = null;
+      }
     };
   }, [selectedRoomId, currentUser]);
 
-  // Attach scroll handler to the correct viewport element
   useEffect(() => {
     if (!scrollAreaRef.current) return;
-    
+
     const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
     if (!viewport) return;
 
     let scrollTimeout: NodeJS.Timeout;
-    
+
     const handleScrollEvent = (e: Event) => {
-      // Debounce scroll handler
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         const element = e.target as HTMLDivElement;
         const threshold = 50;
         const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
         isAtBottomRef.current = isNearBottom;
-        
-        // Infinite scroll for older messages
+
         if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
           const previousScrollHeight = element.scrollHeight;
-          fetchMessages(true).then(() => {
-            const newScrollHeight = element.scrollHeight;
-            element.scrollTop = newScrollHeight - previousScrollHeight;
-          });
+          const oldMessagesLength = messagesRef.current.length;
+
+          if (oldMessagesLength > 0) {
+            // we use the oldest message right from messagesRef in fetchMessages,
+            // but since fetchMessages uses messages directly if we change it to use state, we'll just let it use messagesRef.
+            // Oh wait, fetchMessages still looks at `messages`, wait, I changed fetchMessages to not depend on `messages`.
+            // Let me make sure `fetchMessages` reads from `messagesRef.current`.
+            fetchMessages(true).then(() => {
+              const newScrollHeight = element.scrollHeight;
+              element.scrollTop = newScrollHeight - previousScrollHeight;
+            });
+          }
         }
       }, 50);
     };
@@ -298,196 +573,7 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
       viewport.removeEventListener('scroll', handleScrollEvent);
       clearTimeout(scrollTimeout);
     };
-  }, [hasMore, isLoadingMore, selectedRoomId]);
-
-  const markMessagesAsRead = async (roomId: string) => {
-    if (!currentUser) return;
-    
-    try {
-      await (supabase as any)
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('room_id', roomId)
-        .neq('sender_id', currentUser.id)
-        .is('read_at', null);
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
-  };
-
-  const fetchConversations = async () => {
-    if (!currentUser) return;
-
-    // Only show skeleton on initial load, not refetches
-    if (isInitialConversationLoadRef.current) {
-      setIsLoadingConversations(true);
-    }
-
-    try {
-      // Step 1: Get room IDs for current user
-      const { data: userRooms, error: userRoomsError } = await supabase
-        .from('room_participants')
-        .select('room_id')
-        .eq('user_id', currentUser.id);
-
-      if (userRoomsError) throw userRoomsError;
-
-      if (!userRooms || userRooms.length === 0) {
-        setConversations([]);
-        setIsLoadingConversations(false);
-        return;
-      }
-
-      const roomIds = userRooms.map(r => r.room_id);
-
-      // OPTIMIZED: Parallel queries instead of sequential
-      const [chatRoomsResult, otherParticipantsResult, allMessagesResult] = await Promise.all([
-        supabase.from('chat_rooms').select('id, created_at, updated_at').in('id', roomIds),
-        supabase.from('room_participants').select('room_id, user_id').in('room_id', roomIds).neq('user_id', currentUser.id),
-        supabase.from('messages').select('room_id, message, image_url, created_at').in('room_id', roomIds).order('created_at', { ascending: false })
-      ]);
-
-      if (chatRoomsResult.error) throw chatRoomsResult.error;
-      if (otherParticipantsResult.error) throw otherParticipantsResult.error;
-      if (allMessagesResult.error) throw allMessagesResult.error;
-
-      const otherParticipants = otherParticipantsResult.data;
-      const allMessages = allMessagesResult.data;
-
-      if (!otherParticipants || otherParticipants.length === 0) {
-        setConversations([]);
-        setIsLoadingConversations(false);
-        return;
-      }
-
-      // Fetch profiles for other participants
-      const otherUserIds = otherParticipants.map(p => p.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name, profile_picture')
-        .in('id', otherUserIds);
-
-      if (profilesError) throw profilesError;
-
-      // Combine results
-      const conversationMap = new Map<string, Conversation>();
-
-      otherParticipants.forEach((participant) => {
-        const profile = profiles?.find(p => p.id === participant.user_id);
-        if (!profile) return;
-
-        const lastMsg = allMessages?.find(m => m.room_id === participant.room_id);
-        
-        if (!conversationMap.has(participant.user_id)) {
-          conversationMap.set(participant.user_id, {
-            userId: participant.user_id,
-            userName: profile.name,
-            lastMessage: lastMsg?.message || (lastMsg?.image_url ? '📷 Image' : 'No messages yet'),
-            timestamp: lastMsg?.created_at || new Date().toISOString(),
-            profilePicture: profile.profile_picture,
-            roomId: participant.room_id
-          });
-        }
-      });
-
-      setConversations(Array.from(conversationMap.values()));
-    } catch (error) {
-      console.error('fetchConversations error:', error);
-      toast.error('Failed to load conversations');
-    } finally {
-      setIsLoadingConversations(false);
-      isInitialConversationLoadRef.current = false;
-    }
-  };
-
-  const fetchUserProfile = async () => {
-    if (!selectedConversation) return;
-
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', selectedConversation)
-      .single();
-
-    setSelectedUserProfile(data);
-  };
-
-  const fetchMessages = async (loadMore = false) => {
-    if (!currentUser || !selectedRoomId) return;
-    if (loadMore && (!hasMore || isLoadingMore)) return;
-
-    if (loadMore) setIsLoadingMore(true);
-
-    try {
-      let query = supabase
-        .from('messages')
-        .select('*')
-        .eq('room_id', selectedRoomId)
-        .order('created_at', { ascending: false })
-        .limit(messageLimit);
-
-      if (loadMore && messages.length > 0) {
-        const oldestMessage = messages[0];
-        query = query.lt('created_at', oldestMessage.created_at);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      if (data) {
-        const typedMessages = (data as any[]).map((msg) => ({
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          message: msg.message,
-          image_url: msg.image_url,
-          created_at: msg.created_at,
-          room_id: msg.room_id,
-          read_at: msg.read_at,
-        } as Message));
-
-        if (loadMore) {
-          setMessages([...typedMessages.reverse(), ...messages]);
-          setHasMore(data.length === messageLimit);
-        } else {
-          setMessages(typedMessages.reverse());
-          setHasMore(data.length === messageLimit);
-          // Only scroll to bottom on initial load
-          if (isInitialLoadRef.current) {
-            setTimeout(() => scrollToBottom(true), 100);
-            isInitialLoadRef.current = false;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast.error('Failed to load messages');
-    }
-
-    if (loadMore) setIsLoadingMore(false);
-  };
-
-  const scrollToBottom = useCallback((force = false) => {
-    if (scrollAreaRef.current && (isAtBottomRef.current || force)) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
-      }
-    }
-  }, []);
-
-  const playNotificationSound = (shouldPlay: boolean) => {
-    if (!shouldPlay) return;
-    
-    try {
-      const audio = new Audio('/notification.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(err => console.log('Could not play sound:', err));
-    } catch (error) {
-      console.log('Audio not supported');
-    }
-  };
+  }, [hasMore, isLoadingMore, selectedRoomId, fetchMessages]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -518,17 +604,12 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   };
 
   const handleTyping = () => {
-    if (selectedRoomId && currentUser) {
-      const channel = supabase.channel(`room:${selectedRoomId}:broadcast`);
-      channel.send({
+    if (selectedRoomId && currentUser && broadcastChannelRef.current) {
+      broadcastChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
         payload: { user_id: currentUser.id }
       });
-
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
     }
   };
 
@@ -561,7 +642,7 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
           message: newMessage.trim() || null,
           image_url: imageUrl,
           room_id: roomId
-        } as any);
+        });
 
       if (error) throw error;
 
@@ -570,9 +651,9 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
       fetchConversations();
       // User sent a message, so scroll to bottom
       setTimeout(() => scrollToBottom(true), 100);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      toast.error("Failed to send message");
+      toast.error(`Failed to send message: ${error?.message || JSON.stringify(error)}`);
     } finally {
       setUploading(false);
     }
@@ -581,14 +662,14 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const handleSelectConversation = async (userId: string, roomId: string | null) => {
     isInitialLoadRef.current = true;
     setSelectedConversation(userId);
-    
+
     if (!roomId) {
       const newRoomId = await getOrCreateRoom(userId);
       setSelectedRoomId(newRoomId);
     } else {
       setSelectedRoomId(roomId);
     }
-    
+
     setShowConversations(false);
   };
 
@@ -598,8 +679,8 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
       <div className="container mx-auto px-4 py-4 flex flex-col flex-1 overflow-hidden pb-20 lg:pb-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => navigate('/feed')}
             className="hidden lg:flex"
@@ -609,8 +690,11 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
           </Button>
         </div>
         <div className="grid md:grid-cols-3 gap-4 md:gap-6 flex-1 overflow-hidden">
-          <Card className={`shadow-card p-4 flex flex-col h-full overflow-hidden ${showConversations ? 'block' : 'hidden md:block'}`}>
-            <h2 className="font-bold text-lg mb-4">Conversations</h2>
+          <Card className={`glass-panel p-4 flex flex-col h-full overflow-hidden border-white/20 shadow-2xl ${showConversations ? 'block' : 'hidden md:block'}`}>
+            <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              Conversations
+            </h2>
             <ScrollArea className="h-full">
               {isLoadingConversations ? (
                 <ConversationListSkeleton />
@@ -624,11 +708,10 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
                   <div
                     key={conv.userId}
                     onClick={() => handleSelectConversation(conv.userId, conv.roomId)}
-                    className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer mb-1.5 transition-all duration-200 ${
-                      selectedConversation === conv.userId
-                        ? "bg-primary/10 border border-primary/20 shadow-sm"
-                        : "hover:bg-secondary/60 active:scale-[0.98]"
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer mb-1.5 transition-all duration-200 ${selectedConversation === conv.userId
+                      ? "bg-primary/10 border border-primary/20 shadow-sm"
+                      : "hover:bg-secondary/60 active:scale-[0.98]"
+                      }`}
                   >
                     <div className="relative flex-shrink-0">
                       <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
@@ -645,10 +728,10 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="font-semibold text-sm truncate">{conv.userName}</span>
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                          {new Date(conv.timestamp).toLocaleTimeString('en-US', { 
-                            hour: 'numeric', 
+                          {new Date(conv.timestamp).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
                             minute: '2-digit',
-                            hour12: true 
+                            hour12: true
                           })}
                         </span>
                       </div>
@@ -662,12 +745,12 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
             </ScrollArea>
           </Card>
 
-          <Card className={`md:col-span-2 shadow-card flex flex-col h-full overflow-hidden bg-gradient-to-br from-card to-card/95 ${showConversations ? 'hidden md:flex' : 'flex'}`}>
+          <Card className={`md:col-span-2 glass-panel flex flex-col h-full overflow-hidden border-white/20 shadow-2xl bg-gradient-to-br from-card/80 to-card/40 ${showConversations ? 'hidden md:flex' : 'flex'}`}>
             {selectedConversation ? (
               <>
                 <div className="p-3 sm:p-4 border-b bg-card/50 backdrop-blur-sm flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className="md:hidden hover:bg-secondary/80"
                     onClick={() => {
@@ -701,11 +784,15 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
                     ) : null}
                   </div>
                 </div>
-                <ScrollArea 
-                  ref={scrollAreaRef} 
-                  className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6" 
+                <ScrollArea
+                  ref={scrollAreaRef}
+                  className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 relative"
                   style={{
-                    backgroundColor: 'hsl(var(--background))'
+                    backgroundImage: 'url("/chat-bg.png")',
+                    backgroundSize: '400px',
+                    backgroundRepeat: 'repeat',
+                    backgroundColor: 'hsl(var(--background) / 0.95)',
+                    backgroundBlendMode: 'overlay'
                   }}
                 >
                   {isLoadingMore && (
@@ -713,7 +800,7 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
                       Loading older messages...
                     </div>
                   )}
-                  
+
                   {messages.length > 0 && (
                     <div className="flex justify-center mb-8">
                       <div className="bg-muted/30 backdrop-blur-sm border border-border/50 rounded-2xl px-4 py-2.5 max-w-sm text-center">
@@ -724,73 +811,118 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
                     </div>
                   )}
 
-                  <div className="space-y-4 pb-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-2 group ${
-                          msg.sender_id === currentUser?.id ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        {msg.sender_id !== currentUser?.id && (
-                          <Avatar className="h-9 w-9 ring-2 ring-background shadow-sm">
-                            <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
-                            <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10">
-                              {selectedUserProfile?.name?.charAt(0) || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div className="flex flex-col max-w-[70%] sm:max-w-[65%]">
-                          <div
-                            className={`p-3 sm:p-3.5 rounded-2xl transition-all duration-200 ${
-                              msg.sender_id === currentUser?.id
-                                ? "bg-primary text-primary-foreground rounded-br-sm shadow-md hover:shadow-lg"
-                                : "bg-secondary/80 rounded-bl-sm shadow-sm hover:shadow-md hover:bg-secondary"
-                            }`}
-                          >
-                            {msg.image_url && (
-                              <img 
-                                src={msg.image_url} 
-                                alt="Message attachment" 
-                                className="rounded-xl max-w-full sm:max-w-[280px] max-h-60 object-cover cursor-pointer hover:opacity-95 transition-all mb-2"
-                                onClick={() => window.open(msg.image_url!, '_blank')}
-                              />
+                  <div className="space-y-6 pb-4">
+                    {postContext && messages.length > 0 && (
+                      <div className="flex justify-center mb-6">
+                        <Card
+                          className="bg-primary/5 border-primary/20 backdrop-blur-md p-3 max-w-[80%] cursor-pointer hover:bg-primary/10 transition-all group"
+                          onClick={() => navigate(`/post/${postContext.id}`)}
+                        >
+                          <div className="flex items-center gap-3">
+                            {postContext.image_url && (
+                              <img src={postContext.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
                             )}
-                            {msg.message && (
-                              <p className={`text-sm sm:text-[15px] leading-relaxed ${msg.image_url ? 'mt-2' : ''}`}>
-                                {msg.message}
-                              </p>
-                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">Reference Post</p>
+                              <h4 className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{postContext.title}</h4>
+                            </div>
+                            <ExternalLink className="h-4 w-4 text-primary opacity-50 group-hover:opacity-100 transition-opacity" />
                           </div>
-                          
-                          <div className={`flex items-center gap-1.5 mt-1 ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
-                            <span className="text-[10px] sm:text-xs text-muted-foreground">
-                              {new Date(msg.created_at).toLocaleTimeString('en-US', { 
-                                hour: 'numeric', 
-                                minute: '2-digit',
-                                hour12: true 
-                              })}
-                            </span>
-                            {msg.sender_id === currentUser?.id && (
-                              msg.read_at ? (
-                                <CheckCheck className="h-3.5 w-3.5 text-primary" />
-                              ) : (
-                                <Check className="h-3.5 w-3.5 text-muted-foreground/70" />
-                              )
-                            )}
-                          </div>
+                        </Card>
+                      </div>
+                    )}
+
+                    {groupedMessages.map((group, groupIdx) => (
+                      <div key={group.date} className="space-y-4">
+                        <div className="flex justify-center my-4 sticky top-0 z-10">
+                          <span className="bg-background/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/50 shadow-sm">
+                            {group.date}
+                          </span>
                         </div>
+
+                        {group.messages.map((msg, msgIdx) => {
+                          const isFirstInSequence = msgIdx === 0 || group.messages[msgIdx - 1].sender_id !== msg.sender_id;
+                          const isLastInSequence = msgIdx === group.messages.length - 1 || group.messages[msgIdx + 1].sender_id !== msg.sender_id;
+                          const isMe = msg.sender_id === currentUser?.id;
+
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex gap-2 group relative ${isMe ? "justify-end" : "justify-start"} ${isFirstInSequence ? 'mt-4' : 'mt-1'}`}
+                            >
+                              {!isMe && isFirstInSequence && (
+                                <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm absolute -left-10 hidden sm:flex">
+                                  <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
+                                  <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10">
+                                    {selectedUserProfile?.name?.charAt(0) || "?"}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+
+                              <div className={`flex flex-col max-w-[85%] sm:max-w-[70%] lg:max-w-[60%] relative`}>
+                                <div
+                                  className={`p-2.5 sm:p-3 rounded-2xl transition-all duration-200 shadow-sm relative ${isMe
+                                    ? "bg-primary text-primary-foreground rounded-tr-none"
+                                    : "bg-card border border-border/40 rounded-tl-none"
+                                    } ${!isFirstInSequence ? 'rounded-t-2xl' : ''}`}
+                                >
+                                  {/* Bubble Tail */}
+                                  {isFirstInSequence && (
+                                    <div className={`absolute top-0 w-3 h-3 ${isMe
+                                      ? "right-[-6px] bg-primary clip-path-tail-right"
+                                      : "left-[-6px] bg-card border-l border-t border-border/40 clip-path-tail-left"
+                                      }`} />
+                                  )}
+
+                                  {msg.image_url && (
+                                    <div className="relative group/img overflow-hidden rounded-xl mb-1.5 grayscale-[0.2] hover:grayscale-0 transition-all">
+                                      <img
+                                        src={msg.image_url}
+                                        alt="Message attachment"
+                                        className="w-full max-h-80 object-cover cursor-pointer hover:scale-[1.02] transition-transform duration-500"
+                                        onClick={() => window.open(msg.image_url!, '_blank')}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {msg.message && (
+                                    <p className="text-[14px] sm:text-[15px] leading-relaxed break-words px-0.5">
+                                      {msg.message}
+                                    </p>
+                                  )}
+
+                                  <div className={`flex items-center gap-1.5 mt-1 justify-end opacity-70`}>
+                                    <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-tighter">
+                                      {new Date(msg.created_at).toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      })}
+                                    </span>
+                                    {isMe && (
+                                      msg.read_at ? (
+                                        <CheckCheck className="h-3 w-3 text-blue-400" />
+                                      ) : (
+                                        <Check className="h-3 w-3 text-primary-foreground/50" />
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     ))}
+
                     {typingUsers.size > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground italic">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={selectedUserProfile?.profile_picture || ""} />
-                          <AvatarFallback className="text-xs">
-                            {selectedUserProfile?.name?.charAt(0) || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{selectedUserProfile?.name} is typing...</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground italic animate-pulse py-2">
+                        <div className="flex gap-1">
+                          <span className="h-1.5 w-1.5 bg-muted-foreground/30 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                          <span className="h-1.5 w-1.5 bg-muted-foreground/30 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                          <span className="h-1.5 w-1.5 bg-muted-foreground/30 rounded-full animate-bounce"></span>
+                        </div>
+                        <span>Typing...</span>
                       </div>
                     )}
                   </div>
@@ -810,43 +942,88 @@ const [isLoadingConversations, setIsLoadingConversations] = useState(true);
                     </div>
                   </div>
                 )}
-                <div className="p-3 sm:p-4 border-t bg-card/30 backdrop-blur-sm flex items-end gap-2">
-                  <input
-                    type="file"
-                    id="message-image"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                    disabled={uploading}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors h-10 w-10 flex-shrink-0"
-                    onClick={() => document.getElementById('message-image')?.click()}
-                    disabled={uploading}
-                  >
-                    <ImageIcon className="h-5 w-5" />
-                  </Button>
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => {
-                      setNewMessage(e.target.value);
-                      handleTyping();
-                    }}
-                    placeholder="Message..."
-                    onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                    disabled={uploading}
-                    className="flex-1 rounded-full bg-secondary/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50 px-4 py-2 h-10 placeholder:text-muted-foreground/60"
-                  />
-                  <Button 
-                    onClick={sendMessage} 
-                    disabled={uploading || (!newMessage.trim() && !selectedImage)}
-                    className="rounded-full h-10 w-10 p-0 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex-shrink-0"
-                    size="icon"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                <div className="p-3 sm:p-4 border-t bg-card/30 backdrop-blur-sm flex flex-col gap-3">
+                  {aiSuggestions.length > 0 && messages.length === 0 && (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI Conversation Starters
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {aiSuggestions.map((suggestion, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setNewMessage(suggestion);
+                              setAiSuggestions([]);
+                            }}
+                            className="text-left text-xs bg-primary/5 hover:bg-primary/10 border border-primary/10 hover:border-primary/20 rounded-2xl px-4 py-2.5 transition-all text-foreground/80 hover:text-foreground active:scale-95 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                            style={{ animationDelay: `${i * 100}ms` }}
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {postContext && (
+                    <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-2xl border border-border/40 mb-1 animate-in fade-in duration-500">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 bg-primary/10 rounded-lg">
+                          <ImageIcon className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <p className="text-xs truncate">
+                          Replying to: <span className="font-semibold">{postContext.title}</span>
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => setPostContext(null)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex items-end gap-2">
+                    <input
+                      type="file"
+                      id="message-image"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                      disabled={uploading}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors h-10 w-10 flex-shrink-0"
+                      onClick={() => document.getElementById('message-image')?.click()}
+                      disabled={uploading}
+                    >
+                      <ImageIcon className="h-5 w-5" />
+                    </Button>
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value);
+                        handleTyping();
+                      }}
+                      placeholder="Message..."
+                      onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                      disabled={uploading}
+                      className="flex-1 rounded-full bg-card/40 backdrop-blur-md border border-border/40 focus-visible:ring-1 focus-visible:ring-primary/50 px-4 py-2 h-10 placeholder:text-muted-foreground/60"
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      disabled={uploading || (!newMessage.trim() && !selectedImage)}
+                      className="rounded-full h-10 w-10 p-0 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex-shrink-0"
+                      size="icon"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : (

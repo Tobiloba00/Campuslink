@@ -24,6 +24,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <div className="mesh-background" />
+      <div className="glow-sphere bg-primary w-[500px] h-[500px] -top-20 -left-20" />
+      <div className="glow-sphere bg-accent w-[400px] h-[400px] bottom-0 -right-20" />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

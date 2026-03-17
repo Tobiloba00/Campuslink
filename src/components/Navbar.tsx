@@ -62,76 +62,79 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/85 backdrop-blur-[12px] supports-[backdrop-filter]:bg-card/80">
-      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+    <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none transition-all duration-500 animate-in slide-in-from-top-4">
+      <nav className="pointer-events-auto h-14 glass-panel flex items-center justify-between px-6 max-w-5xl w-full border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] backdrop-blur-2xl">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="h-8 w-8 rounded bg-gradient-primary flex items-center justify-center shadow-inner-glow transition-transform duration-200 ease-spring group-hover:scale-105">
+          <div className="h-7 w-7 rounded-sm bg-gradient-primary flex items-center justify-center shadow-inner-glow transition-all duration-300 ease-spring group-hover:scale-110 group-hover:rotate-3">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-display font-semibold text-lg tracking-tight">CampusLink</span>
+          <span className="font-display font-semibold text-base tracking-tight hidden sm:inline-block">CampusLink</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <ThemeToggle />
           {user ? (
             <>
-              <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
+              <Button variant="ghost" size="sm" asChild className="hidden md:flex h-8 px-2.5 rounded-xl hover:bg-primary/10 transition-colors">
                 <Link to="/users">
-                  <Users className="h-4 w-4 mr-1.5" />
-                  Find Users
+                  <Users className="h-4 w-4 mr-1.5 text-primary" />
+                  <span className="text-xs font-medium">Find Users</span>
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
+              <Button variant="ghost" size="sm" asChild className="hidden md:flex h-8 px-2.5 rounded-xl hover:bg-primary/10 transition-colors">
                 <Link to="/messages">
-                  <MessageSquare className="h-4 w-4 mr-1.5" />
-                  Messages
+                  <MessageSquare className="h-4 w-4 mr-1.5 text-primary" />
+                  <span className="text-xs font-medium">Messages</span>
                 </Link>
               </Button>
               {isAdmin && (
-                <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
+                <Button variant="ghost" size="sm" asChild className="hidden md:flex h-8 px-2.5 rounded-xl hover:bg-primary/10 transition-colors">
                   <Link to="/admin">
-                    <LayoutDashboard className="h-4 w-4 mr-1.5" />
-                    Admin
+                    <LayoutDashboard className="h-4 w-4 mr-1.5 text-primary" />
+                    <span className="text-xs font-medium">Admin</span>
                   </Link>
                 </Button>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-1">
-                    <Avatar className="h-7 w-7">
+                  <Button variant="ghost" size="sm" className="p-0.5 h-8 w-8 rounded-full hover:bg-primary/10 transition-all active:scale-90">
+                    <Avatar className="h-7 w-7 border border-primary/20">
                       <AvatarImage src={userProfile?.profile_picture || ""} />
-                      <AvatarFallback className="text-xs">
-                        {userProfile?.name?.charAt(0) || <UserIcon className="h-3.5 w-3.5" />}
+                      <AvatarFallback className="text-[10px] bg-primary/10">
+                        {userProfile?.name?.charAt(0) || <UserIcon className="h-3 w-3" />}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">View Profile</Link>
+                <DropdownMenuContent align="end" className="w-48 glass-panel border-white/20 mt-2">
+                  <DropdownMenuItem asChild className="rounded-xl focus:bg-primary/10">
+                    <Link to="/profile">
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      View Profile
+                    </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
-                    <DropdownMenuItem asChild className="lg:hidden">
+                    <DropdownMenuItem asChild className="md:hidden rounded-xl focus:bg-primary/10">
                       <Link to="/admin">
-                        <LayoutDashboard className="h-4 w-4 mr-1.5" />
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
                         Admin
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 mr-1.5" />
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl focus:bg-destructive/10 text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="h-8 rounded-xl px-4 text-xs font-semibold bg-gradient-primary shadow-lg hover:shadow-primary/20 transition-all hover:scale-105 active:scale-95">
               <Link to="/auth">Sign In</Link>
             </Button>
           )}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 };
