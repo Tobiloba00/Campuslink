@@ -335,11 +335,11 @@ const Feed = () => {
         </div>
       )}
 
-      <div className="w-full max-w-[1440px] mx-auto px-4 pt-28 pb-36 lg:pb-12">
+      <div className="w-full max-w-[1440px] mx-auto px-4 pt-20 pb-24 lg:pb-12">
         <div className="flex flex-col lg:flex-row gap-8 justify-center">
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-28 space-y-6">
+            <div className="sticky top-20 space-y-6">
               <div className="space-y-2">
                 <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Navigation</h3>
                 <Button
@@ -591,7 +591,7 @@ const Feed = () => {
 
           {/* Right Sidebar - Impulse & Helpers */}
           <aside className="hidden xl:block w-72 flex-shrink-0">
-            <div className="sticky top-28 space-y-6">
+            <div className="sticky top-20 space-y-6">
               {/* Campus Pulse - Real Data */}
               <div className="glass-panel p-5 border-white/20">
                 <div className="flex items-center gap-2 mb-6">

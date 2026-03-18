@@ -676,7 +676,7 @@ const Messages = () => {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <Navbar />
-      <div className="container mx-auto px-4 py-4 flex flex-col flex-1 overflow-hidden pb-20 lg:pb-4">
+      <div className="container mx-auto px-4 py-4 flex flex-col flex-1 overflow-hidden pb-20 lg:pb-4 pt-16">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
           <Button

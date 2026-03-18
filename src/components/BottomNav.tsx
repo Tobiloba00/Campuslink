@@ -17,8 +17,8 @@ const BottomNav = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden pb-6 px-4 pointer-events-none">
-      <div className="pointer-events-auto bg-background/85 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl shadow-primary/10 rounded-[2rem] px-2 py-2.5 flex items-center justify-around relative max-w-[400px] mx-auto">
+    <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/85 backdrop-blur-2xl border-t border-white/10 dark:border-white/5 safe-area-inset-bottom">
+      <div className="px-2 py-2.5 flex items-center justify-around relative max-w-md mx-auto">
         {navItems.map((item) => {
           const active = isActive(item.path);
           const Icon = item.icon;

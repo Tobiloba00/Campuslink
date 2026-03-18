@@ -145,7 +145,7 @@ const EditPost = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 flex justify-center">
+        <div className="container mx-auto px-4 py-8 flex justify-center pt-20">
           <p>Loading...</p>
         </div>
       </div>
@@ -155,7 +155,7 @@ const EditPost = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-2xl pt-20">
         <Card className="shadow-hover">
           <CardHeader>
             <CardTitle className="text-2xl">Edit Post</CardTitle>

@@ -129,7 +129,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl pt-20">
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="shadow-hover">
             <CardHeader>
