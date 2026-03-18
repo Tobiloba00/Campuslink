@@ -321,7 +321,7 @@ const Feed = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background/50 flex flex-col">
+    <div className="min-h-screen bg-background/50">
       <Navbar />
 
       {hasNewPosts && (
@@ -335,7 +335,7 @@ const Feed = () => {
         </div>
       )}
 
-      <div className="flex-1 flex justify-center w-full max-w-[1440px] mx-auto px-4 py-6 md:py-8 gap-8 pb-32 md:pb-8 pt-28">
+      <div className="w-full max-w-[1440px] mx-auto px-4 py-6 md:py-8 gap-8 pb-32 lg:pb-8 pt-24">
         <div className="flex flex-col lg:flex-row gap-8 justify-center">
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block w-64 flex-shrink-0">

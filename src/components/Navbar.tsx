@@ -62,8 +62,8 @@ export const Navbar = () => {
   };
 
   return (
-    <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none transition-all duration-500 animate-in slide-in-from-top-4">
-      <nav className="pointer-events-auto h-14 glass-panel flex items-center justify-between px-6 max-w-5xl w-full border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] backdrop-blur-2xl">
+    <header className="fixed top-0 left-0 right-0 z-50 pt-6 px-4 pointer-events-none">
+      <nav className="pointer-events-auto h-14 glass-panel flex items-center justify-between px-6 max-w-5xl w-full mx-auto border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] backdrop-blur-2xl">
         <Link to="/" className="flex items-center gap-2 group">
           <div className="h-7 w-7 rounded-sm bg-gradient-primary flex items-center justify-center shadow-inner-glow transition-all duration-300 ease-spring group-hover:scale-110 group-hover:rotate-3">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
@@ -135,6 +135,6 @@ export const Navbar = () => {
           )}
         </div>
       </nav>
-    </div>
+    </header>
   );
 };

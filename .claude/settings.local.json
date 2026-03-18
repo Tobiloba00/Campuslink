@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push)",
+      "Bash(git add vercel.json)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Add vercel.json for SPA routing\n\n- Configure Vercel to route all requests to index.html\n- Fixes 404 errors on client-side routes like /auth\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Improve responsive layout with fixed header and footer\n\n- Change Navbar wrapper from div to semantic header element\n- Change BottomNav wrapper from nav to semantic footer element  \n- Improve fixed positioning to prevent floating with page scroll\n- Adjust Feed page padding for better spacing with fixed elements\n- Use pointer-events-none on containers for better click handling\n\nThis fixes the issue where header and footer were floating with \npage content instead of staying fixed at top/bottom.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
