@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +72,7 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
   const [isAiResponding, setIsAiResponding] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     fetchUser();
@@ -164,9 +165,15 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
         has_bookmarked: (c.bookmarks as any[])?.some(b => b.user_id === currentUser?.id),
         is_ai: c.comment_text.startsWith('🤖 CampusLink AI:')
       } as any));
-      
+
       const sorted = sortCommentsForThreadDisplay(processed as any[]);
       setComments(sorted);
+
+      // Auto-collapse all parent comments that have replies
+      const parentsWithReplies = new Set(
+        processed.filter(c => c.parent_id).map(c => c.parent_id)
+      );
+      setCollapsedIds(parentsWithReplies as Set<string>);
     }
   };
 
@@ -245,9 +252,20 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
 
       if (selectedImage) {
         setIsUploading(true);
+        setUploadProgress(0);
+
+        // Simulate upload progress (replace with actual progress if uploadImage supports it)
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 10, 90));
+        }, 200);
+
         const result = await uploadImage(selectedImage, "post-images", "comments");
         imageUrl = result.url;
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
         setIsUploading(false);
+        setTimeout(() => setUploadProgress(0), 500);
       }
 
       if (editingId) {
@@ -330,18 +348,6 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
     }
   };
 
-  const toggleRepost = async (commentId: string, currentReposted: boolean) => {
-    if (!currentUser) return;
-    try {
-      if (currentReposted) {
-        await (supabase.from("reposts") as any).delete().eq("comment_id", commentId).eq("user_id", currentUser.id);
-      } else {
-        await (supabase.from("reposts") as any).insert({ comment_id: commentId, user_id: currentUser.id, type: 'repost' });
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
 
   const toggleBookmark = async (commentId: string, currentBookmarked: boolean) => {
     if (!currentUser) return;
@@ -421,7 +427,7 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
 
       {/* Modern Thread-Style Form */}
       {/* Sticky Composer Bar (Twitter Style) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-t border-border/40 pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom duration-300">
+      <div className="fixed bottom-0 lg:bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-t border-border/40 pb-[env(safe-area-inset-bottom)] mb-20 lg:mb-0 animate-in slide-in-from-bottom duration-300">
         <div className="container max-w-2xl mx-auto px-4 py-2 flex items-center gap-3">
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src={currentUser?.user_metadata?.avatar_url || ""} />
@@ -478,15 +484,25 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
                   )}
                   {selectedImage && (
                     <div className="relative mt-2 w-fit">
-                      <img 
-                        src={URL.createObjectURL(selectedImage)} 
+                      <img
+                        src={URL.createObjectURL(selectedImage)}
+                        alt="Selected image preview"
                         className="rounded-2xl max-h-[300px] object-cover border border-border"
                       />
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
+                      {isUploading && uploadProgress > 0 && (
+                        <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                          <div className="text-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-2" />
+                            <p className="text-white text-sm font-medium">{uploadProgress}%</p>
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="icon"
                         className="absolute top-2 right-2 rounded-full h-8 w-8"
                         onClick={() => setSelectedImage(null)}
+                        aria-label="Remove image"
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -545,7 +561,6 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggleLike={toggleLike}
-              onToggleRepost={toggleRepost}
               onToggleBookmark={toggleBookmark}
               onReply={handleReply}
               hasConnectorBelow={hasConnectorBelow}
@@ -559,14 +574,13 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
   );
 };
 
-const CommentItem = ({ 
-  comment, 
-  currentUser, 
-  onEdit, 
-  onDelete, 
-  onReply, 
+const CommentItem = ({
+  comment,
+  currentUser,
+  onEdit,
+  onDelete,
+  onReply,
   onToggleLike,
-  onToggleRepost,
   onToggleBookmark,
   hasConnectorBelow,
   isCollapsed,
@@ -662,9 +676,10 @@ const CommentItem = ({
 
           {/* Action Row */}
           <div className="flex items-center justify-between text-muted-foreground -ml-2 max-w-sm">
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); onReply(comment.id); }}
               className="flex items-center gap-1.5 group/act hover:text-primary transition-colors p-2 rounded-full hover:bg-primary/10"
+              aria-label="Reply to comment"
             >
               <Reply className="h-4.5 w-4.5" />
               {directReplyCount > 0 && !isCollapsed && (
@@ -673,9 +688,10 @@ const CommentItem = ({
             </button>
 
             {totalDescendants > 0 && (
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); onToggleCollapse(); }}
                 className="flex items-center gap-1.5 group/act hover:text-primary transition-colors p-2 rounded-full hover:bg-primary/10"
+                aria-label={isCollapsed ? `Show ${totalDescendants} replies` : "Hide replies"}
               >
                 {isCollapsed ? (
                   <>
@@ -688,33 +704,10 @@ const CommentItem = ({
               </button>
             )}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button 
-                  onClick={(e) => e.stopPropagation()}
-                  className={cn("flex items-center gap-1.5 group/act hover:text-green-500 transition-colors p-2 rounded-full hover:bg-green-500/10", comment.has_reposted && "text-green-500")}
-                >
-                  <Repeat2 className="h-4.5 w-4.5" />
-                  {(comment.reposts_count || 0) > 0 && (
-                    <span className="text-[13px] font-medium">{comment.reposts_count}</span>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                <DropdownMenuItem onClick={() => onToggleRepost(comment.id, comment.has_reposted)}>
-                  <Repeat2 className="mr-2 h-4 w-4" />
-                  <span>{comment.has_reposted ? "Undo Repost" : "Repost"}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info("Quote feature coming soon!")}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  <span>Quote</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); onToggleLike(comment.id, comment.has_liked); }}
               className={cn("flex items-center gap-1.5 group/act hover:text-pink-500 transition-colors p-2 rounded-full hover:bg-pink-500/10", comment.has_liked && "text-pink-500")}
+              aria-label={comment.has_liked ? "Unlike comment" : "Like comment"}
             >
               <Heart className={cn("h-4.5 w-4.5", comment.has_liked && "fill-current")} />
               {(comment.likes_count || 0) > 0 && (
@@ -722,9 +715,10 @@ const CommentItem = ({
               )}
             </button>
 
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); onToggleBookmark(comment.id, comment.has_bookmarked); }}
               className={cn("flex items-center gap-1.5 group/act hover:text-primary transition-colors p-2 rounded-full hover:bg-primary/10", comment.has_bookmarked && "text-primary")}
+              aria-label={comment.has_bookmarked ? "Remove bookmark" : "Bookmark comment"}
             >
               <Bookmark className={cn("h-4.5 w-4.5", comment.has_bookmarked && "fill-current")} />
               {(comment.bookmarks_count || 0) > 0 && (
@@ -732,13 +726,14 @@ const CommentItem = ({
               )}
             </button>
 
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard.writeText(`${window.location.origin}/post/${comment.post_id}`);
                 toast.success("Link copied to clipboard");
               }}
               className="flex items-center gap-1.5 group/act hover:text-primary transition-colors p-2 rounded-full hover:bg-primary/10"
+              aria-label="Share comment"
             >
               <Share2 className="h-4.5 w-4.5" />
             </button>
