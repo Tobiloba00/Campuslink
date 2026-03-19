@@ -159,7 +159,7 @@ const PostDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl pt-20 pb-24">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl pt-28 pb-36 lg:pb-8">
         <Button
           variant="ghost"
           onClick={() => navigate("/feed")}
