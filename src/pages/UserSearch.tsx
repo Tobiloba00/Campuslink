@@ -85,7 +85,7 @@ const UserSearch = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 pt-28">
+        <div className="container mx-auto px-4 pb-8 pt-28">
           <p className="text-center text-muted-foreground">Loading users...</p>
         </div>
       </div>
@@ -95,7 +95,7 @@ const UserSearch = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-6 md:py-8 pt-28 pb-36 lg:pb-8">
+      <div className="container mx-auto px-4 pt-28 pb-36 lg:pb-8">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             Find Users
