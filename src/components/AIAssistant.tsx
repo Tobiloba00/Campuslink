@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Sparkles, X, Send, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -171,7 +172,12 @@ export function AIAssistant() {
                             : 'bg-muted'
                         )}
                       >
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        <div className={cn(
+                          "prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted/50 prose-pre:p-3 prose-pre:rounded-lg",
+                          msg.role === 'user' ? 'prose-p:text-primary-foreground' : 'text-foreground'
+                        )}>
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
                       </div>
                     </div>
                   ))}
