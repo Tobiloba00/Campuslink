@@ -527,6 +527,41 @@
 }
 
 /* ═══════════════════════════════════════════
+   AI Assistant — Markdown overflow protection
+   ═══════════════════════════════════════════ */
+
+.ai-markdown pre {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.ai-markdown code {
+  word-break: break-all;
+}
+
+.ai-markdown p {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.ai-markdown img {
+  max-width: 100%;
+  height: auto;
+}
+
+.ai-markdown table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* safe-area utility for the AI panel */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ═══════════════════════════════════════════
    Premium Animation & Utility System
    ═══════════════════════════════════════════ */
 
