@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MessageCircle, Star } from "lucide-react";
+import { Search, MessageCircle, Star, Users, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
@@ -42,7 +41,6 @@ const UserSearch = () => {
         .from("profiles")
         .select("*")
         .order("rating", { ascending: false });
-
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
@@ -53,7 +51,7 @@ const UserSearch = () => {
   };
 
   const filteredProfiles = profiles
-    .filter((profile) => profile.id !== currentUser?.id) // Exclude current user
+    .filter((profile) => profile.id !== currentUser?.id)
     .filter((profile) => {
       const query = searchQuery.toLowerCase();
       return (
@@ -81,104 +79,116 @@ const UserSearch = () => {
     navigate(`/rate-user/${userId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-4 pb-8 pt-28">
-          <p className="text-center text-muted-foreground">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 pt-28 pb-36 lg:pb-8">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-            Find Users
-          </h1>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search by name, course, or bio..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+      <div className="max-w-5xl mx-auto px-4 pt-24 pb-24 lg:pb-8">
+        {/* Header */}
+        <div className="mb-8 animate-hero">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight">Find People</h1>
+              <p className="text-sm text-muted-foreground">Discover students on campus</p>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="glass-panel p-2 border-white/10">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name, course, or bio..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-11 bg-transparent border-none focus-visible:ring-0 text-base"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {filteredProfiles.map((profile) => (
-            <Card
-              key={profile.id}
-              className="hover:shadow-lg transition-all duration-300 hover:scale-105"
-            >
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col items-center text-center">
-                  <Avatar className="w-20 h-20 md:w-24 md:h-24 mb-4">
-                    <AvatarImage src={profile.profile_picture || ""} alt={profile.name} />
-                    <AvatarFallback className="text-xl md:text-2xl bg-primary/10 text-primary">
-                      {profile.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Results count */}
+            {searchQuery && (
+              <p className="text-xs text-muted-foreground mb-4 font-medium">
+                {filteredProfiles.length} result{filteredProfiles.length !== 1 ? 's' : ''} found
+              </p>
+            )}
 
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1">
-                    {profile.name}
-                  </h3>
-
-                  {profile.course && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {profile.course}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-1 mb-3">
-                    <Star className="w-4 h-4 fill-accent text-accent" />
-                    <span className="text-sm font-medium">
-                      {Number(profile.rating).toFixed(1)}
-                    </span>
+            {/* User Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredProfiles.map((profile, i) => (
+                <div
+                  key={profile.id}
+                  className="glass-panel border-white/10 p-5 hover:border-primary/10 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group cursor-default"
+                  style={{ animationDelay: `${Math.min(i * 0.05, 0.3)}s` }}
+                >
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-14 w-14 ring-2 ring-primary/5 group-hover:ring-primary/20 transition-all">
+                      <AvatarImage src={profile.profile_picture || ""} alt={profile.name} />
+                      <AvatarFallback className="text-lg bg-gradient-primary text-primary-foreground font-bold">
+                        {profile.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-base truncate group-hover:text-primary transition-colors">
+                        {profile.name}
+                      </h3>
+                      {profile.course && (
+                        <p className="text-xs text-muted-foreground truncate">{profile.course}</p>
+                      )}
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        <span className="text-xs font-bold">{Number(profile.rating).toFixed(1)}</span>
+                      </div>
+                    </div>
                   </div>
 
                   {profile.bio && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {profile.bio}
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-3 line-clamp-2 leading-relaxed">{profile.bio}</p>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-4">
                     <Button
                       onClick={() => handleMessage(profile.id)}
-                      className="flex-1"
                       size="sm"
+                      className="flex-1 h-9 rounded-xl bg-gradient-primary shadow-sm hover:shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all text-xs font-semibold"
                     >
-                      <MessageCircle className="w-4 h-4 mr-2" />
+                      <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
                       Message
                     </Button>
                     <Button
                       onClick={() => handleRateUser(profile.id)}
                       variant="outline"
-                      className="flex-1"
                       size="sm"
+                      className="h-9 rounded-xl border-border/50 hover:bg-primary/5 transition-all text-xs font-semibold px-3"
                     >
-                      <Star className="w-4 h-4 mr-2" />
+                      <Star className="h-3.5 w-3.5 mr-1" />
                       Rate
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              ))}
+            </div>
 
-        {filteredProfiles.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No users found matching your search.</p>
-          </div>
+            {filteredProfiles.length === 0 && (
+              <div className="text-center py-20 animate-hero">
+                <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-7 w-7 text-muted-foreground/40" />
+                </div>
+                <p className="font-semibold mb-1">No users found</p>
+                <p className="text-sm text-muted-foreground">Try a different search term</p>
+              </div>
+            )}
+          </>
         )}
       </div>
       <BottomNav />

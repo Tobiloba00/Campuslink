@@ -160,6 +160,8 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
     if (data) {
       const processed = data.map(c => ({
         ...c,
+        // Use actual comment_likes count instead of broken likes_count column
+        likes_count: (c.comment_likes as any[])?.length || 0,
         has_liked: (c.comment_likes as any[])?.some(l => l.user_id === currentUser?.id),
         has_reposted: (c.reposts as any[])?.some(r => r.user_id === currentUser?.id),
         has_bookmarked: (c.bookmarks as any[])?.some(b => b.user_id === currentUser?.id),
@@ -177,33 +179,40 @@ export const Comments = ({ postId, postTitle = "", postDescription = "" }: Comme
     }
   };
 
+  // O(n) threaded comment sort using a children map instead of repeated .filter()
   const sortCommentsForThreadDisplay = (flatComments: Comment[]): Comment[] => {
     const result: Comment[] = [];
-    const rootComments = flatComments.filter(c => !c.parent_id);
-    
-    // Initial sort for root comments (latest first by default or top if selected)
-    rootComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+    // Build parent → children map in one pass (O(n))
+    const childrenMap = new Map<string | null, Comment[]>();
+    flatComments.forEach(c => {
+      const parentKey = c.parent_id || null;
+      if (!childrenMap.has(parentKey)) childrenMap.set(parentKey, []);
+      childrenMap.get(parentKey)!.push(c);
+    });
+
+    // Sort root comments: newest first
+    const roots = childrenMap.get(null) || [];
+    roots.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Recursive traverse using the map (O(1) child lookup per node)
+    const descendantCounts = new Map<string, number>();
     const traverse = (parent: Comment): number => {
-      const children = flatComments.filter(c => c.parent_id === parent.id);
-      
+      const children = childrenMap.get(parent.id) || [];
       result.push(parent);
-      
-      let totalDescendants = children.length;
-      
-      // Sort children by likes desc (Twitter style)
+
+      // Sort children by actual like count (from comment_likes join, not broken column)
       children.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
-      
-      children.forEach(child => {
-        totalDescendants += traverse(child);
-      });
-      
-      // Store total count for toggle display
-      (parent as any).descendantCount = totalDescendants;
-      return totalDescendants;
+
+      let total = children.length;
+      children.forEach(child => { total += traverse(child); });
+
+      descendantCounts.set(parent.id, total);
+      (parent as any).descendantCount = total;
+      return total;
     };
 
-    rootComments.forEach(root => traverse(root));
+    roots.forEach(root => traverse(root));
     return result;
   };
 

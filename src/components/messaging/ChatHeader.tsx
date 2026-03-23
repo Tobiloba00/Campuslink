@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import { UserProfile } from "./types";
 import { memo } from "react";
 
@@ -12,51 +12,49 @@ interface ChatHeaderProps {
 
 export const ChatHeader = memo(({ userProfile, isOnline, onBack }: ChatHeaderProps) => {
   return (
-    <div className="p-3 sm:p-4 border-b bg-card/60 backdrop-blur-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500 z-10 sticky top-0">
+    <div className="px-3 sm:px-4 py-3 border-b border-border/50 bg-background/80 backdrop-blur-xl flex items-center gap-3 z-10">
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden hover:bg-secondary/80 rounded-full h-9 w-9 transition-transform active:scale-95"
+        className="md:hidden rounded-full h-9 w-9 hover:bg-muted transition-all active:scale-95 flex-shrink-0"
         onClick={onBack}
         aria-label="Back to conversations"
       >
         <ArrowLeft className="h-5 w-5" />
       </Button>
-      
-      <div className="relative">
-        <Avatar className="h-11 w-11 ring-2 ring-background shadow-md transition-transform hover:scale-105">
+
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-10 w-10 ring-2 ring-border/50">
           <AvatarImage src={userProfile?.profile_picture || ""} alt={userProfile?.name} className="object-cover" />
-          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 font-semibold text-primary">
+          <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold text-sm">
             {userProfile?.name?.charAt(0) || "?"}
           </AvatarFallback>
         </Avatar>
         {isOnline && (
-          <div
-            className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success border-2 border-background shadow-md animate-in zoom-in duration-300"
-            aria-label="Online"
-          >
-            <div className="absolute inset-0 rounded-full bg-success animate-ping opacity-20" />
-          </div>
+          <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
         )}
       </div>
-      
+
       <div className="flex-1 min-w-0">
-        <h2 className="font-semibold text-base sm:text-lg truncate tracking-tight">
+        <h2 className="font-semibold text-[15px] truncate leading-tight">
           {userProfile?.name || "User"}
         </h2>
-        {isOnline ? (
-          <p className="text-xs text-success font-medium animate-in fade-in" aria-live="polite">
-            Active now
-          </p>
-        ) : userProfile?.course ? (
-          <p className="text-xs text-muted-foreground truncate opacity-80 mt-0.5">
-            {userProfile.course}
-          </p>
-        ) : userProfile?.rating && userProfile.rating > 0 ? (
-          <p className="text-xs text-muted-foreground flex items-center gap-1 opacity-80 mt-0.5">
-            <span className="text-amber-500">⭐</span> {userProfile.rating.toFixed(1)} rating
-          </p>
-        ) : null}
+        <div className="flex items-center gap-2 mt-0.5">
+          {isOnline ? (
+            <span className="text-xs text-emerald-500 font-medium">Online</span>
+          ) : userProfile?.course ? (
+            <span className="text-xs text-muted-foreground truncate">{userProfile.course}</span>
+          ) : null}
+          {userProfile?.rating && userProfile.rating > 0 && (
+            <>
+              {(isOnline || userProfile?.course) && <span className="text-muted-foreground/30 text-xs">·</span>}
+              <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                {userProfile.rating.toFixed(1)}
+              </span>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

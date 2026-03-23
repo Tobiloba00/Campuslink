@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Send, X, Loader2, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Send, X, Loader2, Sparkles, Reply } from "lucide-react";
 import { compressImage } from "@/lib/imageUtils";
 import { toast } from "sonner";
-import { PostContext } from "./types";
-import { Card } from "@/components/ui/card";
+import { PostContext, ReplyContext } from "./types";
 
 interface MessageInputProps {
   onSendMessage: (text: string, imageFile: File | null, imagePreview: string | null) => Promise<void>;
@@ -15,6 +13,8 @@ interface MessageInputProps {
   aiSuggestions: string[];
   onSelectAiSuggestion: (suggestion: string) => void;
   messagesCount: number;
+  replyTo: ReplyContext | null;
+  onClearReply: () => void;
 }
 
 export const MessageInput = ({
@@ -25,16 +25,25 @@ export const MessageInput = ({
   onClearPostContext,
   aiSuggestions,
   onSelectAiSuggestion,
-  messagesCount
+  messagesCount,
+  replyTo,
+  onClearReply
 }: MessageInputProps) => {
   const [text, setText] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when reply is set
+  useEffect(() => {
+    if (replyTo) {
+      textareaRef.current?.focus();
+    }
+  }, [replyTo]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -50,21 +59,18 @@ export const MessageInput = ({
 
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Please select a JPEG, PNG, or WebP image.');
+      toast.error('Please select a JPEG, PNG, or WebP image');
       return;
     }
-    
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
+      toast.error('Image must be under 10MB');
       return;
     }
 
     setIsCompressing(true);
-
     try {
       const compressedFile = await compressImage(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       setSelectedImage(compressedFile);
-      
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -84,25 +90,21 @@ export const MessageInput = ({
   };
 
   const handleSend = async () => {
-    if ((!text.trim() && !selectedImage) || isOffline) return;
-    
+    if ((!text.trim() && !selectedImage) || isOffline || isSending) return;
+
     setIsSending(true);
     const textToSend = text;
     const imgToSend = selectedImage;
     const previewToSend = imagePreview;
-    
-    // Clear instantly for optimistic UI feel
+
     setText("");
     clearImage();
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.focus();
-    }
+    onClearReply();
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     try {
       await onSendMessage(textToSend, imgToSend, previewToSend);
     } catch {
-      // Restore on fail (this is handled slightly differently in parent but we can restore here)
       setText(textToSend);
       if (imgToSend && previewToSend) {
         setSelectedImage(imgToSend);
@@ -110,6 +112,7 @@ export const MessageInput = ({
       }
     } finally {
       setIsSending(false);
+      requestAnimationFrame(() => textareaRef.current?.focus());
     }
   };
 
@@ -118,25 +121,28 @@ export const MessageInput = ({
       e.preventDefault();
       handleSend();
     }
+    if (e.key === 'Escape' && replyTo) {
+      onClearReply();
+    }
   };
 
+  const canSend = (text.trim() || selectedImage) && !isCompressing && !isOffline && !isSending;
+
   return (
-    <div className="p-3 sm:p-4 border-t bg-card/60 backdrop-blur-xl flex flex-col gap-3 relative z-10 pb-safe">
-      
-      {/* AI Suggestions (Only show initially) */}
+    <div className="border-t border-border/50 bg-background/95 backdrop-blur-xl">
+      {/* AI Suggestions */}
       {aiSuggestions.length > 0 && messagesCount === 0 && (
-        <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-4">
-          <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+        <div className="px-4 pt-3 pb-1">
+          <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider flex items-center gap-1 mb-2">
             <Sparkles className="h-3 w-3" />
-            AI Conversation Starters
+            Conversation Starters
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {aiSuggestions.map((suggestion, i) => (
               <button
                 key={i}
                 onClick={() => onSelectAiSuggestion(suggestion)}
-                className="text-left text-xs bg-primary/5 hover:bg-primary/10 border border-primary/10 hover:border-primary/20 rounded-2xl px-4 py-2.5 transition-all text-foreground/80 hover:text-foreground active:scale-95"
-                style={{ animationDelay: `${i * 100}ms` }}
+                className="text-left text-xs bg-primary/5 hover:bg-primary/10 border border-primary/10 hover:border-primary/20 rounded-xl px-3 py-2 transition-all text-foreground/80 hover:text-foreground active:scale-95"
               >
                 {suggestion}
               </button>
@@ -147,42 +153,61 @@ export const MessageInput = ({
 
       {/* Post Context */}
       {postContext && (
-        <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-2xl border border-border/40 mb-1 animate-in zoom-in duration-300">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
-              <ImageIcon className="h-3.5 w-3.5 text-primary" />
+        <div className="px-4 pt-3">
+          <div className="flex items-center justify-between px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-6 w-1 bg-primary rounded-full flex-shrink-0" />
+              <p className="text-xs truncate">
+                Re: <span className="font-semibold">{postContext.title}</span>
+              </p>
             </div>
-            <p className="text-xs truncate">
-              Replying to: <span className="font-semibold">{postContext.title}</span>
-            </p>
+            <button onClick={onClearPostContext} className="p-1 rounded-full hover:bg-muted transition-colors flex-shrink-0">
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-70 hover:opacity-100 shrink-0" onClick={onClearPostContext}>
-            <X className="h-3 w-3" />
-          </Button>
+        </div>
+      )}
+
+      {/* Reply context */}
+      {replyTo && (
+        <div className="px-4 pt-3">
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-xl border-l-2 border-primary">
+            <Reply className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-primary">{replyTo.senderName}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {replyTo.imageUrl ? '📷 Photo' : replyTo.text || ''}
+              </p>
+            </div>
+            <button onClick={onClearReply} className="p-1 rounded-full hover:bg-muted transition-colors flex-shrink-0">
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </div>
         </div>
       )}
 
       {/* Image Preview */}
       {imagePreview && (
-        <div className="relative inline-block self-start mb-1 animate-in zoom-in slide-in-from-bottom-2 duration-300">
-          <img src={imagePreview} alt="Preview" className="h-24 md:h-32 object-cover rounded-xl border-2 border-primary/20 shadow-md" />
-          {isCompressing && (
-            <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          )}
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute -top-2 -right-2 h-7 w-7 rounded-full shadow-lg"
-            onClick={clearImage}
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
+        <div className="px-4 pt-3">
+          <div className="relative inline-block">
+            <img src={imagePreview} alt="Preview" className="h-20 sm:h-24 object-cover rounded-xl border border-border/50" />
+            {isCompressing && (
+              <div className="absolute inset-0 bg-background/60 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            )}
+            <button
+              onClick={clearImage}
+              className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center shadow-md hover:bg-destructive/90 transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      {/* Input row */}
+      <div className="flex items-end gap-2 p-3 sm:p-4">
         <input
           type="file"
           ref={fileInputRef}
@@ -191,18 +216,16 @@ export const MessageInput = ({
           onChange={handleImageSelect}
           disabled={isCompressing || isOffline || isSending}
         />
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors h-10 w-10 flex-shrink-0"
+
+        <button
+          className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 disabled:opacity-40"
           onClick={() => fileInputRef.current?.click()}
           disabled={isCompressing || isOffline || isSending}
         >
           <ImageIcon className="h-5 w-5" />
-        </Button>
+        </button>
 
-        <div className="flex-1 relative group">
+        <div className="flex-1">
           <textarea
             ref={textareaRef}
             value={text}
@@ -212,27 +235,27 @@ export const MessageInput = ({
             }}
             onKeyDown={handleKeyDown}
             disabled={isCompressing || isOffline || isSending}
-            placeholder={isOffline ? "Waiting for connection..." : "Message..."}
-            className="w-full rounded-2xl md:rounded-3xl bg-card border border-border/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 px-4 py-2.5 min-h-[44px] max-h-[120px] resize-none overflow-y-auto leading-relaxed shadow-sm transition-all text-[15px] placeholder:text-muted-foreground/60 focus:shadow-md"
+            placeholder={isOffline ? "Waiting for connection..." : "Type a message..."}
+            className="w-full rounded-2xl bg-muted/40 border border-border/30 focus:border-primary/30 focus:ring-1 focus:ring-primary/15 px-4 py-2.5 min-h-[44px] max-h-[120px] resize-none overflow-y-auto chat-text leading-relaxed placeholder:text-muted-foreground/40 transition-all outline-none"
             rows={1}
           />
         </div>
 
-        <Button
+        <button
           onClick={handleSend}
-          disabled={isCompressing || isOffline || isSending || (!text.trim() && !selectedImage)}
-          className={`rounded-full h-11 w-11 p-0 shadow-md flex-shrink-0 transition-all duration-300 ${
-            text.trim() || selectedImage 
-              ? 'bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-lg hover:scale-105 active:scale-95' 
-              : 'bg-muted text-muted-foreground'
+          disabled={!canSend}
+          className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+            canSend
+              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:scale-105 active:scale-95'
+              : 'bg-muted/60 text-muted-foreground/30'
           }`}
         >
-          {isCompressing || isSending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+          {isSending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Send className="h-4 w-4 ml-0.5" />
           )}
-        </Button>
+        </button>
       </div>
     </div>
   );

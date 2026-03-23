@@ -1,9 +1,21 @@
 // ============================================================================
 // MESSAGING TYPE DEFINITIONS
-// Premium-grade type safety for the entire messaging system
 // ============================================================================
 
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'failed';
+
+export interface MessageReaction {
+  emoji: string;
+  userIds: string[];
+  count: number;
+}
+
+export interface ReplyContext {
+  messageId: string;
+  senderName: string;
+  text: string | null;
+  imageUrl: string | null;
+}
 
 export interface Message {
   id: string;
@@ -16,6 +28,8 @@ export interface Message {
   read_at: string | null;
   status?: MessageStatus;
   tempId?: string;
+  reactions?: MessageReaction[];
+  replyTo?: ReplyContext;
 }
 
 export interface Conversation {
@@ -25,7 +39,7 @@ export interface Conversation {
   timestamp: string;
   profilePicture?: string | null;
   roomId: string;
-  unreadCount?: number;
+  unreadCount: number;
 }
 
 export interface UserProfile {

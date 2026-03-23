@@ -1,9 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Check, CheckCheck, Loader2, Copy, Trash2, Reply } from "lucide-react";
-import { Message, UserProfile } from './types';
+import { Check, CheckCheck, Loader2, Copy, RotateCcw, SmilePlus, Reply } from "lucide-react";
+import { Message, UserProfile, ReplyContext } from './types';
+import { formatMessageTime, detectLinks } from "./utils";
 import { useState, memo } from 'react';
-import { detectLinks } from "./utils";
 import { toast } from "sonner";
+import { ReactionPicker } from "./ReactionPicker";
 
 interface MessageBubbleProps {
   message: Message;
@@ -12,36 +13,50 @@ interface MessageBubbleProps {
   isLastInSequence: boolean;
   userProfile: UserProfile | null;
   currentUserId: string;
+  onRetry: () => void;
+  onReact: (messageId: string, emoji: string) => void;
+  onReply: (msg: Message) => void;
+  onImageClick: (src: string) => void;
 }
 
 export const MessageBubble = memo(({
   message,
   isMe,
   isFirstInSequence,
-  userProfile
+  isLastInSequence,
+  userProfile,
+  currentUserId,
+  onRetry,
+  onReact,
+  onReply,
+  onImageClick
 }: MessageBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [showActions, setShowActions] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const isFailed = message.status === 'failed';
+  const isSending = message.status === 'sending';
+  const hasReactions = message.reactions && message.reactions.length > 0;
 
-  // Link detection rendering
   const renderMessageContent = (text: string) => {
     if (!text) return null;
     const links = detectLinks(text);
-    if (links.length === 0) return <p className="text-[14px] sm:text-[15px] leading-relaxed break-words px-0.5">{text}</p>;
 
-    let parts = text.split(/(https?:\/\/[^\s]+)/g);
-    
+    if (links.length === 0) {
+      return <p className="chat-text leading-[1.55] break-words whitespace-pre-wrap">{text}</p>;
+    }
+
+    const parts = text.split(/(https?:\/\/[^\s]+)/g);
     return (
-      <p className="text-[14px] sm:text-[15px] leading-relaxed break-words px-0.5">
+      <p className="chat-text leading-[1.55] break-words whitespace-pre-wrap">
         {parts.map((part, i) => {
           if (part.match(/https?:\/\/[^\s]+/)) {
             return (
-              <a 
-                key={i} 
-                href={part} 
-                target="_blank" 
+              <a
+                key={i}
+                href={part}
+                target="_blank"
                 rel="noopener noreferrer"
-                className="underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity font-medium break-all"
+                className="underline underline-offset-2 opacity-90 hover:opacity-100 break-all font-medium"
                 onClick={(e) => e.stopPropagation()}
               >
                 {part}
@@ -54,126 +69,169 @@ export const MessageBubble = memo(({
     );
   };
 
-  const copyToClipboard = () => {
+  const copyMessage = () => {
     if (message.message) {
       navigator.clipboard.writeText(message.message);
-      toast.success("Copied to clipboard");
+      toast.success("Copied");
     }
-    setShowActions(false);
   };
 
   const getStatusIcon = () => {
     if (!isMe) return null;
-    
     switch (message.status) {
       case 'sending':
-        return <Loader2 className="h-3 w-3 animate-spin text-primary-foreground/50" />;
+        return <Loader2 className="h-3 w-3 animate-spin opacity-40" />;
       case 'failed':
-        return <span className="text-[9px] text-destructive">!</span>;
+        return <span className="text-[9px] text-red-300 font-bold">!</span>;
       default:
-        return message.read_at ? (
-          <CheckCheck className="h-3.5 w-3.5 text-blue-400 animate-in zoom-in duration-300" />
-        ) : (
-          <Check className="h-3.5 w-3.5 text-primary-foreground/50 animate-in zoom-in" />
-        );
+        return message.read_at
+          ? <CheckCheck className="h-3.5 w-3.5 text-sky-300" />
+          : <Check className="h-3.5 w-3.5 opacity-40" />;
     }
   };
 
+  // Reply preview inside bubble
+  const replyTo = message.replyTo;
+
   return (
     <div
-      className={`flex gap-2 group relative animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMe ? "justify-end" : "justify-start"} ${isFirstInSequence ? 'mt-3' : 'mt-0.5'}`}
-      role="article"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-      onPointerDown={() => setShowActions(true)}
+      className={`flex items-end gap-1.5 group relative ${isMe ? "justify-end" : "justify-start"} ${isFirstInSequence ? 'mt-4' : 'mt-2'}`}
     >
+      {/* Sender avatar */}
       {!isMe && isFirstInSequence && (
-        <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm absolute -left-10 hidden sm:flex">
-          <AvatarImage src={userProfile?.profile_picture || ""} alt={userProfile?.name} className="object-cover" />
-          <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+        <Avatar className="h-7 w-7 mb-0.5 flex-shrink-0 ring-1 ring-border/30">
+          <AvatarImage src={userProfile?.profile_picture || ""} className="object-cover" />
+          <AvatarFallback className="text-[10px] bg-gradient-primary text-primary-foreground font-bold">
             {userProfile?.name?.charAt(0) || "?"}
           </AvatarFallback>
         </Avatar>
       )}
+      {!isMe && !isFirstInSequence && <div className="w-7 flex-shrink-0" />}
 
-      {/* Floating Action Menu for Desktop (hover) */}
-      {showActions && isMe && (
-        <div className="absolute top-1/2 -translate-y-1/2 -left-12 flex items-center gap-1 opacity-100 transition-opacity bg-card/80 backdrop-blur-sm p-1 rounded-xl shadow-sm border border-border/40 animate-in fade-in zoom-in duration-200">
-          <button onClick={copyToClipboard} className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors" title="Copy text">
-            <Copy className="h-3 w-3" />
-          </button>
-        </div>
-      )}
-      
-      {showActions && !isMe && (
-        <div className="absolute top-1/2 -translate-y-1/2 -right-12 flex items-center gap-1 opacity-100 transition-opacity bg-card/80 backdrop-blur-sm p-1 rounded-xl shadow-sm border border-border/40 animate-in fade-in zoom-in duration-200">
-           <button onClick={copyToClipboard} className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors" title="Copy text">
-            <Copy className="h-3 w-3" />
-          </button>
-        </div>
-      )}
+      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%] sm:max-w-[70%] lg:max-w-[65%] relative`}>
+        {/* Hover action bar */}
+        {!isFailed && !isSending && (
+          <div className={`absolute ${isMe ? 'left-0 -translate-x-full pr-1' : 'right-0 translate-x-full pl-1'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center gap-0.5`}>
+            <button
+              onClick={() => setShowReactionPicker(!showReactionPicker)}
+              className="h-7 w-7 rounded-full bg-background/90 border border-border/50 shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+              title="React"
+            >
+              <SmilePlus className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => onReply(message)}
+              className="h-7 w-7 rounded-full bg-background/90 border border-border/50 shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+              title="Reply"
+            >
+              <Reply className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+            {message.message && (
+              <button
+                onClick={copyMessage}
+                className="h-7 w-7 rounded-full bg-background/90 border border-border/50 shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+                title="Copy"
+              >
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
 
-      <div className={`flex flex-col max-w-[85%] sm:max-w-[70%] lg:max-w-[60%] relative`}>
+        {/* Reaction picker popup */}
+        {showReactionPicker && (
+          <div className={`absolute ${isMe ? 'right-0' : 'left-0'} -top-12 z-30`}>
+            <ReactionPicker
+              onSelect={(emoji) => onReact(message.id, emoji)}
+              onClose={() => setShowReactionPicker(false)}
+            />
+          </div>
+        )}
+
+        {/* Message bubble */}
         <div
-          className={`p-2.5 sm:p-3 sm:px-4 rounded-2xl transition-all duration-300 shadow-sm relative ${
+          className={`relative px-3 py-2 ${
             isMe
-              ? "bg-primary text-primary-foreground rounded-tr-sm hover:shadow-md"
-              : "bg-card border border-border/40 rounded-tl-sm hover:border-border/80"
-          } ${!isFirstInSequence ? 'rounded-t-2xl' : ''} ${
-            message.status === 'failed' ? 'opacity-70 border-destructive/50 ring-1 ring-destructive' : ''
-          }`}
+              ? `chat-bubble-me ${isFirstInSequence ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl'} ${!isLastInSequence ? 'rounded-br-sm' : ''}`
+              : `chat-bubble-other ${isFirstInSequence ? 'rounded-2xl rounded-bl-sm' : 'rounded-2xl'} ${!isLastInSequence ? 'rounded-bl-sm' : ''}`
+          } ${isFailed ? 'opacity-50 ring-1 ring-red-400/50' : ''} ${isSending ? 'opacity-70' : ''}`}
         >
-          {isFirstInSequence && (
-            <div className={`absolute top-0 w-3 h-3 ${
-              isMe
-                ? "right-[-6px] bg-primary clip-path-tail-right"
-                : "left-[-6px] bg-card border-l border-t border-border/40 clip-path-tail-left"
-            }`} />
+          {/* Reply preview */}
+          {replyTo && (
+            <div className={`mb-1.5 px-2.5 py-1.5 rounded-lg border-l-2 ${isMe ? 'bg-white/10 border-white/40' : 'bg-primary/5 border-primary/40'} cursor-pointer`}>
+              <p className={`text-[10px] font-bold ${isMe ? 'text-white/70' : 'text-primary/70'}`}>
+                {replyTo.senderName}
+              </p>
+              <p className={`text-[11px] truncate ${isMe ? 'text-white/50' : 'text-muted-foreground'}`}>
+                {replyTo.imageUrl ? '📷 Photo' : replyTo.text || ''}
+              </p>
+            </div>
           )}
 
+          {/* Image */}
           {message.image_url && (
-            <div 
-              className="relative group/img overflow-hidden rounded-xl mb-1.5 transition-all shadow-sm ring-1 ring-black/5 cursor-zoom-in"
-              onClick={() => window.open(message.image_url!, '_blank')}
+            <div
+              className="relative overflow-hidden rounded-lg mb-1.5 cursor-pointer group/img"
+              onClick={() => onImageClick(message.image_url!)}
             >
               {!imageLoaded && (
-                <div className="absolute inset-0 bg-black/10 animate-pulse" />
+                <div className="w-full h-48 bg-black/10 animate-pulse rounded-lg" />
               )}
               <img
                 src={message.image_url}
                 alt="Attachment"
                 loading="lazy"
                 decoding="async"
-                className={`w-full max-h-80 object-cover hover:scale-[1.02] transition-transform duration-700 ease-out ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`w-full max-h-72 object-cover rounded-lg group-hover/img:brightness-90 transition-all ${imageLoaded ? '' : 'h-0 overflow-hidden'}`}
                 onLoad={() => setImageLoaded(true)}
               />
             </div>
           )}
 
-          {renderMessageContent(message.message || '')}
+          {/* Text */}
+          {message.message && renderMessageContent(message.message)}
 
-          <div className={`flex items-center gap-1.5 mt-1 justify-end opacity-70`}>
-            <time
-              className="text-[9.5px] font-semibold uppercase tracking-tighter tabular-nums"
-              dateTime={message.created_at}
-            >
-              {new Date(message.created_at).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
+          {/* Time + status */}
+          <div className={`flex items-center gap-1 mt-0.5 justify-end ${isMe ? 'text-white/50' : 'text-muted-foreground/50'}`}>
+            <time className="text-[9px] font-medium tabular-nums tracking-tight">
+              {formatMessageTime(message.created_at)}
             </time>
             {getStatusIcon()}
           </div>
         </div>
 
-        {message.status === 'failed' && (
-          <p className="text-[10px] text-destructive mt-1 px-1 flex items-center gap-1 animate-in slide-in-from-top-1">
-            <span className="h-1 w-1 rounded-full bg-destructive animate-pulse" />
-            Failed to send. Tap retry in input.
-          </p>
+        {/* Reactions display */}
+        {hasReactions && (
+          <div className={`flex flex-wrap gap-1 mt-0.5 -mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+            {message.reactions!.map((reaction) => {
+              const iReacted = reaction.userIds.includes(currentUserId);
+              return (
+                <button
+                  key={reaction.emoji}
+                  onClick={() => onReact(message.id, reaction.emoji)}
+                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs border transition-all hover:scale-110 active:scale-95 ${
+                    iReacted
+                      ? 'bg-primary/10 border-primary/30 text-primary'
+                      : 'bg-muted/60 border-border/40 text-foreground/70 hover:bg-muted'
+                  }`}
+                >
+                  <span className="text-sm leading-none">{reaction.emoji}</span>
+                  {reaction.count > 1 && <span className="text-[10px] font-bold">{reaction.count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Failed retry */}
+        {isFailed && (
+          <button
+            onClick={onRetry}
+            className="text-[11px] text-destructive hover:text-destructive/80 font-medium flex items-center gap-1 mt-1 px-1 transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Tap to retry
+          </button>
         )}
       </div>
     </div>

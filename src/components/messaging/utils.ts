@@ -1,6 +1,5 @@
 // ============================================================================
 // MESSAGING UTILITIES
-// Shared formatting, validation, and helper functions
 // ============================================================================
 
 import { Message, MessageGroup } from './types';
@@ -38,6 +37,14 @@ export const formatRelativeTime = (dateStr: string): string => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+export const formatMessageTime = (dateStr: string): string => {
+  return new Date(dateStr).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+};
+
 export const groupMessagesByDate = (messages: Message[]): MessageGroup[] => {
   const groups: MessageGroup[] = [];
   messages.forEach(msg => {
@@ -50,21 +57,6 @@ export const groupMessagesByDate = (messages: Message[]): MessageGroup[] => {
     }
   });
   return groups;
-};
-
-export const isValidImageFile = (file: File): boolean => {
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  return validTypes.includes(file.type) && file.size <= 10 * 1024 * 1024;
-};
-
-export const playNotificationSound = (): void => {
-  try {
-    const audio = new Audio('/notification.mp3');
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
-  } catch {
-    // Audio not supported
-  }
 };
 
 export const detectLinks = (text: string): string[] => {

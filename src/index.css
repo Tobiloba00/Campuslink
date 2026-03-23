@@ -443,3 +443,280 @@
   box-shadow: 0 0 0 2px hsl(var(--primary) / 0.1);
   border-color: hsl(var(--primary) / 0.3);
 }
+
+/* ═══════════════════════════════════════════
+   Chat System — WhatsApp-tier Styling
+   ═══════════════════════════════════════════ */
+
+/* Chat font — slightly larger, rounder, more readable */
+.chat-text {
+  font-size: 15px;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+}
+
+@media (min-width: 640px) {
+  .chat-text {
+    font-size: 15.5px;
+  }
+}
+
+/* Sent message bubble (me) — WhatsApp green-teal inspired */
+.chat-bubble-me {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+  color: white;
+  box-shadow: 0 1px 2px hsl(var(--primary) / 0.15);
+}
+
+/* Received message bubble */
+.chat-bubble-other {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.4);
+  color: hsl(var(--foreground));
+  box-shadow: 0 1px 1px hsl(0 0% 0% / 0.03);
+}
+
+.dark .chat-bubble-other {
+  background: hsl(217 33% 15%);
+  border-color: hsl(217 33% 22%);
+}
+
+/* Chat background — CampusLink branded doodle wallpaper */
+.chat-background {
+  background-color: hsl(220 20% 97%);
+}
+
+.dark .chat-background {
+  background-color: hsl(222 47% 8%);
+}
+
+/* Campus-themed doodle pattern — books, graduation caps, lightbulbs, pencils, chat bubbles, stars */
+.chat-background::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%23334155' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'%3E%3C!-- Book 1 --%3E%3Cpath d='M18 25h16v20H18z'/%3E%3Cpath d='M26 25v20'/%3E%3Cpath d='M18 30h8M26 30h8'/%3E%3C!-- Graduation cap --%3E%3Cpath d='M70 18l15 7-15 7-15-7z'/%3E%3Cpath d='M70 25v10'/%3E%3Cpath d='M60 22v8c0 3 4.5 5 10 5s10-2 10-5v-8'/%3E%3C!-- Lightbulb --%3E%3Ccircle cx='135' cy='20' r='8'/%3E%3Cpath d='M131 28v4h8v-4'/%3E%3Cpath d='M132 32h6M132 34h6'/%3E%3Cpath d='M135 12v-3M127 15l-2-2M143 15l2-2M125 22h-3M148 22h-3'/%3E%3C!-- Pencil --%3E%3Cpath d='M175 15l6 18M181 15l-6 18'/%3E%3Cpath d='M175 28h6'/%3E%3Cpath d='M178 33v3'/%3E%3C!-- Chat bubble --%3E%3Cpath d='M20 75c0-3 3-6 7-6h14c4 0 7 3 7 6v8c0 3-3 6-7 6H30l-5 4v-4h-1c-2 0-4-3-4-6v-8z'/%3E%3Ccircle cx='28' cy='79' r='1'/%3E%3Ccircle cx='33' cy='79' r='1'/%3E%3Ccircle cx='38' cy='79' r='1'/%3E%3C!-- Star --%3E%3Cpath d='M80 72l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z'/%3E%3C!-- Wi-Fi / Signal --%3E%3Cpath d='M130 85a12 12 0 0 1 16 0'/%3E%3Cpath d='M133 82a8 8 0 0 1 10 0'/%3E%3Cpath d='M136 79a4 4 0 0 1 4 0'/%3E%3Ccircle cx='138' cy='87' r='1.5' fill='%23334155'/%3E%3C!-- Calculator --%3E%3Crect x='170' y='68' width='14' height='20' rx='2'/%3E%3Crect x='172' y='70' width='10' height='5'/%3E%3Ccircle cx='174.5' cy='79' r='1' fill='%23334155'/%3E%3Ccircle cx='177' cy='79' r='1' fill='%23334155'/%3E%3Ccircle cx='179.5' cy='79' r='1' fill='%23334155'/%3E%3Ccircle cx='174.5' cy='83' r='1' fill='%23334155'/%3E%3Ccircle cx='177' cy='83' r='1' fill='%23334155'/%3E%3Ccircle cx='179.5' cy='83' r='1' fill='%23334155'/%3E%3C!-- Notebook lines --%3E%3Crect x='15' y='125' width='20' height='26' rx='2'/%3E%3Cpath d='M19 131h12M19 135h12M19 139h8M19 143h10'/%3E%3Cpath d='M21 125v26'/%3E%3C!-- Trophy --%3E%3Cpath d='M72 135h12v-5a6 6 0 0 0-12 0v5z'/%3E%3Cpath d='M72 132h-3a3 3 0 0 1 0-6h3M84 132h3a3 3 0 0 0 0-6h-3'/%3E%3Cpath d='M76 135v4h4v-4'/%3E%3Cpath d='M74 139h8'/%3E%3C!-- Heart --%3E%3Cpath d='M135 133a4 4 0 0 1 7 0c3 4-7 9-7 9s-10-5-7-9a4 4 0 0 1 7 0z'/%3E%3C!-- Clock --%3E%3Ccircle cx='178' cy='135' r='9'/%3E%3Cpath d='M178 129v6l4 3'/%3E%3C!-- Music note --%3E%3Cpath d='M30 175v-14'/%3E%3Ccircle cx='27' cy='175' r='3'/%3E%3Cpath d='M30 161c4-2 8-1 8 2'/%3E%3C!-- Paper airplane --%3E%3Cpath d='M70 165l20-8-14 12z'/%3E%3Cpath d='M76 169l4-5'/%3E%3Cpath d='M70 165l6 4'/%3E%3C!-- Atom / Science --%3E%3Ccircle cx='135' cy='175' r='2' fill='%23334155'/%3E%3Cellipse cx='135' cy='175' rx='10' ry='4'/%3E%3Cellipse cx='135' cy='175' rx='10' ry='4' transform='rotate(60 135 175)'/%3E%3Cellipse cx='135' cy='175' rx='10' ry='4' transform='rotate(-60 135 175)'/%3E%3C!-- Pin / Location --%3E%3Cpath d='M178 168a5 5 0 1 1 0 6c-1.5 2-5 8-5 8s-3.5-6-5-8a5 5 0 1 1 0-6'/%3E%3Ccircle cx='173' cy='171' r='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+.dark .chat-background::before {
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%2394a3b8' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'%3E%3C!-- Book 1 --%3E%3Cpath d='M18 25h16v20H18z'/%3E%3Cpath d='M26 25v20'/%3E%3Cpath d='M18 30h8M26 30h8'/%3E%3C!-- Graduation cap --%3E%3Cpath d='M70 18l15 7-15 7-15-7z'/%3E%3Cpath d='M70 25v10'/%3E%3Cpath d='M60 22v8c0 3 4.5 5 10 5s10-2 10-5v-8'/%3E%3C!-- Lightbulb --%3E%3Ccircle cx='135' cy='20' r='8'/%3E%3Cpath d='M131 28v4h8v-4'/%3E%3Cpath d='M132 32h6M132 34h6'/%3E%3Cpath d='M135 12v-3M127 15l-2-2M143 15l2-2M125 22h-3M148 22h-3'/%3E%3C!-- Pencil --%3E%3Cpath d='M175 15l6 18M181 15l-6 18'/%3E%3Cpath d='M175 28h6'/%3E%3Cpath d='M178 33v3'/%3E%3C!-- Chat bubble --%3E%3Cpath d='M20 75c0-3 3-6 7-6h14c4 0 7 3 7 6v8c0 3-3 6-7 6H30l-5 4v-4h-1c-2 0-4-3-4-6v-8z'/%3E%3Ccircle cx='28' cy='79' r='1'/%3E%3Ccircle cx='33' cy='79' r='1'/%3E%3Ccircle cx='38' cy='79' r='1'/%3E%3C!-- Star --%3E%3Cpath d='M80 72l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z'/%3E%3C!-- Wi-Fi / Signal --%3E%3Cpath d='M130 85a12 12 0 0 1 16 0'/%3E%3Cpath d='M133 82a8 8 0 0 1 10 0'/%3E%3Cpath d='M136 79a4 4 0 0 1 4 0'/%3E%3Ccircle cx='138' cy='87' r='1.5' fill='%2394a3b8'/%3E%3C!-- Calculator --%3E%3Crect x='170' y='68' width='14' height='20' rx='2'/%3E%3Crect x='172' y='70' width='10' height='5'/%3E%3Ccircle cx='174.5' cy='79' r='1' fill='%2394a3b8'/%3E%3Ccircle cx='177' cy='79' r='1' fill='%2394a3b8'/%3E%3Ccircle cx='179.5' cy='79' r='1' fill='%2394a3b8'/%3E%3Ccircle cx='174.5' cy='83' r='1' fill='%2394a3b8'/%3E%3Ccircle cx='177' cy='83' r='1' fill='%2394a3b8'/%3E%3Ccircle cx='179.5' cy='83' r='1' fill='%2394a3b8'/%3E%3C!-- Notebook lines --%3E%3Crect x='15' y='125' width='20' height='26' rx='2'/%3E%3Cpath d='M19 131h12M19 135h12M19 139h8M19 143h10'/%3E%3Cpath d='M21 125v26'/%3E%3C!-- Trophy --%3E%3Cpath d='M72 135h12v-5a6 6 0 0 0-12 0v5z'/%3E%3Cpath d='M72 132h-3a3 3 0 0 1 0-6h3M84 132h3a3 3 0 0 0 0-6h-3'/%3E%3Cpath d='M76 135v4h4v-4'/%3E%3Cpath d='M74 139h8'/%3E%3C!-- Heart --%3E%3Cpath d='M135 133a4 4 0 0 1 7 0c3 4-7 9-7 9s-10-5-7-9a4 4 0 0 1 7 0z'/%3E%3C!-- Clock --%3E%3Ccircle cx='178' cy='135' r='9'/%3E%3Cpath d='M178 129v6l4 3'/%3E%3C!-- Music note --%3E%3Cpath d='M30 175v-14'/%3E%3Ccircle cx='27' cy='175' r='3'/%3E%3Cpath d='M30 161c4-2 8-1 8 2'/%3E%3C!-- Paper airplane --%3E%3Cpath d='M70 165l20-8-14 12z'/%3E%3Cpath d='M76 169l4-5'/%3E%3Cpath d='M70 165l6 4'/%3E%3C!-- Atom / Science --%3E%3Ccircle cx='135' cy='175' r='2' fill='%2394a3b8'/%3E%3Cellipse cx='135' cy='175' rx='10' ry='4'/%3E%3Cellipse cx='135' cy='175' rx='10' ry='4' transform='rotate(60 135 175)'/%3E%3Cellipse cx='135' cy='175' rx='10' ry='4' transform='rotate(-60 135 175)'/%3E%3C!-- Pin / Location --%3E%3Cpath d='M178 168a5 5 0 1 1 0 6c-1.5 2-5 8-5 8s-3.5-6-5-8a5 5 0 1 1 0-6'/%3E%3Ccircle cx='173' cy='171' r='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* Soft gradient overlay on top of doodles for depth */
+.chat-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 30%, hsl(var(--primary) / 0.03) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 70%, hsl(var(--accent) / 0.025) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Empty state background */
+.chat-background-empty {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.03) 0%, transparent 70%);
+}
+
+/* ═══════════════════════════════════════════
+   Premium Animation & Utility System
+   ═══════════════════════════════════════════ */
+
+/* Gradient Text */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-accent {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Stagger Animation System */
+.animate-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: stagger-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.animate-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.animate-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.animate-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+
+@keyframes stagger-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(4px) rotate(-1deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Shimmer Loading Effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Glow Pulse */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.2); }
+  50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.4); }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Counter Animation */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count-up {
+  animation: count-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hero Entrance */
+@keyframes hero-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-hero {
+  animation: hero-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-hero-delayed {
+  opacity: 0;
+  animation: hero-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+.animate-hero-delayed-2 {
+  opacity: 0;
+  animation: hero-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+}
+
+/* Marquee for testimonials */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Gradient Border Glow */
+@keyframes border-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.border-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  z-index: -1;
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* Page transition */
+.page-enter {
+  animation: page-fade-in 0.3s ease-out forwards;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Noise texture overlay for premium feel */
+.noise-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Scroll-reveal for sections */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
