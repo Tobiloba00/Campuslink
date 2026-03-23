@@ -14,6 +14,8 @@ import { FeedSkeleton } from "@/components/ui/skeleton-loaders";
 import BottomNav from "@/components/BottomNav";
 import { AIAssistant } from "@/components/AIAssistant";
 import { PostCard } from "@/components/feed/PostCard";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/PullToRefresh";
 
 type Post = {
   id: string;
@@ -157,6 +159,16 @@ const Feed = () => {
     fetchTrendingTags();
     fetchTopHelpers();
   }, [user, fetchPosts, fetchUserLikes, fetchTrendingTags, fetchTopHelpers]);
+
+  // ─── Pull to Refresh ───
+  const handlePullRefresh = useCallback(async () => {
+    await Promise.all([fetchPosts(), fetchTrendingTags(), fetchTopHelpers()]);
+  }, [fetchPosts, fetchTrendingTags, fetchTopHelpers]);
+
+  const { pullDistance, isRefreshing, progress, isReady } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+    enabled: !isLoading,
+  });
 
   // ─── Real-time ───
   useEffect(() => {
@@ -305,6 +317,14 @@ const Feed = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
+      {/* Pull to Refresh */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        progress={progress}
+        isReady={isReady}
+      />
 
       {/* New posts toast */}
       {hasNewPosts && (

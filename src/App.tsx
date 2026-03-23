@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 // Eagerly loaded (landing + auth — fast first paint)
 import Index from "./pages/Index";
@@ -39,29 +41,29 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <div className="mesh-background" />
-      <div className="glow-sphere bg-primary w-[500px] h-[500px] -top-20 -left-20" />
-      <div className="glow-sphere bg-accent w-[400px] h-[400px] bottom-0 -right-20" />
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/create-post" element={<CreatePost />} />
-            <Route path="/edit-post/:id" element={<EditPost />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/users" element={<UserSearch />} />
-            <Route path="/user-search" element={<UserSearch />} />
-            <Route path="/rate-user/:userId" element={<RateUser />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/post/:id" element={<PostDetail />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PageTransition>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/create-post" element={<CreatePost />} />
+              <Route path="/edit-post/:id" element={<EditPost />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/users" element={<UserSearch />} />
+              <Route path="/user-search" element={<UserSearch />} />
+              <Route path="/rate-user/:userId" element={<RateUser />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/post/:id" element={<PostDetail />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PageTransition>
         </Suspense>
+        <PWAInstallPrompt />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -2,22 +2,47 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
     <title>CampusLink - Connect, Learn, Thrive</title>
     <meta name="description" content="Connect with students for academic help, tutoring, and campus marketplace. Build your reputation and help your peers succeed." />
     <meta name="author" content="CampusLink" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0b" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CampusLink" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Prevent tap highlight & callout on mobile -->
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- OG -->
     <meta property="og:title" content="CampusLink - Connect, Learn, Thrive" />
     <meta property="og:description" content="Student platform for academic collaboration, tutoring, and marketplace" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:site" content="@campuslink" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <style>
+      /* Prevent overscroll bounce on iOS */
+      html, body { overscroll-behavior: none; }
+      /* Standalone (installed PWA) adjustments */
+      @media (display-mode: standalone) {
+        body { -webkit-user-select: none; user-select: text; }
+      }
+    </style>
   </head>
 
   <body>

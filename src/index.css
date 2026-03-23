@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════
+   Mobile-Native Feel — PWA & App-like UX
+   ═══════════════════════════════════════════ */
+
+/* Prevent text selection on interactive elements (app-like) */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Smooth scrolling everywhere */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent pull-to-refresh in Chrome (we handle it ourselves) */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Standalone PWA — hide browser UI artifacts */
+@media (display-mode: standalone) {
+  /* Extra top padding for status bar */
+  .pwa-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Active press feedback — subtle scale on mobile */
+@media (hover: none) and (pointer: coarse) {
+  .active\:press:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Momentum scrolling for all scrollable containers */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
 /* Hide scrollbar for category pills */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
