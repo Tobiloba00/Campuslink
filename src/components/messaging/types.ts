@@ -1,5 +1,9 @@
-// Messaging Type Definitions
-// Eliminates all 'any' types for type safety
+// ============================================================================
+// MESSAGING TYPE DEFINITIONS
+// Premium-grade type safety for the entire messaging system
+// ============================================================================
+
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'failed';
 
 export interface Message {
   id: string;
@@ -10,8 +14,8 @@ export interface Message {
   created_at: string;
   room_id: string | null;
   read_at: string | null;
-  status?: 'sending' | 'sent' | 'delivered' | 'failed'; // For optimistic UI
-  tempId?: string; // For optimistic updates
+  status?: MessageStatus;
+  tempId?: string;
 }
 
 export interface Conversation {
@@ -30,8 +34,8 @@ export interface UserProfile {
   profile_picture: string | null;
   rating: number;
   course: string | null;
-  bio: string | null;
-  email: string;
+  bio?: string | null;
+  email?: string;
 }
 
 export interface PostContext {
@@ -47,20 +51,16 @@ export interface PostContext {
   };
 }
 
+export interface CurrentUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+}
+
 export interface MessageGroup {
   date: string;
   messages: Message[];
-}
-
-export interface MessagingState {
-  currentUser: any | null; // From Supabase Auth
-  conversations: Conversation[];
-  selectedConversation: string | null;
-  selectedUserProfile: UserProfile | null;
-  messages: Message[];
-  selectedRoomId: string | null;
-  onlineUsers: Set<string>;
-  typingUsers: Set<string>;
-  postContext: PostContext | null;
-  aiSuggestions: string[];
 }
