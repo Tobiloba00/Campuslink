@@ -1,75 +1,117 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, Plus, MessageCircle, User } from "lucide-react";
+import { Home, Search, PlusSquare, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread message count
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchUnread = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id)
+        .is('read_at', null);
+
+      if (mounted && count) setUnreadCount(count);
+    };
+
+    fetchUnread();
+
+    // Listen for new messages
+    const channel = supabase
+      .channel('bottomnav-unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
+        fetchUnread();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => {
+        fetchUnread();
+      })
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [location.pathname]); // Re-check when navigating
 
   const navItems = [
     { path: "/feed", icon: Home, label: "Home" },
-    { path: "/user-search", icon: Search, label: "Search" },
-    { path: "/create-post", icon: Plus, label: "Post" },
-    { path: "/messages", icon: MessageCircle, label: "Messages" },
+    { path: "/user-search", icon: Search, label: "Explore" },
+    { path: "/create-post", icon: PlusSquare, label: "Post" },
+    { path: "/messages", icon: MessageCircle, label: "Chat", badge: unreadCount },
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/85 backdrop-blur-2xl border-t border-white/10 dark:border-white/5 safe-area-inset-bottom">
-      <div className="px-4 py-2.5 flex items-center justify-around relative max-w-lg mx-auto">
-        {navItems.map((item) => {
-          const active = isActive(item.path);
-          const Icon = item.icon;
-          const isCenter = item.label === "Post";
+    <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+      {/* Solid background with subtle top border */}
+      <div className="bg-background border-t border-border/40 safe-area-inset-bottom">
+        <nav className="flex items-stretch justify-around max-w-lg mx-auto h-[52px]">
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            const Icon = item.icon;
 
-          if (isCenter) {
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative flex items-center justify-center -mt-5 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 h-12 w-12 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-background"
+                className={cn(
+                  "relative flex flex-col items-center justify-center flex-1 gap-0.5",
+                  "transition-colors duration-200",
+                  "active:opacity-60"
+                )}
+                aria-label={item.label}
+                aria-current={active ? "page" : undefined}
               >
-                <Icon className="h-6 w-6 text-white" strokeWidth={2.5} />
+                <div className="relative">
+                  <Icon
+                    className={cn(
+                      "h-[22px] w-[22px] transition-colors duration-200",
+                      active
+                        ? "text-foreground"
+                        : "text-muted-foreground/70"
+                    )}
+                    strokeWidth={active ? 2.5 : 1.8}
+                    fill={active ? "currentColor" : "none"}
+                  />
+
+                  {/* Unread badge */}
+                  {item.badge && item.badge > 0 && (
+                    <span className={cn(
+                      "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center",
+                      "bg-red-500 text-white text-[9px] font-bold rounded-full",
+                      "ring-2 ring-background"
+                    )}>
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
+                </div>
+
+                <span className={cn(
+                  "text-[10px] leading-tight transition-colors duration-200",
+                  active
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground/60 font-medium"
+                )}>
+                  {item.label}
+                </span>
               </button>
             );
-          }
-
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={cn(
-                "relative flex flex-col items-center justify-center flex-1 h-full py-1",
-                "transition-all duration-300 ease-out",
-                "active:scale-95 hover:opacity-80"
-              )}
-            >
-              {/* Active Glow behind icon */}
-              <div className={cn(
-                "absolute bg-primary/20 blur-md rounded-full w-8 h-8 transition-opacity duration-300",
-                active ? "opacity-100" : "opacity-0"
-              )} />
-
-              <Icon
-                className={cn(
-                  "h-[22px] w-[22px] transition-all duration-300 relative z-10",
-                  active
-                    ? "text-primary -translate-y-1"
-                    : "text-muted-foreground"
-                )}
-                strokeWidth={active ? 2.5 : 2}
-              />
-
-              {/* Active Dot indicator */}
-              <div className={cn(
-                "absolute bottom-0 w-1 h-1 rounded-full transition-all duration-300 bg-primary",
-                active ? "scale-100 opacity-100" : "scale-0 opacity-0 translate-y-2"
-              )} />
-            </button>
-          );
-        })}
+          })}
+        </nav>
       </div>
     </footer>
   );
