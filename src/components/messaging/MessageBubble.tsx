@@ -109,9 +109,9 @@ export const MessageBubble = memo(({
       {!isMe && !isFirstInSequence && <div className="w-7 flex-shrink-0" />}
 
       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%] sm:max-w-[70%] lg:max-w-[65%] relative`}>
-        {/* Hover action bar */}
+        {/* Hover action bar — hidden on mobile (use long-press instead), shown on desktop hover */}
         {!isFailed && !isSending && (
-          <div className={`absolute ${isMe ? 'left-0 -translate-x-full pr-1' : 'right-0 translate-x-full pl-1'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center gap-0.5`}>
+          <div className={`absolute ${isMe ? 'left-0 -translate-x-full pr-1' : 'right-0 translate-x-full pl-1'} top-1/2 -translate-y-1/2 hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity z-20 items-center gap-0.5`}>
             <button
               onClick={() => setShowReactionPicker(!showReactionPicker)}
               className="h-7 w-7 rounded-full bg-background/90 border border-border/50 shadow-sm flex items-center justify-center hover:bg-muted transition-colors"

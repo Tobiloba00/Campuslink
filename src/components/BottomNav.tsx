@@ -18,7 +18,7 @@ const BottomNav = () => {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/85 backdrop-blur-2xl border-t border-white/10 dark:border-white/5 safe-area-inset-bottom">
-      <div className="px-2 py-2.5 flex items-center justify-around relative max-w-md mx-auto">
+      <div className="px-4 py-2.5 flex items-center justify-around relative max-w-lg mx-auto">
         {navItems.map((item) => {
           const active = isActive(item.path);
           const Icon = item.icon;
@@ -29,7 +29,7 @@ const BottomNav = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative flex items-center justify-center -mt-6 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 h-14 w-14 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-background/50"
+                className="relative flex items-center justify-center -mt-5 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 h-12 w-12 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-background"
               >
                 <Icon className="h-6 w-6 text-white" strokeWidth={2.5} />
               </button>

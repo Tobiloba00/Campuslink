@@ -38,7 +38,7 @@ const Leaderboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 pt-24 pb-24 lg:pb-8">
+      <div className="max-w-3xl mx-auto px-4 pt-20 pb-24 lg:pb-8">
         {/* Header */}
         <div className="text-center mb-10 animate-hero">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-2xl shadow-amber-500/30 mb-5">
@@ -54,7 +54,7 @@ const Leaderboard = () => {
 
         {/* Top 3 Podium */}
         {topHelpers.length >= 3 && (
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8 animate-hero-delayed">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8 animate-hero-delayed">
             {[1, 0, 2].map((idx) => {
               const helper = topHelpers[idx];
               const rank = getRankDisplay(idx)!;
@@ -62,20 +62,20 @@ const Leaderboard = () => {
               return (
                 <div
                   key={helper.id}
-                  className={`text-center ${isFirst ? '-mt-4' : 'mt-2'}`}
+                  className={`text-center ${isFirst ? '-mt-2 sm:-mt-4' : 'mt-1 sm:mt-2'}`}
                 >
-                  <div className={`relative inline-block mb-3`}>
-                    <Avatar className={`${isFirst ? 'h-20 w-20 sm:h-24 sm:w-24' : 'h-16 w-16 sm:h-20 sm:w-20'} ring-4 ${rank.ring} shadow-xl`}>
+                  <div className={`relative inline-block mb-2 sm:mb-3`}>
+                    <Avatar className={`${isFirst ? 'h-16 w-16 sm:h-24 sm:w-24' : 'h-12 w-12 sm:h-20 sm:w-20'} ring-2 sm:ring-4 ${rank.ring} shadow-xl`}>
                       <AvatarImage src={helper.profile_picture || ""} />
-                      <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-lg">
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-sm sm:text-lg">
                         {helper.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className={`absolute -top-2 -right-2 h-7 w-7 rounded-full ${rank.bg} flex items-center justify-center border-2 border-background shadow-sm`}>
-                      <rank.icon className={`h-3.5 w-3.5 ${rank.color}`} />
+                    <div className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-5 w-5 sm:h-7 sm:w-7 rounded-full ${rank.bg} flex items-center justify-center border-2 border-background shadow-sm`}>
+                      <rank.icon className={`h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 ${rank.color}`} />
                     </div>
                   </div>
-                  <p className="font-bold text-sm truncate px-1">{helper.name}</p>
+                  <p className="font-bold text-xs sm:text-sm truncate px-0.5">{helper.name}</p>
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     <span className="text-sm font-bold">{helper.rating.toFixed(1)}</span>

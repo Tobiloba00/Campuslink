@@ -167,7 +167,7 @@ export const PostCard = memo(({ post, isLiked, likeCount, isOwner, onLike, onDel
               alt={post.title}
               loading="lazy"
               decoding="async"
-              className="w-full max-h-[380px] object-cover"
+              className="w-full max-h-[280px] sm:max-h-[380px] object-cover"
             />
           </div>
         )}
@@ -218,11 +218,11 @@ export const PostCard = memo(({ post, isLiked, likeCount, isOwner, onLike, onDel
           {!isOwner && (
             <Button
               size="sm"
-              className="h-8 rounded-full px-4 gap-1.5 bg-gradient-primary text-white text-xs font-semibold shadow-sm shadow-primary/15 hover:shadow-primary/25 hover:scale-[1.03] active:scale-[0.97] transition-all"
+              className="h-8 rounded-full px-3 sm:px-4 gap-1 sm:gap-1.5 bg-gradient-primary text-white text-[11px] sm:text-xs font-semibold shadow-sm shadow-primary/15 hover:shadow-primary/25 hover:scale-[1.03] active:scale-[0.97] transition-all"
               onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}&postId=${post.id}`); }}
             >
-              <ActionIcon className="h-3.5 w-3.5" />
-              {config.action}
+              <ActionIcon className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate max-w-[80px] sm:max-w-none">{config.action}</span>
             </Button>
           )}
         </div>

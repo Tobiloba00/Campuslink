@@ -141,7 +141,7 @@ const Messages = () => {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <Navbar />
 
-      <div className="flex-1 flex flex-col overflow-hidden pt-14 pb-16 lg:pb-0">
+      <div className="flex-1 flex flex-col overflow-hidden pt-14 pb-[68px] lg:pb-0">
         {/* Offline banner */}
         {!isOnline && (
           <div className="flex items-center justify-center gap-2 py-2 bg-destructive/10 border-b border-destructive/20 text-destructive text-xs font-semibold">

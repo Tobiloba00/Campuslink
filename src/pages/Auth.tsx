@@ -112,7 +112,7 @@ const Auth = () => {
       </div>
 
       {/* Right Panel — Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 relative">
         <div className="mesh-background" />
 
         {/* Mobile logo */}

@@ -157,7 +157,7 @@ const Profile = () => {
 
       {/* Stats Row */}
       <div className="max-w-4xl mx-auto px-4 mb-8">
-        <div className="grid grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: 'Rating', value: profile?.rating?.toFixed(1) || '0.0', icon: Star, color: 'text-amber-500' },
             { label: 'Reviews', value: reviews.length, icon: Award, color: 'text-accent' },

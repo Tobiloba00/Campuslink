@@ -123,7 +123,7 @@ const Index = () => {
     <div className="min-h-screen bg-background overflow-hidden">
       {/* ═══ Navbar ═══ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-white/10 dark:border-white/5">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 group">
             <div className="h-8 w-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110 group-hover:rotate-3">
               <GraduationCap className="h-4.5 w-4.5 text-primary-foreground" />
@@ -144,7 +144,7 @@ const Index = () => {
       </header>
 
       {/* ═══ Hero Section ═══ */}
-      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32">
+      <section className="relative pt-28 pb-16 md:pt-40 md:pb-28">
         {/* Decorative elements */}
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-40 left-1/4 w-[300px] h-[300px] bg-accent/5 rounded-full blur-[100px] pointer-events-none animate-float-slow" />
@@ -208,18 +208,18 @@ const Index = () => {
       <section ref={statsSection.ref} className="relative py-16 md:py-20 border-y border-border/50">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-transparent to-accent/3" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
-          <div className="grid grid-cols-3 gap-8 text-center">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
             {[
               { value: userCount, suffix: '+', label: 'Active Students', icon: Users, color: 'text-primary' },
               { value: postCount, suffix: '+', label: 'Posts Created', icon: BookOpen, color: 'text-accent' },
               { value: connectionCount, suffix: '+', label: 'Messages Sent', icon: MessageSquare, color: 'text-primary' },
             ].map((stat, i) => (
               <div key={i} className={`${statsSection.inView ? 'animate-count-up' : 'opacity-0'}`} style={{ animationDelay: `${i * 0.15}s` }}>
-                <stat.icon className={`h-5 w-5 mx-auto mb-3 ${stat.color} opacity-60`} />
-                <div className={`text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight ${stat.color}`}>
+                <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-2 sm:mb-3 ${stat.color} opacity-60`} />
+                <div className={`text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight ${stat.color}`}>
                   {formatNumber(stat.value)}{stat.suffix}
                 </div>
-                <div className="text-sm text-muted-foreground mt-1.5 font-medium">{stat.label}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>

@@ -224,7 +224,7 @@ const PostDetail = () => {
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between py-3 border-y border-border/30">
+          <div className="flex flex-wrap items-center justify-between gap-2 py-3 border-y border-border/30">
             <div className="flex items-center gap-1">
               <button
                 onClick={toggleLike}
@@ -232,20 +232,20 @@ const PostDetail = () => {
                   isLiked ? 'bg-red-500/10 text-red-500' : 'hover:bg-red-500/5 hover:text-red-500 text-muted-foreground'
                 }`}
               >
-                <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
-                <span className="font-semibold">{likeCount || ''}</span>
+                <Heart className={`h-4.5 w-4.5 ${isLiked ? 'fill-current' : ''}`} />
+                <span className="font-semibold text-xs">{likeCount || ''}</span>
               </button>
               <button
                 onClick={() => document.getElementById('comment-input')?.focus()}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-full text-sm text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
+                className="flex items-center h-9 w-9 justify-center rounded-full text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
               >
-                <MessageSquare className="h-5 w-5" />
+                <MessageSquare className="h-4.5 w-4.5" />
               </button>
               <button
                 onClick={handleShare}
                 className="flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
               >
-                <Share2 className="h-5 w-5" />
+                <Share2 className="h-4.5 w-4.5" />
               </button>
             </div>
 
@@ -253,20 +253,20 @@ const PostDetail = () => {
               {!isOwner && (
                 <Button
                   size="sm"
-                  className="h-9 rounded-full px-4 bg-gradient-primary text-white text-xs font-semibold shadow-sm"
+                  className="h-8 sm:h-9 rounded-full px-3 sm:px-4 bg-gradient-primary text-white text-[11px] sm:text-xs font-semibold shadow-sm"
                   onClick={() => navigate(`/messages?userId=${post.user_id}&postId=${post.id}`)}
                 >
-                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                  <MessageSquare className="h-3.5 w-3.5 mr-1" />
                   Message
                 </Button>
               )}
               {isOwner && (
                 <>
-                  <Button variant="outline" size="sm" className="h-9 rounded-full text-xs" onClick={() => navigate(`/edit-post/${id}`)}>
-                    <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit
+                  <Button variant="outline" size="sm" className="h-8 sm:h-9 rounded-full text-[11px] sm:text-xs px-3" onClick={() => navigate(`/edit-post/${id}`)}>
+                    <Edit className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="h-9 rounded-full text-xs text-destructive hover:bg-destructive/10" onClick={handleDelete}>
-                    <Trash className="h-3.5 w-3.5 mr-1.5" /> Delete
+                  <Button variant="outline" size="sm" className="h-8 sm:h-9 rounded-full text-[11px] sm:text-xs px-3 text-destructive hover:bg-destructive/10" onClick={handleDelete}>
+                    <Trash className="h-3.5 w-3.5 mr-1" /> Delete
                   </Button>
                 </>
               )}
