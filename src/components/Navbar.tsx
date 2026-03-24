@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users, Trophy, Home, Search } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -75,13 +76,8 @@ export const Navbar = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30">
       <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto">
         {/* Logo */}
-        <Link to={user ? "/feed" : "/"} className="flex items-center gap-2 group">
-          <img
-            src="/logo.png"
-            alt="CampusLink"
-            className="h-9 w-9 object-contain logo-adaptive transition-transform duration-200 group-hover:scale-110"
-          />
-          <span className="font-display font-bold text-base tracking-tight hidden sm:inline-block">CampusLink</span>
+        <Link to={user ? "/feed" : "/"} className="group">
+          <Logo size={34} showText textClassName="text-base hidden sm:inline-block" />
         </Link>
 
         <div className="flex items-center gap-1">

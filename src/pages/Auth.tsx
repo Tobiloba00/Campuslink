@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { GraduationCap, ArrowRight, BookOpen, MessageSquare, Star, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, BookOpen, MessageSquare, Star, Eye, EyeOff } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -70,9 +71,8 @@ const Auth = () => {
         <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
           {/* Logo */}
           <div>
-            <button onClick={() => navigate('/')} className="flex items-center gap-2.5 group">
-              <img src="/logo.png" alt="CampusLink" className="h-10 w-10 object-contain invert brightness-110 group-hover:scale-110 transition-transform" />
-              <span className="font-bold text-lg text-white tracking-tight">CampusLink</span>
+            <button onClick={() => navigate('/')} className="group">
+              <Logo size={36} showText className="text-white" textClassName="text-lg text-white" />
             </button>
           </div>
 
@@ -114,16 +114,15 @@ const Auth = () => {
         <div className="mesh-background" />
 
         {/* Mobile logo */}
-        <button onClick={() => navigate('/')} className="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
-          <img src="/logo.png" alt="CampusLink" className="h-9 w-9 object-contain logo-adaptive" />
-          <span className="font-bold text-sm tracking-tight">CampusLink</span>
+        <button onClick={() => navigate('/')} className="absolute top-6 left-6 lg:hidden">
+          <Logo size={32} showText textClassName="text-sm" />
         </button>
 
         <div className="w-full max-w-sm relative z-10 animate-hero">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="lg:hidden mx-auto mb-5">
-              <img src="/logo.png" alt="CampusLink" className="h-16 w-16 object-contain logo-adaptive mx-auto" />
+            <div className="lg:hidden flex justify-center mb-5">
+              <Logo size={56} />
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
               {isSignUp ? "Create your account" : "Welcome back"}

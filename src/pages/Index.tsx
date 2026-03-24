@@ -8,6 +8,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
 
 type PlatformStats = {
   users: number;
@@ -124,9 +125,8 @@ const Index = () => {
       {/* ═══ Navbar ═══ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-white/10 dark:border-white/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2.5 group">
-            <img src="/logo.png" alt="CampusLink" className="h-10 w-10 object-contain logo-adaptive transition-transform group-hover:scale-110" />
-            <span className="font-display font-bold text-lg tracking-tight">CampusLink</span>
+          <a href="/" className="group">
+            <Logo size={36} showText textClassName="text-lg" />
           </a>
           <div className="flex items-center gap-3">
             <ThemeToggle />
