@@ -7,6 +7,7 @@ import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Trophy, Home,
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ export const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const location = useLocation();
+  const navHidden = useScrollDirection(12);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -72,18 +74,19 @@ export const Navbar = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30"
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30 transition-transform duration-300 ease-out ${
+        navHidden ? '-translate-y-full' : 'translate-y-0'
+      }`}
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto relative">
 
         {/* Left — Logo icon on mobile, Logo + text on desktop */}
         <Link to={user ? "/feed" : "/"} className="z-10 flex items-center">
-          {/* Mobile: icon only */}
           <div className="lg:hidden">
             <Logo size={28} />
           </div>
-          {/* Desktop: icon + text */}
           <div className="hidden lg:block">
             <Logo size={34} showText textClassName="text-base" />
           </div>

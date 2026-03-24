@@ -342,7 +342,7 @@ const Feed = () => {
         <div className="flex gap-8 justify-center">
           {/* ─── Left Sidebar ─── */}
           <aside className="hidden lg:block w-56 flex-shrink-0">
-            <div className="sticky top-[72px] space-y-5 pt-1">
+            <div className="sticky top-4 space-y-5 pt-1">
               <div className="space-y-1">
                 {FILTER_OPTIONS.map(opt => (
                   <button
@@ -371,7 +371,7 @@ const Feed = () => {
           {/* ─── Main Feed ─── */}
           <main className="w-full max-w-[600px]">
             {/* Search */}
-            <div className="sticky top-[56px] z-30 bg-background/80 backdrop-blur-xl pb-3 pt-4 -mx-1 px-1">
+            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl pb-3 pt-4 -mx-1 px-1">
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -447,7 +447,7 @@ const Feed = () => {
 
           {/* ─── Right Sidebar ─── */}
           <aside className="hidden xl:block w-64 flex-shrink-0">
-            <div className="sticky top-[72px] space-y-5 pt-1">
+            <div className="sticky top-4 space-y-5 pt-1">
               {/* Campus Pulse */}
               <div className="rounded-2xl border border-border/30 p-4">
                 <div className="flex items-center gap-2 mb-4">

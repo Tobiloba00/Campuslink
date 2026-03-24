@@ -1,11 +1,12 @@
-// CampusLink Service Worker — Cache-first for assets, network-first for API
-const CACHE_NAME = 'campuslink-v1';
+// CampusLink Service Worker v2 — with update support
+const CACHE_NAME = 'campuslink-v2';
 const STATIC_ASSETS = [
   '/',
   '/feed',
   '/manifest.json',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
+  '/icons/apple-touch-icon.png',
 ];
 
 // Install: pre-cache shell
@@ -13,7 +14,14 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
-  self.skipWaiting();
+  // Don't skipWaiting automatically — let the UpdatePrompt control this
+});
+
+// Listen for SKIP_WAITING message from the app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Activate: clean old caches
@@ -50,7 +58,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For static assets (JS, CSS, images, fonts): cache-first
+  // For static assets: cache-first
   if (
     url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|woff2?|ttf|ico)$/) ||
     url.hostname === 'fonts.googleapis.com' ||

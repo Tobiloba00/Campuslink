@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { Logo } from "@/components/Logo";
 
 // Eagerly loaded (landing + auth — fast first paint)
@@ -64,6 +65,7 @@ const App = () => (
           </PageTransition>
         </Suspense>
         <PWAInstallPrompt />
+        <UpdatePrompt />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
