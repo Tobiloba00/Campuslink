@@ -71,9 +71,7 @@ const Auth = () => {
           {/* Logo */}
           <div>
             <button onClick={() => navigate('/')} className="flex items-center gap-2.5 group">
-              <div className="h-9 w-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
-                <GraduationCap className="h-5 w-5 text-white" />
-              </div>
+              <img src="/logo.png" alt="CampusLink" className="h-10 w-10 object-contain invert brightness-110 group-hover:scale-110 transition-transform" />
               <span className="font-bold text-lg text-white tracking-tight">CampusLink</span>
             </button>
           </div>
@@ -117,17 +115,15 @@ const Auth = () => {
 
         {/* Mobile logo */}
         <button onClick={() => navigate('/')} className="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
-          <div className="h-8 w-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
-            <GraduationCap className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <img src="/logo.png" alt="CampusLink" className="h-9 w-9 object-contain logo-adaptive" />
           <span className="font-bold text-sm tracking-tight">CampusLink</span>
         </button>
 
         <div className="w-full max-w-sm relative z-10 animate-hero">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="lg:hidden mx-auto h-14 w-14 rounded-2xl bg-gradient-primary flex items-center justify-center mb-5 shadow-xl shadow-primary/20">
-              <GraduationCap className="h-7 w-7 text-primary-foreground" />
+            <div className="lg:hidden mx-auto mb-5">
+              <img src="/logo.png" alt="CampusLink" className="h-16 w-16 object-contain logo-adaptive mx-auto" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
               {isSignUp ? "Create your account" : "Welcome back"}

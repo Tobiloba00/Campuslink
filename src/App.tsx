@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
@@ -29,9 +28,9 @@ const queryClient = new QueryClient();
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
-    <div className="flex flex-col items-center gap-3">
-      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">Loading...</p>
+    <div className="flex flex-col items-center gap-4">
+      <img src="/logo.png" alt="CampusLink" className="h-16 w-16 object-contain logo-adaptive animate-pulse" />
+      <p className="text-xs text-muted-foreground font-medium tracking-wide">Loading...</p>
     </div>
   </div>
 );

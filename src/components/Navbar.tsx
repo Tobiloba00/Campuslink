@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { GraduationCap, LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users, Trophy, Home, Search } from "lucide-react";
+import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users, Trophy, Home, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -76,9 +76,11 @@ export const Navbar = () => {
       <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto">
         {/* Logo */}
         <Link to={user ? "/feed" : "/"} className="flex items-center gap-2 group">
-          <div className="h-8 w-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-sm transition-transform duration-200 group-hover:scale-105">
-            <GraduationCap className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="CampusLink"
+            className="h-9 w-9 object-contain logo-adaptive transition-transform duration-200 group-hover:scale-110"
+          />
           <span className="font-display font-bold text-base tracking-tight hidden sm:inline-block">CampusLink</span>
         </Link>
 

@@ -125,9 +125,7 @@ const Index = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-white/10 dark:border-white/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 group">
-            <div className="h-8 w-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110 group-hover:rotate-3">
-              <GraduationCap className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="CampusLink" className="h-10 w-10 object-contain logo-adaptive transition-transform group-hover:scale-110" />
             <span className="font-display font-bold text-lg tracking-tight">CampusLink</span>
           </a>
           <div className="flex items-center gap-3">

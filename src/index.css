@@ -61,6 +61,22 @@ body {
   animation: page-enter 0.25s ease-out forwards;
 }
 
+/* ═══════════════════════════════════════════
+   Logo — Transparent background + dark mode
+   ═══════════════════════════════════════════ */
+
+/* Light mode: mix-blend-mode kills white bg, shows black art */
+.logo-adaptive {
+  mix-blend-mode: multiply;
+  transition: filter 0.3s ease;
+}
+
+/* Dark mode: invert the black art to white */
+.dark .logo-adaptive {
+  filter: invert(1) brightness(1.1);
+  mix-blend-mode: screen;
+}
+
 /* Hide scrollbar for category pills */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
