@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { GraduationCap, LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users, Trophy } from "lucide-react";
+import { GraduationCap, LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users, Trophy, Home, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,7 +18,6 @@ export const Navbar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
 
   useEffect(() => {
@@ -64,34 +63,37 @@ export const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navLinks = [
-    { path: '/users', icon: Users, label: 'People' },
+  // Desktop nav links — mirrors BottomNav items so the experience is consistent
+  const desktopLinks = [
+    { path: '/feed', icon: Home, label: 'Feed' },
+    { path: '/user-search', icon: Search, label: 'Explore' },
     { path: '/messages', icon: MessageSquare, label: 'Messages' },
     { path: '/leaderboard', icon: Trophy, label: 'Leaders' },
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/50 dark:border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30">
       <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto">
-        <Link to="/feed" className="flex items-center gap-2 group">
-          <div className="h-8 w-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+        {/* Logo */}
+        <Link to={user ? "/feed" : "/"} className="flex items-center gap-2 group">
+          <div className="h-8 w-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-sm transition-transform duration-200 group-hover:scale-105">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-display font-bold text-base tracking-tight hidden sm:inline-block">CampusLink</span>
         </Link>
 
         <div className="flex items-center gap-1">
-          {/* Desktop nav links */}
-          {user && navLinks.map((link) => (
+          {/* Desktop nav links — hidden on mobile (BottomNav handles it) */}
+          {user && desktopLinks.map((link) => (
             <Button
               key={link.path}
               variant="ghost"
               size="sm"
               asChild
-              className={`hidden md:flex h-9 px-3 rounded-xl transition-all ${
+              className={`hidden lg:flex h-9 px-3 rounded-xl transition-all ${
                 isActive(link.path)
                   ? 'bg-primary/10 text-primary font-semibold'
-                  : 'hover:bg-primary/5 text-muted-foreground hover:text-foreground'
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
               <Link to={link.path}>
@@ -102,7 +104,7 @@ export const Navbar = () => {
           ))}
 
           {user && isAdmin && (
-            <Button variant="ghost" size="sm" asChild className="hidden md:flex h-9 px-3 rounded-xl hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all">
+            <Button variant="ghost" size="sm" asChild className="hidden lg:flex h-9 px-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
               <Link to="/admin">
                 <LayoutDashboard className="h-4 w-4 mr-1.5" />
                 <span className="text-xs font-medium">Admin</span>
@@ -110,15 +112,15 @@ export const Navbar = () => {
             </Button>
           )}
 
-          <div className="w-px h-5 bg-border/50 mx-1.5 hidden md:block" />
+          {user && <div className="w-px h-5 bg-border/40 mx-1 hidden lg:block" />}
 
           <ThemeToggle />
 
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-0.5 h-9 w-9 rounded-full hover:bg-primary/10 transition-all active:scale-90">
-                  <Avatar className="h-7 w-7 ring-2 ring-primary/10 transition-all hover:ring-primary/30">
+                <Button variant="ghost" size="sm" className="p-0.5 h-9 w-9 rounded-full hover:bg-muted transition-all active:scale-90">
+                  <Avatar className="h-7 w-7 ring-2 ring-border/30">
                     <AvatarImage src={userProfile?.profile_picture || ""} />
                     <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
                       {userProfile?.name?.charAt(0) || <UserIcon className="h-3 w-3" />}
@@ -126,40 +128,45 @@ export const Navbar = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 glass-panel border-white/10 mt-2 p-1.5">
-                {/* User info header */}
+              <DropdownMenuContent align="end" className="w-52 mt-2 p-1.5">
                 {userProfile && (
                   <>
                     <div className="px-3 py-2">
                       <p className="font-semibold text-sm truncate">{userProfile.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
-                    <DropdownMenuSeparator className="bg-border/50" />
+                    <DropdownMenuSeparator />
                   </>
                 )}
-                <DropdownMenuItem asChild className="rounded-lg focus:bg-primary/10 cursor-pointer">
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                   <Link to="/profile">
                     <UserIcon className="h-4 w-4 mr-2" />
                     View Profile
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  <Link to="/leaderboard">
+                    <Trophy className="h-4 w-4 mr-2" />
+                    Leaderboard
+                  </Link>
+                </DropdownMenuItem>
                 {isAdmin && (
-                  <DropdownMenuItem asChild className="md:hidden rounded-lg focus:bg-primary/10 cursor-pointer">
+                  <DropdownMenuItem asChild className="lg:hidden rounded-lg cursor-pointer">
                     <Link to="/admin">
                       <LayoutDashboard className="h-4 w-4 mr-2" />
                       Admin
                     </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator className="bg-border/50" />
-                <DropdownMenuItem onClick={handleLogout} className="rounded-lg focus:bg-destructive/10 text-destructive focus:text-destructive cursor-pointer">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="rounded-lg text-destructive focus:text-destructive cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild size="sm" className="h-8 rounded-full px-4 text-xs font-semibold bg-gradient-primary shadow-lg hover:shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+            <Button asChild size="sm" className="h-8 rounded-full px-4 text-xs font-semibold bg-primary hover:bg-primary/90 transition-all">
               <Link to="/auth">Sign In</Link>
             </Button>
           )}

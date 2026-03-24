@@ -45,6 +45,22 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Page transition — only on route change, never on re-render */
+@keyframes page-enter {
+  from {
+    opacity: 0.6;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.25s ease-out forwards;
+}
+
 /* Hide scrollbar for category pills */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

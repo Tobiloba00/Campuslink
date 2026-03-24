@@ -1,21 +1,21 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, PlusSquare, MessageCircle, User } from "lucide-react";
+import { Home, Search, Plus, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const mountedRef = useRef(true);
 
-  // Fetch unread message count
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     const fetchUnread = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !mountedRef.current) return;
 
       const { count } = await supabase
         .from('messages')
@@ -23,43 +23,37 @@ const BottomNav = () => {
         .eq('receiver_id', user.id)
         .is('read_at', null);
 
-      if (mounted && count) setUnreadCount(count);
+      if (mountedRef.current) setUnreadCount(count || 0);
     };
 
     fetchUnread();
 
-    // Listen for new messages
     const channel = supabase
       .channel('bottomnav-unread')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
-        fetchUnread();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => {
-        fetchUnread();
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => fetchUnread())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchUnread())
       .subscribe();
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, [location.pathname]); // Re-check when navigating
+  }, [location.pathname]);
 
   const navItems = [
     { path: "/feed", icon: Home, label: "Home" },
     { path: "/user-search", icon: Search, label: "Explore" },
-    { path: "/create-post", icon: PlusSquare, label: "Post" },
+    { path: "/create-post", icon: Plus, label: "Post", isCreate: true },
     { path: "/messages", icon: MessageCircle, label: "Chat", badge: unreadCount },
-    { path: "/profile", icon: User, label: "Profile" },
+    { path: "/profile", icon: User, label: "You" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-      {/* Solid background with subtle top border */}
-      <div className="bg-background border-t border-border/40 safe-area-inset-bottom">
-        <nav className="flex items-stretch justify-around max-w-lg mx-auto h-[52px]">
+      <div className="bg-background/95 backdrop-blur-md border-t border-border/30 safe-area-inset-bottom">
+        <nav className="flex items-stretch justify-around max-w-md mx-auto h-14 px-2">
           {navItems.map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
@@ -69,45 +63,52 @@ const BottomNav = () => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center flex-1 gap-0.5",
-                  "transition-colors duration-200",
-                  "active:opacity-60"
+                  "relative flex flex-col items-center justify-center flex-1 gap-1 pt-1",
+                  "transition-all duration-150",
+                  "active:scale-90"
                 )}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
               >
                 <div className="relative">
-                  <Icon
-                    className={cn(
-                      "h-[22px] w-[22px] transition-colors duration-200",
+                  {item.isCreate ? (
+                    // Create button — special styling
+                    <div className={cn(
+                      "h-7 w-7 rounded-lg flex items-center justify-center transition-colors duration-150",
                       active
-                        ? "text-foreground"
-                        : "text-muted-foreground/70"
-                    )}
-                    strokeWidth={active ? 2.5 : 1.8}
-                    fill={active ? "currentColor" : "none"}
-                  />
+                        ? "bg-primary text-white"
+                        : "bg-muted/80 text-muted-foreground"
+                    )}>
+                      <Icon className="h-4 w-4" strokeWidth={2.5} />
+                    </div>
+                  ) : (
+                    <Icon
+                      className={cn(
+                        "h-[23px] w-[23px] transition-colors duration-150",
+                        active ? "text-primary" : "text-muted-foreground/60"
+                      )}
+                      strokeWidth={active ? 2.2 : 1.7}
+                    />
+                  )}
 
                   {/* Unread badge */}
-                  {item.badge && item.badge > 0 && (
-                    <span className={cn(
-                      "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center",
-                      "bg-red-500 text-white text-[9px] font-bold rounded-full",
-                      "ring-2 ring-background"
-                    )}>
+                  {item.badge != null && item.badge > 0 && (
+                    <span className="absolute -top-1 -right-2.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full ring-2 ring-background">
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
                   )}
                 </div>
 
-                <span className={cn(
-                  "text-[10px] leading-tight transition-colors duration-200",
-                  active
-                    ? "text-foreground font-semibold"
-                    : "text-muted-foreground/60 font-medium"
-                )}>
-                  {item.label}
-                </span>
+                {!item.isCreate && (
+                  <span className={cn(
+                    "text-[10px] leading-none transition-colors duration-150",
+                    active
+                      ? "text-primary font-semibold"
+                      : "text-muted-foreground/50 font-medium"
+                  )}>
+                    {item.label}
+                  </span>
+                )}
               </button>
             );
           })}

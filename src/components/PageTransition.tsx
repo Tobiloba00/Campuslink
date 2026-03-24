@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 interface PageTransitionProps {
   children: React.ReactNode;
@@ -8,42 +7,27 @@ interface PageTransitionProps {
 
 export function PageTransition({ children }: PageTransitionProps) {
   const location = useLocation();
-  const [displayedChildren, setDisplayedChildren] = useState(children);
-  const [transitioning, setTransitioning] = useState(false);
-  const [phase, setPhase] = useState<'enter' | 'idle'>('enter');
-  const prevPathRef = useRef(location.pathname);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const prevPath = useRef(location.pathname);
 
   useEffect(() => {
-    if (location.pathname === prevPathRef.current) {
-      setDisplayedChildren(children);
-      return;
-    }
-
-    prevPathRef.current = location.pathname;
-    setTransitioning(true);
-    setPhase('enter');
-
-    // Small delay to ensure the exit animation plays
-    const timeout = setTimeout(() => {
-      setDisplayedChildren(children);
-      setTransitioning(false);
-      // Reset scroll
+    if (location.pathname !== prevPath.current) {
+      prevPath.current = location.pathname;
+      setIsAnimating(true);
       window.scrollTo(0, 0);
-    }, 80);
 
-    return () => clearTimeout(timeout);
-  }, [location.pathname, children]);
+      // Remove animation class after it plays
+      const timer = setTimeout(() => setIsAnimating(false), 250);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname]);
 
   return (
     <div
-      className={cn(
-        "transition-all duration-300 ease-out",
-        transitioning
-          ? "opacity-0 translate-y-2"
-          : "opacity-100 translate-y-0"
-      )}
+      key={location.pathname}
+      className={isAnimating ? 'animate-page-enter' : undefined}
     >
-      {displayedChildren}
+      {children}
     </div>
   );
 }
