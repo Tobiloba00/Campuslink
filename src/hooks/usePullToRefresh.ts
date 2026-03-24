@@ -17,25 +17,36 @@ export function usePullToRefresh({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const startY = useRef(0);
   const pulling = useRef(false);
+  const isPulling = useRef(false); // True only when actively in a pull gesture
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (!enabled || isRefreshing) return;
-    if (window.scrollY > 5) return; // Only trigger at top
+    if (window.scrollY > 5) return;
     startY.current = e.touches[0].clientY;
     pulling.current = true;
+    isPulling.current = false;
   }, [enabled, isRefreshing]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!pulling.current || isRefreshing) return;
+
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY.current;
 
     if (diff > 0 && window.scrollY <= 0) {
-      // Rubber-band effect: diminishing returns as you pull further
       const dampened = Math.min(maxPull, diff * 0.5);
       setPullDistance(dampened);
-      if (dampened > 10) {
+      isPulling.current = true;
+
+      // Only preventDefault when we're clearly in a pull gesture (> 15px)
+      // This prevents interfering with normal scroll
+      if (dampened > 15) {
         e.preventDefault();
+      }
+    } else {
+      // Not a pull — stop tracking
+      if (!isPulling.current) {
+        pulling.current = false;
       }
     }
   }, [isRefreshing, maxPull]);
@@ -43,6 +54,7 @@ export function usePullToRefresh({
   const handleTouchEnd = useCallback(async () => {
     if (!pulling.current) return;
     pulling.current = false;
+    isPulling.current = false;
 
     if (pullDistance >= threshold) {
       setIsRefreshing(true);
@@ -58,6 +70,8 @@ export function usePullToRefresh({
   useEffect(() => {
     if (!enabled) return;
 
+    // Use passive: true for touchstart and touchend (never call preventDefault)
+    // Use passive: false for touchmove ONLY so we can prevent default during active pull
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });

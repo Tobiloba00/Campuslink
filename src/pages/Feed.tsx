@@ -371,7 +371,7 @@ const Feed = () => {
           {/* ─── Main Feed ─── */}
           <main className="w-full max-w-[600px]">
             {/* Search */}
-            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl pb-3 pt-4 -mx-1 px-1">
+            <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl pb-3 pt-3 -mx-1 px-1 border-b border-border/10">
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
