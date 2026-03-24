@@ -22,10 +22,9 @@ button, a, [role="button"] {
   -webkit-touch-callout: none;
 }
 
-/* Smooth scrolling everywhere */
+/* Smooth scrolling — only for programmatic scroll, not user scroll (which should be instant) */
 html {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
 }
 
 /* Standalone PWA — hide browser UI artifacts */
@@ -263,7 +262,6 @@ html {
     @apply bg-background text-foreground antialiased;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     letter-spacing: -0.01em;
-    overflow-x: clip; /* clip instead of hidden — doesn't create scroll-blocking BFC */
   }
 
   h1,
