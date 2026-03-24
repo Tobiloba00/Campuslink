@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Users, Trophy, Home, Search } from "lucide-react";
+import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Trophy, Home, Search } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -72,16 +72,24 @@ export const Navbar = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto relative">
 
-        {/* Left — Logo icon (always) + text (desktop only) */}
-        <Link to={user ? "/feed" : "/"} className="group flex items-center z-10">
-          <Logo size={30} className="lg:hidden" />
-          <Logo size={34} showText textClassName="text-base" className="hidden lg:flex" />
+        {/* Left — Logo icon on mobile, Logo + text on desktop */}
+        <Link to={user ? "/feed" : "/"} className="z-10 flex items-center">
+          {/* Mobile: icon only */}
+          <div className="lg:hidden">
+            <Logo size={28} />
+          </div>
+          {/* Desktop: icon + text */}
+          <div className="hidden lg:block">
+            <Logo size={34} showText textClassName="text-base" />
+          </div>
         </Link>
 
-        {/* Center — Wordmark on mobile (like Instagram) */}
+        {/* Center — Wordmark on mobile only */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none lg:hidden">
           <span className="font-display font-extrabold text-[17px] tracking-tight text-foreground">
             CampusLink
@@ -90,7 +98,6 @@ export const Navbar = () => {
 
         {/* Right — Actions */}
         <div className="flex items-center gap-1 z-10">
-          {/* Desktop nav links */}
           {user && desktopLinks.map((link) => (
             <Button
               key={link.path}
