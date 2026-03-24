@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);padding:32px 32px 28px;text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                CampusLink
+              </div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px;font-weight:500;letter-spacing:2px;text-transform:uppercase;">
+                Connect &middot; Learn &middot; Thrive
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 32px 20px;">
+              <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#09090b;text-align:center;">
+                Verify your email
+              </h1>
+              <p style="margin:0 0 32px;font-size:14px;color:#71717a;text-align:center;line-height:1.7;">
+                Use this code to complete your CampusLink registration.<br>It expires in <strong style="color:#52525b;">10 minutes</strong>.
+              </p>
+
+              <!-- OTP Code Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <div style="background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:2px solid #dbeafe;border-radius:16px;padding:24px 40px;display:inline-block;">
+                      <div style="font-size:40px;font-weight:800;letter-spacing:10px;color:#2563eb;font-family:'Courier New',Consolas,monospace;">
+                        {{ .Token }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Helper text -->
+              <p style="margin:28px 0 0;font-size:13px;color:#a1a1aa;text-align:center;line-height:1.6;">
+                Enter this code in the CampusLink app to verify your account.<br>
+                If you didn't sign up, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 32px;">
+              <hr style="border:none;border-top:1px solid #f4f4f5;margin:28px 0 20px;">
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:0 32px 28px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:11px;color:#a1a1aa;">
+                Powered by <span style="font-weight:700;color:#71717a;">Omniai</span> &middot; AI-driven campus networking
+              </p>
+              <p style="margin:0;font-size:10px;color:#d4d4d8;">
+                &copy; 2025 CampusLink. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Sub-footer -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;margin-top:16px;">
+          <tr>
+            <td style="text-align:center;">
+              <p style="margin:0;font-size:10px;color:#a1a1aa;">
+                This is an automated message from CampusLink. Please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
