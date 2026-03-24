@@ -1,43 +1,7 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="512" height="512" rx="112" fill="#2563eb"/>
-  <!-- Cap top -->
-  <path d="M256 115L374 158L256 201L138 158Z" fill="white" opacity="0.2" stroke="white" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M256 132L342 165L256 196L170 165Z" stroke="white" stroke-width="1.5" opacity="0.3" fill="none"/>
-  <path d="M256 145L320 168L256 190L192 168Z" stroke="white" stroke-width="1" opacity="0.18" fill="none"/>
-  <!-- Center rosette -->
-  <circle cx="256" cy="158" r="9" fill="white" opacity="0.35"/>
-  <circle cx="256" cy="158" r="5.5" stroke="white" stroke-width="1" fill="none" opacity="0.5"/>
-  <circle cx="256" cy="158" r="3" fill="white" opacity="0.7"/>
-  <!-- Cap body -->
-  <path d="M176 166V235C176 252 208 270 256 270C304 270 336 252 336 235V166" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-  <path d="M190 170V228C190 243 214 258 256 258C298 258 322 243 322 228V170" stroke="white" stroke-width="1" opacity="0.2" fill="none"/>
-  <!-- Tassel cord -->
-  <path d="M256 158Q264 185 344 195Q348 196 348 202" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <!-- Tassel knot -->
-  <ellipse cx="348" cy="208" rx="8" ry="6" fill="white" opacity="0.55"/>
-  <!-- Tassel threads -->
-  <path d="M341 213Q339 244 337 286" stroke="white" stroke-width="2.5" opacity="0.5" fill="none" stroke-linecap="round"/>
-  <path d="M344 213Q343 244 342 286" stroke="white" stroke-width="2" opacity="0.4" fill="none" stroke-linecap="round"/>
-  <path d="M347 213Q347 244 347 286" stroke="white" stroke-width="2.5" opacity="0.5" fill="none" stroke-linecap="round"/>
-  <path d="M350 213Q351 244 352 286" stroke="white" stroke-width="2" opacity="0.4" fill="none" stroke-linecap="round"/>
-  <path d="M353 213Q355 244 357 286" stroke="white" stroke-width="2.5" opacity="0.5" fill="none" stroke-linecap="round"/>
-  <!-- Tassel tips -->
-  <circle cx="337" cy="288" r="2" fill="white" opacity="0.4"/>
-  <circle cx="342" cy="290" r="2" fill="white" opacity="0.4"/>
-  <circle cx="347" cy="290" r="2" fill="white" opacity="0.4"/>
-  <circle cx="352" cy="290" r="2" fill="white" opacity="0.4"/>
-  <circle cx="357" cy="288" r="2" fill="white" opacity="0.4"/>
-  <!-- Sparkles -->
-  <path d="M394 72L397.5 84L410 88L397.5 92L394 104L390.5 92L378 88L390.5 84Z" fill="white" opacity="0.85"/>
-  <path d="M118 84L120.5 92L129 95L120.5 98L118 106L115.5 98L107 95L115.5 92Z" fill="white" opacity="0.45"/>
-  <path d="M68 235L70.5 244L80 247L70.5 250L68 259L65.5 250L56 247L65.5 244Z" fill="white" opacity="0.45"/>
-  <path d="M132 385L134 391L140 393L134 395L132 401L130 395L124 393L130 391Z" fill="white" opacity="0.3"/>
-  <path d="M404 335L405.8 340L411 342L405.8 344L404 349L402.2 344L397 342L402.2 340Z" fill="white" opacity="0.35"/>
-  <!-- Subtle particle dots -->
-  <circle cx="100" cy="160" r="1.5" fill="white" opacity="0.12"/>
-  <circle cx="412" cy="155" r="1.5" fill="white" opacity="0.12"/>
-  <circle cx="85" cy="310" r="1.2" fill="white" opacity="0.1"/>
-  <circle cx="420" cy="290" r="1.2" fill="white" opacity="0.1"/>
-  <circle cx="170" cy="370" r="1.5" fill="white" opacity="0.1"/>
-  <circle cx="256" cy="390" r="1.2" fill="white" opacity="0.08"/>
+  <path d="M256 100L406 164L256 228L106 164Z" fill="white"/>
+  <path d="M160 180V256C160 282 200 304 256 304C312 304 352 282 352 256V180L256 228L160 180Z" fill="white" opacity="0.55"/>
+  <line x1="352" y1="180" x2="352" y2="372" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="352" cy="392" r="18" fill="white"/>
 </svg>
