@@ -64,7 +64,6 @@ export const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Desktop nav links — mirrors BottomNav items so the experience is consistent
   const desktopLinks = [
     { path: '/feed', icon: Home, label: 'Feed' },
     { path: '/user-search', icon: Search, label: 'Explore' },
@@ -74,14 +73,24 @@ export const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/30">
-      <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto">
-        {/* Logo */}
-        <Link to={user ? "/feed" : "/"} className="group">
-          <Logo size={34} showText textClassName="text-base hidden sm:inline-block" />
+      <nav className="h-14 flex items-center justify-between px-4 sm:px-6 max-w-6xl w-full mx-auto relative">
+
+        {/* Left — Logo icon (always) + text (desktop only) */}
+        <Link to={user ? "/feed" : "/"} className="group flex items-center z-10">
+          <Logo size={30} className="lg:hidden" />
+          <Logo size={34} showText textClassName="text-base" className="hidden lg:flex" />
         </Link>
 
-        <div className="flex items-center gap-1">
-          {/* Desktop nav links — hidden on mobile (BottomNav handles it) */}
+        {/* Center — Wordmark on mobile (like Instagram) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none lg:hidden">
+          <span className="font-display font-extrabold text-[17px] tracking-tight text-foreground">
+            CampusLink
+          </span>
+        </div>
+
+        {/* Right — Actions */}
+        <div className="flex items-center gap-1 z-10">
+          {/* Desktop nav links */}
           {user && desktopLinks.map((link) => (
             <Button
               key={link.path}
