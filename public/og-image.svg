@@ -1,0 +1,59 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <rect width="1200" height="630" fill="#0a0a0b"/>
+  <rect width="1200" height="630" fill="url(#bg-grad)" opacity="0.9"/>
+
+  <!-- Subtle grid pattern -->
+  <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+    <path d="M60 0V60H0" stroke="white" stroke-opacity="0.03" stroke-width="0.5" fill="none"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Decorative glow -->
+  <circle cx="300" cy="315" r="300" fill="#2563eb" opacity="0.08" filter="url(#blur1)"/>
+  <circle cx="900" cy="315" r="250" fill="#7c3aed" opacity="0.06" filter="url(#blur1)"/>
+
+  <!-- Logo mark — graduation cap -->
+  <g transform="translate(520, 140)">
+    <path d="M80 0L160 40L80 80L0 40Z" fill="white" opacity="0.95"/>
+    <path d="M30 48V88C30 99 50 108 80 108C110 108 130 99 130 88V48L80 80L30 48Z" fill="white" opacity="0.5"/>
+    <line x1="130" y1="48" x2="130" y2="120" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+    <circle cx="130" cy="126" r="5" fill="white" opacity="0.8"/>
+  </g>
+
+  <!-- Text: CampusLink -->
+  <text x="600" y="340" text-anchor="middle" fill="white" font-family="'Poppins','Segoe UI',sans-serif" font-weight="800" font-size="72" letter-spacing="-2">
+    CampusLink
+  </text>
+
+  <!-- Tagline -->
+  <text x="600" y="390" text-anchor="middle" fill="white" opacity="0.5" font-family="'Poppins','Segoe UI',sans-serif" font-weight="500" font-size="24" letter-spacing="4">
+    CONNECT · LEARN · THRIVE
+  </text>
+
+  <!-- Description -->
+  <text x="600" y="450" text-anchor="middle" fill="white" opacity="0.35" font-family="'Poppins','Segoe UI',sans-serif" font-weight="400" font-size="20">
+    The all-in-one platform where students find help,
+  </text>
+  <text x="600" y="480" text-anchor="middle" fill="white" opacity="0.35" font-family="'Poppins','Segoe UI',sans-serif" font-weight="400" font-size="20">
+    trade resources, and build real connections.
+  </text>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="590" width="1200" height="40" fill="#2563eb" opacity="0.15"/>
+  <text x="600" y="616" text-anchor="middle" fill="white" opacity="0.4" font-family="'Poppins','Segoe UI',sans-serif" font-weight="600" font-size="14" letter-spacing="1">
+    campuslink-self.vercel.app
+  </text>
+
+  <!-- Gradient defs -->
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="1200" y2="630">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#0a0a0b"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <filter id="blur1">
+      <feGaussianBlur stdDeviation="80"/>
+    </filter>
+  </defs>
+</svg>
