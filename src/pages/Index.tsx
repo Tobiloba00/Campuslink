@@ -123,18 +123,20 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* ═══ Navbar ═══ */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-white/10 dark:border-white/5">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <header
+        className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-white/10 dark:border-white/5"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
           <a href="/" className="group flex-shrink-0">
-            <div className="sm:hidden"><Logo size={28} /></div>
-            <div className="hidden sm:block"><Logo size={36} showText textClassName="text-lg" /></div>
+            <Logo size={28} />
           </a>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <ThemeToggle />
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-sm font-medium" onClick={() => navigate('/auth')}>
               Log in
             </Button>
-            <Button size="sm" className="rounded-full px-4 sm:px-5 bg-gradient-primary shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all text-xs sm:text-sm font-semibold" onClick={() => navigate('/auth')}>
+            <Button size="sm" className="rounded-full h-9 px-4 bg-gradient-primary shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all text-xs font-semibold" onClick={() => navigate('/auth')}>
               Get Started
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>

@@ -132,7 +132,7 @@ export function AIAssistant() {
           "bg-gradient-to-br from-primary to-primary/80 text-white",
           "transition-all duration-300 hover:scale-110 active:scale-95",
           "hover:shadow-primary/40 hover:shadow-2xl",
-          isMobile ? "bottom-[76px] right-3" : "bottom-6 right-6",
+          isMobile ? "bottom-[86px] right-4" : "bottom-6 right-6",
           isOpen && "pointer-events-none opacity-0 scale-50",
           !isVisible && isMobile ? "scale-75 opacity-40" : "opacity-100",
           isMobile ? "h-12 w-12" : "h-14 w-14"

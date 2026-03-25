@@ -82,7 +82,7 @@ const UserSearch = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 pt-20 pb-24 lg:pb-8">
+      <div className="max-w-5xl mx-auto px-4 pt-[76px] pb-24 lg:pb-8">
         {/* Header */}
         <div className="mb-8 animate-hero">
           <div className="flex items-center gap-3 mb-4">

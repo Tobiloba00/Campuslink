@@ -38,7 +38,7 @@ const Leaderboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 pt-20 pb-24 lg:pb-8">
+      <div className="max-w-3xl mx-auto px-4 pt-[76px] pb-24 lg:pb-8">
         {/* Header */}
         <div className="text-center mb-10 animate-hero">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-2xl shadow-amber-500/30 mb-5">
