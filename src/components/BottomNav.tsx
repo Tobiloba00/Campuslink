@@ -81,9 +81,9 @@ const BottomNav = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-      <div className="bg-background/95 backdrop-blur-md border-t border-border/30 safe-area-inset-bottom">
-        <nav className="flex items-stretch justify-around max-w-md mx-auto h-14 px-2">
+    <footer className="fixed bottom-0 left-0 right-0 z-50 lg:hidden pointer-events-none">
+      <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 safe-area-inset-bottom shadow-[0_-2px_12px_-4px_rgba(0,0,0,0.08)] pointer-events-auto">
+        <nav className="flex items-end justify-around max-w-md mx-auto h-16 px-2">
           {navItems.map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
@@ -93,32 +93,36 @@ const BottomNav = () => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center flex-1 gap-1 pt-1",
+                  "relative flex flex-col items-center justify-end flex-1 gap-1",
                   "transition-all duration-150",
-                  "active:scale-90"
+                  item.isCreate ? "pb-2" : "pb-1.5 pt-2",
+                  "active:scale-95"
                 )}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
               >
                 <div className="relative">
                   {item.isCreate ? (
-                    // Create button — special styling
-                    <div className={cn(
-                      "h-7 w-7 rounded-lg flex items-center justify-center transition-colors duration-150",
-                      active
-                        ? "bg-primary text-white"
-                        : "bg-muted/80 text-muted-foreground"
-                    )}>
-                      <Icon className="h-4 w-4" strokeWidth={2.5} />
+                    // Floating action button — large blue circle, lifted above the bar
+                    <div
+                      className={cn(
+                        "h-12 w-12 rounded-full flex items-center justify-center -mt-5",
+                        "bg-primary text-white shadow-lg shadow-primary/40",
+                        "transition-transform duration-150 active:scale-90"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" strokeWidth={2.6} />
                     </div>
                   ) : item.isProfile ? (
                     // Profile tab renders the user's actual avatar
-                    <Avatar className={cn(
-                      "h-[26px] w-[26px] transition-all duration-150",
-                      active
-                        ? "ring-2 ring-primary ring-offset-1 ring-offset-background"
-                        : "ring-1 ring-border/40"
-                    )}>
+                    <Avatar
+                      className={cn(
+                        "h-[26px] w-[26px] transition-all duration-150",
+                        active
+                          ? "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                          : "ring-1 ring-border/40"
+                      )}
+                    >
                       <AvatarImage src={profilePicture || ""} alt={profileName || "Profile"} />
                       <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
                         {profileName?.charAt(0).toUpperCase() || <Icon className="h-3.5 w-3.5" />}
@@ -127,10 +131,10 @@ const BottomNav = () => {
                   ) : (
                     <Icon
                       className={cn(
-                        "h-[23px] w-[23px] transition-colors duration-150",
-                        active ? "text-primary" : "text-muted-foreground/60"
+                        "h-[22px] w-[22px] transition-colors duration-150",
+                        active ? "text-primary" : "text-muted-foreground/70"
                       )}
-                      strokeWidth={active ? 2.2 : 1.7}
+                      strokeWidth={active ? 2.3 : 1.8}
                     />
                   )}
 
@@ -143,12 +147,14 @@ const BottomNav = () => {
                 </div>
 
                 {!item.isCreate && (
-                  <span className={cn(
-                    "text-[10px] leading-none transition-colors duration-150",
-                    active
-                      ? "text-primary font-semibold"
-                      : "text-muted-foreground/50 font-medium"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[10px] leading-none transition-colors duration-150",
+                      active
+                        ? "text-primary font-semibold"
+                        : "text-muted-foreground/60 font-medium"
+                    )}
+                  >
                     {item.label}
                   </span>
                 )}
