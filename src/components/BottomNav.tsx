@@ -85,12 +85,9 @@ const BottomNav = () => {
   return (
     <footer
       className={cn(
-        "fixed left-0 right-0 z-50 lg:hidden pointer-events-none transition-transform duration-300 ease-out",
+        "fixed bottom-2 left-0 right-0 z-50 lg:hidden pointer-events-none transition-transform duration-300 ease-out",
         hidden ? "translate-y-[140%]" : "translate-y-0"
       )}
-      style={{
-        bottom: "env(safe-area-inset-bottom, 0px)",
-      }}
     >
       <div className="mx-3 pointer-events-auto">
         <div className="bg-card/95 backdrop-blur-xl border border-border/40 rounded-[28px] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.18),0_2px_6px_-2px_rgba(0,0,0,0.08)]">
