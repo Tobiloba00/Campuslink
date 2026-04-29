@@ -89,7 +89,7 @@ const BottomNav = () => {
         hidden ? "translate-y-[140%]" : "translate-y-0"
       )}
       style={{
-        bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)",
       }}
     >
       <div className="mx-3 pointer-events-auto">
