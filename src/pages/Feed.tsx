@@ -407,7 +407,7 @@ const Feed = () => {
         </div>
       )}
 
-      <div className="max-w-[1400px] mx-auto px-4 pt-[76px] pb-24 lg:pb-8">
+      <div className="max-w-[1400px] mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+76px)] pb-24 lg:pb-8">
         <div className="flex gap-8 justify-center">
           {/* ─── Left Sidebar ─── */}
           <aside className="hidden lg:block w-56 flex-shrink-0">

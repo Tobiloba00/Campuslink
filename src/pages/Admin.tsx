@@ -78,7 +78,7 @@ const Admin = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-background"><Navbar /><div className="flex items-center justify-center h-96 pt-28">Loading...</div></div>;
+    return <div className="min-h-screen bg-background"><Navbar /><div className="flex items-center justify-center h-96 pt-[calc(env(safe-area-inset-top,0px)+7rem)]">Loading...</div></div>;
   }
 
   if (!isAdmin) return null;
@@ -86,7 +86,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 pt-28 pb-24 lg:pb-8">
+      <div className="container mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+7rem)] pb-24 lg:pb-8">
         <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Dashboard</h1>
 
         <Tabs defaultValue="posts" className="space-y-6">

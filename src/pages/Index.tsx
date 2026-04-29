@@ -145,7 +145,7 @@ const Index = () => {
       </header>
 
       {/* ═══ Hero Section ═══ */}
-      <section className="relative pt-28 pb-16 md:pt-40 md:pb-28">
+      <section className="relative pt-[calc(env(safe-area-inset-top,0px)+7rem)] pb-16 md:pt-40 md:pb-28">
         {/* Decorative elements */}
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-40 left-1/4 w-[300px] h-[300px] bg-accent/5 rounded-full blur-[100px] pointer-events-none animate-float-slow" />
