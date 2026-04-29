@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  GraduationCap, MessageSquare, TrendingUp, Users, ArrowRight,
+  MessageSquare, TrendingUp, Users, ArrowRight,
   Loader2, Sparkles, BookOpen, ShoppingBag, Shield, Zap, Star,
   ChevronRight
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Logo } from "@/components/Logo";
+import { Logo, LogoMark } from "@/components/Logo";
 
 type PlatformStats = {
   users: number;
@@ -108,8 +108,8 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-primary flex items-center justify-center animate-glow-pulse">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+          <div className="h-12 w-12 rounded-2xl bg-gradient-primary flex items-center justify-center animate-glow-pulse text-primary-foreground">
+            <LogoMark size={24} />
           </div>
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -254,7 +254,7 @@ const Index = () => {
                 iconColor: 'text-blue-500',
               },
               {
-                icon: GraduationCap,
+                icon: Users,
                 title: 'Find Tutors',
                 description: 'Connect with top-rated student tutors in any subject. Book sessions and climb the grades.',
                 gradient: 'from-emerald-500/10 to-emerald-600/5',
@@ -357,8 +357,8 @@ const Index = () => {
           <div className={`transition-all duration-700 ${ctaSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="relative inline-block mb-8">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-3xl scale-150" />
-              <div className="relative h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-2xl shadow-primary/30">
-                <GraduationCap className="h-8 w-8 text-primary-foreground" />
+              <div className="relative h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-2xl shadow-primary/30 text-primary-foreground">
+                <LogoMark size={32} />
               </div>
             </div>
 
@@ -391,10 +391,10 @@ const Index = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <GraduationCap className="h-3.5 w-3.5 text-primary-foreground" />
+              <div className="h-7 w-7 rounded-lg bg-gradient-primary flex items-center justify-center text-primary-foreground">
+                <LogoMark size={14} />
               </div>
-              <span className="font-bold text-sm tracking-tight">CampusLink</span>
+              <span className="font-bold text-sm tracking-tight">Campus Link</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <button onClick={() => navigate('/feed')} className="hover:text-foreground transition-colors">Feed</button>

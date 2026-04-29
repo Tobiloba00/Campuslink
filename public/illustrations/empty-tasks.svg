@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <!-- Soft gradient halo behind the composition -->
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.10"/>
+      <stop offset="60%" stop-color="#6366f1" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cardSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fafbff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1e1b4b" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+
+  <circle cx="120" cy="120" r="110" fill="url(#halo)"/>
+
+  <!-- Decorative dots scattered around -->
+  <circle cx="36" cy="58" r="3" fill="#a5b4fc" opacity="0.55"/>
+  <circle cx="48" cy="190" r="2.5" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="200" cy="56" r="2.5" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="208" cy="180" r="3" fill="#a5b4fc" opacity="0.55"/>
+
+  <!-- Ground shadow -->
+  <ellipse cx="120" cy="218" rx="86" ry="6" fill="#000" opacity="0.05"/>
+
+  <!-- Bottom card (deepest, faintest) -->
+  <g transform="translate(56 154)" filter="url(#shadow)">
+    <rect width="128" height="46" rx="12" fill="url(#cardSheen)" stroke="#e0e7ff" stroke-width="1.4"/>
+    <rect x="16" y="16" width="58" height="6" rx="3" fill="#e0e7ff"/>
+    <rect x="16" y="28" width="44" height="4" rx="2" fill="#eef2ff"/>
+  </g>
+
+  <!-- Middle card -->
+  <g transform="translate(46 102)">
+    <rect width="148" height="58" rx="14" fill="url(#cardSheen)" stroke="#c7d2fe" stroke-width="1.4"/>
+    <rect x="18" y="18" width="76" height="7" rx="3.5" fill="#c7d2fe"/>
+    <rect x="18" y="32" width="60" height="5" rx="2.5" fill="#e0e7ff"/>
+    <rect x="18" y="42" width="46" height="5" rx="2.5" fill="#e0e7ff"/>
+    <!-- Small status dot -->
+    <circle cx="130" cy="22" r="4" fill="#10b981" opacity="0.85"/>
+  </g>
+
+  <!-- Top card — the hero, slightly tilted, full design language -->
+  <g transform="translate(36 42) rotate(-3 84 35)">
+    <!-- Card body -->
+    <rect width="168" height="76" rx="16" fill="#ffffff" stroke="#a5b4fc" stroke-width="1.6"/>
+
+    <!-- Title bar -->
+    <rect x="20" y="18" width="96" height="8" rx="4" fill="#4f46e5"/>
+
+    <!-- Description lines -->
+    <rect x="20" y="34" width="80" height="5" rx="2.5" fill="#e0e7ff"/>
+    <rect x="20" y="44" width="64" height="5" rx="2.5" fill="#e0e7ff"/>
+
+    <!-- Price chip (green) -->
+    <rect x="20" y="56" width="40" height="12" rx="6" fill="#d1fae5"/>
+    <circle cx="27" cy="62" r="2" fill="#10b981"/>
+    <rect x="32" y="60" width="22" height="4" rx="2" fill="#10b981"/>
+
+    <!-- Urgency dot row -->
+    <rect x="66" y="58" width="28" height="3" rx="1.5" fill="#fecaca"/>
+    <rect x="66" y="64" width="20" height="3" rx="1.5" fill="#fecaca"/>
+
+    <!-- Status pill (top-right, amber = "Open" hint) -->
+    <rect x="124" y="14" width="32" height="14" rx="7" fill="#fef3c7"/>
+    <rect x="130" y="19" width="20" height="4" rx="2" fill="#f59e0b"/>
+  </g>
+
+  <!-- Floating sparkles -->
+  <g transform="translate(178 78)">
+    <path d="M 10 0 L 11.8 7.2 L 19 9 L 11.8 10.8 L 10 18 L 8.2 10.8 L 1 9 L 8.2 7.2 Z" fill="#fbbf24"/>
+  </g>
+  <g transform="translate(28 134)">
+    <path d="M 7 0 L 8.2 5 L 13 6 L 8.2 7 L 7 12 L 5.8 7 L 1 6 L 5.8 5 Z" fill="#a5b4fc"/>
+  </g>
+  <g transform="translate(196 138)">
+    <path d="M 5 0 L 5.9 3.6 L 9.6 4.5 L 5.9 5.4 L 5 9 L 4.1 5.4 L 0.4 4.5 L 4.1 3.6 Z" fill="#a5b4fc"/>
+  </g>
+
+  <!-- Tiny "+" emblem in upper-left, hinting "post a task" -->
+  <g transform="translate(18 86)">
+    <circle cx="10" cy="10" r="10" fill="#eef2ff"/>
+    <path d="M 10 5 L 10 15 M 5 10 L 15 10" stroke="#6366f1" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+</svg>

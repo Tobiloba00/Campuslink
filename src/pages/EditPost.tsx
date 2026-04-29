@@ -11,8 +11,11 @@ import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { uploadImage, deleteImage } from "@/lib/imageUpload";
 import { formatNairaInput, parseNairaInput } from "@/lib/utils";
-import { BookOpen, GraduationCap, ShoppingBag, Edit, ArrowLeft, Save, Loader2 } from "lucide-react";
+import { BookOpen, Users, ShoppingBag, Edit, ArrowLeft, Save, Loader2, Calendar as CalendarIcon, X } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 
 const EditPost = () => {
   const { id } = useParams();
@@ -24,6 +27,7 @@ const EditPost = () => {
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [displayPrice, setDisplayPrice] = useState("");
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -42,6 +46,7 @@ const EditPost = () => {
       setCategory(data.category);
       setPrice(data.optional_price?.toString() || "");
       setDisplayPrice(data.optional_price ? formatNairaInput(data.optional_price.toString()) : "");
+      setDueDate((data as any).due_date ? new Date((data as any).due_date) : undefined);
       setCurrentImageUrl(data.image_url);
     } catch {
       toast.error("Failed to load post");
@@ -91,9 +96,10 @@ const EditPost = () => {
         .update({
           title, description, category: category as any,
           optional_price: price ? parseFloat(price) : null,
+          due_date: dueDate ? dueDate.toISOString() : null,
           ai_summary: summaryResponse.data?.summary || null,
           image_url: imageUrl
-        })
+        } as any)
         .eq('id', id);
 
       if (error) throw error;
@@ -152,7 +158,7 @@ const EditPost = () => {
                     <span className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-blue-500" /> Academic Help</span>
                   </SelectItem>
                   <SelectItem value="Tutoring" className="rounded-lg">
-                    <span className="flex items-center gap-2"><GraduationCap className="h-4 w-4 text-emerald-500" /> Tutoring</span>
+                    <span className="flex items-center gap-2"><Users className="h-4 w-4 text-emerald-500" /> Tutoring</span>
                   </SelectItem>
                   <SelectItem value="Buy & Sell" className="rounded-lg">
                     <span className="flex items-center gap-2"><ShoppingBag className="h-4 w-4 text-orange-500" /> Buy & Sell</span>
@@ -177,6 +183,37 @@ const EditPost = () => {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">₦</span>
                 <Input id="price" type="text" placeholder="0" value={displayPrice} onChange={handlePriceChange} className="h-12 rounded-xl bg-muted/50 border-border/50 pl-8" />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Deadline (optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full h-12 rounded-xl bg-muted/50 border-border/50 justify-start font-normal text-base">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                    {dueDate ? format(dueDate, "PPP") : <span className="text-muted-foreground">Pick a deadline</span>}
+                    {dueDate && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDueDate(undefined); }}
+                        className="ml-auto p-1 rounded hover:bg-muted"
+                        aria-label="Clear deadline"
+                      >
+                        <X className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

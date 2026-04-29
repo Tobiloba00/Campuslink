@@ -3,11 +3,14 @@ import { Home, Search, Plus, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -26,12 +29,30 @@ const BottomNav = () => {
       if (mountedRef.current) setUnreadCount(count || 0);
     };
 
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !mountedRef.current) return;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('profile_picture, name')
+        .eq('id', user.id)
+        .single();
+
+      if (mountedRef.current && data) {
+        setProfilePicture(data.profile_picture);
+        setProfileName(data.name);
+      }
+    };
+
     fetchUnread();
+    fetchProfile();
 
     const channel = supabase
       .channel('bottomnav-unread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => fetchUnread())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchUnread())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => fetchProfile())
       .subscribe();
 
     return () => {
@@ -40,12 +61,21 @@ const BottomNav = () => {
     };
   }, [location.pathname]);
 
-  const navItems = [
+  type NavItem = {
+    path: string;
+    icon: typeof Home;
+    label: string;
+    isCreate?: boolean;
+    isProfile?: boolean;
+    badge?: number;
+  };
+
+  const navItems: NavItem[] = [
     { path: "/feed", icon: Home, label: "Home" },
     { path: "/user-search", icon: Search, label: "Explore" },
     { path: "/create-post", icon: Plus, label: "Post", isCreate: true },
     { path: "/messages", icon: MessageCircle, label: "Chat", badge: unreadCount },
-    { path: "/profile", icon: User, label: "You" },
+    { path: "/profile", icon: User, label: "You", isProfile: true },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -81,6 +111,19 @@ const BottomNav = () => {
                     )}>
                       <Icon className="h-4 w-4" strokeWidth={2.5} />
                     </div>
+                  ) : item.isProfile ? (
+                    // Profile tab renders the user's actual avatar
+                    <Avatar className={cn(
+                      "h-[26px] w-[26px] transition-all duration-150",
+                      active
+                        ? "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                        : "ring-1 ring-border/40"
+                    )}>
+                      <AvatarImage src={profilePicture || ""} alt={profileName || "Profile"} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                        {profileName?.charAt(0).toUpperCase() || <Icon className="h-3.5 w-3.5" />}
+                      </AvatarFallback>
+                    </Avatar>
                   ) : (
                     <Icon
                       className={cn(

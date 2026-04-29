@@ -138,10 +138,12 @@ export const ChatView = memo(({
         <div className="flex flex-col">
           {messageGroups.map((group) => (
             <div key={group.date}>
-              <div className="flex justify-center my-4 sticky top-1 z-10">
-                <span className="bg-background/85 backdrop-blur-sm px-3 py-1 rounded-lg text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border border-border/30 shadow-sm">
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px bg-border/40" />
+                <span className="text-[11px] font-semibold text-muted-foreground/70 tracking-wide">
                   {group.date}
                 </span>
+                <div className="flex-1 h-px bg-border/40" />
               </div>
 
               {group.messages.map((msg, index) => {

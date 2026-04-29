@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, ArrowLeft, Home, Search } from "lucide-react";
+import { ArrowLeft, Home, Search } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 const NotFound = () => {
   const location = useLocation();
@@ -21,8 +22,8 @@ const NotFound = () => {
 
       <div className="text-center relative z-10 max-w-lg animate-hero">
         {/* Logo */}
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-primary shadow-2xl shadow-primary/30 mb-8">
-          <GraduationCap className="h-8 w-8 text-primary-foreground" />
+        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-primary shadow-2xl shadow-primary/30 mb-8 text-primary-foreground">
+          <LogoMark size={32} />
         </div>
 
         {/* 404 number */}

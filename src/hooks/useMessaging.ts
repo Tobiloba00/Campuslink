@@ -343,7 +343,7 @@ export const useMessaging = (currentUserId: string | undefined) => {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .select('id, title, description, category, user_id, profiles (name, course)')
+        .select('id, title, description, category, user_id, image_url, optional_price, profiles (name, course)')
         .eq('id', postId)
         .single();
       if (!error && data) {

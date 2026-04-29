@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, CheckCheck, Loader2, Copy, RotateCcw, SmilePlus, Reply } from "lucide-react";
 import { Message, UserProfile, ReplyContext } from './types';
 import { formatMessageTime, detectLinks } from "./utils";
-import { useState, memo } from 'react';
+import { useState, memo, useRef, useEffect } from 'react';
 import { toast } from "sonner";
 import { ReactionPicker } from "./ReactionPicker";
 
@@ -80,23 +80,124 @@ export const MessageBubble = memo(({
     if (!isMe) return null;
     switch (message.status) {
       case 'sending':
-        return <Loader2 className="h-3 w-3 animate-spin opacity-40" />;
+        return <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/60" />;
       case 'failed':
-        return <span className="text-[9px] text-red-300 font-bold">!</span>;
+        return <span className="text-[10px] text-destructive font-bold">!</span>;
       default:
         return message.read_at
-          ? <CheckCheck className="h-3.5 w-3.5 text-sky-300" />
-          : <Check className="h-3.5 w-3.5 opacity-40" />;
+          ? <CheckCheck className="h-3.5 w-3.5 text-primary" />
+          : <Check className="h-3.5 w-3.5 text-muted-foreground/50" />;
     }
   };
 
   // Reply preview inside bubble
   const replyTo = message.replyTo;
 
+  // ─── Swipe-to-reply (mobile, WhatsApp-style) ───
+  // Received messages: drag right. Sent messages: drag left.
+  const SWIPE_TRIGGER = 60;   // px drag distance to trigger reply
+  const MAX_DRAG = 100;       // visual cap so the bubble doesn't fly across the screen
+  const ACTIVATION = 8;       // ignored micro-movement before deciding intent
+
+  const rowRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef<{
+    startX: number;
+    startY: number;
+    locked: boolean;          // committed to a horizontal drag
+    crossedThreshold: boolean;
+  } | null>(null);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const direction = isMe ? -1 : 1; // expected sign of dx for a valid swipe
+
+    const onTouchStart = (e: TouchEvent) => {
+      // Don't start if message is mid-send / failed (no point replying yet)
+      if (isSending || isFailed) return;
+      const t = e.touches[0];
+      touchRef.current = { startX: t.clientX, startY: t.clientY, locked: false, crossedThreshold: false };
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const s = touchRef.current;
+      if (!s) return;
+      const t = e.touches[0];
+      const dx = t.clientX - s.startX;
+      const dy = t.clientY - s.startY;
+
+      if (!s.locked) {
+        if (Math.abs(dx) < ACTIVATION && Math.abs(dy) < ACTIVATION) return;
+        // Vertical scroll wins — abandon
+        if (Math.abs(dy) > Math.abs(dx)) { touchRef.current = null; return; }
+        // Wrong direction
+        if (dx * direction < 0) { touchRef.current = null; return; }
+        s.locked = true;
+        setIsDragging(true);
+      }
+
+      e.preventDefault(); // we own this gesture now → block vertical scroll
+      const magnitude = Math.min(Math.abs(dx), MAX_DRAG);
+      setDragX(magnitude * direction);
+
+      // Haptic tick at threshold crossing
+      if (magnitude >= SWIPE_TRIGGER && !s.crossedThreshold) {
+        s.crossedThreshold = true;
+        if ('vibrate' in navigator) navigator.vibrate(12);
+      } else if (magnitude < SWIPE_TRIGGER && s.crossedThreshold) {
+        s.crossedThreshold = false;
+      }
+    };
+
+    const onTouchEnd = () => {
+      const s = touchRef.current;
+      if (s?.locked && s.crossedThreshold) onReply(message);
+      touchRef.current = null;
+      setIsDragging(false);
+      setDragX(0);
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [isMe, isSending, isFailed, onReply, message]);
+
+  const dragProgress = Math.min(Math.abs(dragX) / SWIPE_TRIGGER, 1);
+
   return (
-    <div
-      className={`flex items-end gap-1.5 group relative ${isMe ? "justify-end" : "justify-start"} ${isFirstInSequence ? 'mt-4' : 'mt-2'}`}
-    >
+    <div ref={rowRef} className={`relative ${isFirstInSequence ? 'mt-4' : 'mt-2'}`}>
+      {/* Reply indicator — fades / scales in as user drags */}
+      {dragProgress > 0 && (
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 ${isMe ? 'right-2' : 'left-2'} pointer-events-none`}
+          style={{ opacity: dragProgress }}
+        >
+          <div
+            className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center"
+            style={{ transform: `scale(${0.6 + dragProgress * 0.4})` }}
+          >
+            <Reply className="h-[18px] w-[18px] text-primary" />
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`flex items-end gap-1.5 group ${isMe ? "justify-end" : "justify-start"}`}
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: isDragging ? 'none' : 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}
+      >
       {/* Sender avatar */}
       {!isMe && isFirstInSequence && (
         <Avatar className="h-7 w-7 mb-0.5 flex-shrink-0 ring-1 ring-border/30">
@@ -190,15 +291,17 @@ export const MessageBubble = memo(({
 
           {/* Text */}
           {message.message && renderMessageContent(message.message)}
+        </div>
 
-          {/* Time + status */}
-          <div className={`flex items-center gap-1 mt-0.5 justify-end ${isMe ? 'text-white/50' : 'text-muted-foreground/50'}`}>
-            <time className="text-[9px] font-medium tabular-nums tracking-tight">
+        {/* Time + status — sits OUTSIDE the bubble (matches mockup) */}
+        {isLastInSequence && (
+          <div className={`flex items-center gap-1 mt-1 px-1 ${isMe ? 'flex-row-reverse text-muted-foreground/70' : 'text-muted-foreground/70'}`}>
+            <time className="text-[10px] font-medium tabular-nums tracking-tight">
               {formatMessageTime(message.created_at)}
             </time>
-            {getStatusIcon()}
+            {isMe && getStatusIcon()}
           </div>
-        </div>
+        )}
 
         {/* Reactions display */}
         {hasReactions && (
@@ -233,6 +336,7 @@ export const MessageBubble = memo(({
             Tap to retry
           </button>
         )}
+      </div>
       </div>
     </div>
   );

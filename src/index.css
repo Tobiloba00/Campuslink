@@ -96,6 +96,10 @@ html {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* CampusLink Design System - iOS-Slick Marketplace Aesthetic
  * All colors MUST be HSL.
  * Typography: Poppins (unified, iOS-like)
@@ -255,6 +259,13 @@ html {
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   html,

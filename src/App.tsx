@@ -24,6 +24,8 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
 const UserSearch = lazy(() => import("./pages/UserSearch"));
 const RateUser = lazy(() => import("./pages/RateUser"));
+const MyTasks = lazy(() => import("./pages/MyTasks"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -56,6 +58,8 @@ const App = () => (
               <Route path="/users" element={<UserSearch />} />
               <Route path="/user-search" element={<UserSearch />} />
               <Route path="/rate-user/:userId" element={<RateUser />} />
+              <Route path="/my-tasks" element={<MyTasks />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/post/:id" element={<PostDetail />} />

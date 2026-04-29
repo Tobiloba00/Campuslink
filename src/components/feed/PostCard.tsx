@@ -2,16 +2,7 @@ import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Heart, Share2, MoreHorizontal, Copy, Trash, Edit,
-  BookOpen, GraduationCap, ShoppingBag, Sparkles,
-  MessageSquare, Bookmark
-} from "lucide-react";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+import { Heart, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface PostCardProps {
@@ -28,10 +19,12 @@ interface PostCardProps {
     tags: string[] | null;
     campus_highlight: string | null;
     comment_count?: number;
+    due_date?: string | null;
     profiles: {
       name: string;
       rating: number;
       profile_picture: string | null;
+      course?: string | null;
     };
   };
   isLiked: boolean;
@@ -42,187 +35,176 @@ interface PostCardProps {
   onShare: (postId: string, title: string, description: string, e: React.MouseEvent) => void;
 }
 
-const CATEGORY_CONFIG: Record<string, { icon: typeof BookOpen; color: string; bg: string; label: string; action: string; actionIcon: typeof MessageSquare }> = {
-  'Academic Help': { icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'ACADEMIC', action: 'I Can Help', actionIcon: MessageSquare },
-  'Tutoring': { icon: GraduationCap, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'TUTORING', action: 'Book Session', actionIcon: GraduationCap },
-  'Buy & Sell': { icon: ShoppingBag, color: 'text-orange-500', bg: 'bg-orange-500/10', label: 'MARKETPLACE', action: 'Make Offer', actionIcon: ShoppingBag },
+const CATEGORY_META: Record<string, { badge: string; tag: string; tagColor: string; cta: string }> = {
+  'Academic Help': { badge: 'Help Needed', tag: 'HELP NEEDED', tagColor: 'text-blue-600 dark:text-blue-400', cta: 'I Can Help' },
+  'Tutoring':      { badge: 'Tutoring',    tag: 'TUTORING',    tagColor: 'text-emerald-600 dark:text-emerald-400', cta: 'Book Session' },
+  'Buy & Sell':    { badge: 'For Sale',    tag: 'FOR SALE',    tagColor: 'text-amber-600 dark:text-amber-400', cta: 'Message Seller' },
 };
 
 const formatTimestamp = (timestamp: string) => {
   const diff = Date.now() - new Date(timestamp).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
-  if (minutes < 60) return `${minutes}m`;
-  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+  if (days < 7) return `${days}d ago`;
   return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export const PostCard = memo(({ post, isLiked, likeCount, isOwner, onLike, onDelete, onShare }: PostCardProps) => {
-  const navigate = useNavigate();
-  const config = CATEGORY_CONFIG[post.category] || CATEGORY_CONFIG['Academic Help'];
-  const CategoryIcon = config.icon;
-  const ActionIcon = config.actionIcon;
+const formatUrgency = (iso: string | null | undefined): { label: string; urgent: boolean } | null => {
+  if (!iso) return null;
+  const due = new Date(iso).getTime();
+  const diffMs = due - Date.now();
+  const diffDays = Math.ceil(diffMs / 86400000);
+  if (diffMs < 0) return { label: 'Overdue', urgent: true };
+  if (diffDays === 0) return { label: 'Due today', urgent: true };
+  if (diffDays === 1) return { label: 'Due tomorrow', urgent: true };
+  if (diffDays <= 7) return { label: `Due in ${diffDays} days`, urgent: diffDays <= 2 };
+  return null;
+};
 
-  const copyLink = (e: React.MouseEvent) => {
+export const PostCard = memo(({ post, isLiked, likeCount, isOwner, onLike, onShare }: PostCardProps) => {
+  const navigate = useNavigate();
+  const meta = CATEGORY_META[post.category] || CATEGORY_META['Academic Help'];
+  const urgency = formatUrgency(post.due_date);
+  const hasImage = !!post.image_url;
+
+  const goToDetail = () => navigate(`/post/${post.id}`);
+  const goToMessage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
-    toast.success("Link copied!");
+    navigate(`/messages?userId=${post.user_id}&postId=${post.id}`);
+  };
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onLike(post.id, e);
+  };
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/edit-post/${post.id}`);
   };
 
   return (
     <article
-      className="bg-card border border-border/40 dark:border-border/20 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:border-border/60 hover:shadow-lg hover:shadow-black/[0.03] dark:hover:shadow-black/20 active:scale-[0.998]"
-      onClick={() => navigate(`/post/${post.id}`)}
+      className="bg-card border border-border/50 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:border-border hover:shadow-md hover:shadow-black/[0.04] dark:hover:shadow-black/20 active:scale-[0.997]"
+      onClick={goToDetail}
     >
-      <div className="p-4 sm:p-5">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-10 w-10 ring-2 ring-border/30 group-hover:ring-primary/20 transition-all">
-            <AvatarImage src={post.profiles.profile_picture || ""} alt={post.profiles.name} />
-            <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-sm">
-              {post.profiles.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm truncate">{post.profiles.name}</span>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide ${config.bg} ${config.color}`}>
-                <CategoryIcon className="h-2.5 w-2.5" />
-                {config.label}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-              <span>{formatTimestamp(post.created_at)}</span>
-              {post.profiles.rating > 0 && (
-                <>
-                  <span className="text-border">·</span>
-                  <span className="flex items-center gap-0.5">
-                    <span className="text-amber-500 text-[10px]">★</span>
-                    <span className="font-medium text-foreground/70">{post.profiles.rating.toFixed(1)}</span>
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
+      {/* Hero image (only when post has one) — overlays for category badge + heart */}
+      {hasImage && (
+        <div className="relative w-full aspect-[16/11] bg-muted overflow-hidden">
+          <img
+            src={post.image_url!}
+            alt={post.title}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover"
+          />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 rounded-xl">
-              <DropdownMenuItem onClick={copyLink} className="rounded-lg text-xs">
-                <Copy className="mr-2 h-3.5 w-3.5" /> Copy link
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="rounded-lg text-xs">
-                <Bookmark className="mr-2 h-3.5 w-3.5" /> Save post
-              </DropdownMenuItem>
-              {isOwner && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/edit-post/${post.id}`); }} className="rounded-lg text-xs">
-                    <Edit className="mr-2 h-3.5 w-3.5" /> Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => onDelete(post.id, e)} className="text-destructive rounded-lg text-xs">
-                    <Trash className="mr-2 h-3.5 w-3.5" /> Delete
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+          {/* Top-left category badge: "✓ For Sale" / "✓ Help Needed" / etc. */}
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-emerald-500 text-white font-semibold text-[11px] px-2 py-1 rounded-full shadow-sm">
+            <Check className="h-3 w-3" strokeWidth={3} />
+            {meta.badge}
+          </span>
 
-        {/* Content */}
-        <div className="mb-3">
-          <h3 className="text-base sm:text-lg font-bold leading-snug tracking-tight mb-1.5 group-hover:text-primary transition-colors">
-            {post.title}
-          </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-            {post.description}
-          </p>
-        </div>
-
-        {/* AI Summary */}
-        {post.ai_summary && (
-          <div className="mb-3 flex items-start gap-1.5 bg-primary/5 dark:bg-primary/8 px-3 py-2 rounded-xl">
-            <Sparkles className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
-            <span className="text-xs text-primary/80 italic line-clamp-2 leading-relaxed">{post.ai_summary}</span>
-          </div>
-        )}
-
-        {/* Campus Highlight */}
-        {post.campus_highlight && (
-          <div className="mb-3 px-3 py-2 bg-accent/5 rounded-xl border border-accent/10 flex items-start gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-accent mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-foreground/80 leading-relaxed">{post.campus_highlight}</p>
-          </div>
-        )}
-
-        {/* Image */}
-        {post.image_url && (
-          <div className="mb-3 rounded-xl overflow-hidden border border-border/20">
-            <img
-              src={post.image_url}
-              alt={post.title}
-              loading="lazy"
-              decoding="async"
-              className="w-full max-h-[280px] sm:max-h-[380px] object-cover"
+          {/* Top-right heart (like) */}
+          <button
+            onClick={handleLike}
+            className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/95 dark:bg-background/95 backdrop-blur flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform"
+            aria-label={isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart
+              className={`h-[18px] w-[18px] transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-foreground/60'}`}
             />
-          </div>
-        )}
+          </button>
+        </div>
+      )}
 
-        {/* Price & Tags */}
-        {(post.optional_price || (post.tags && post.tags.length > 0)) && (
-          <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div className="p-4">
+        {/* Category tag + price row */}
+        <div className="flex items-center justify-between gap-3 mb-1.5">
+          <span className={`text-[11px] font-bold tracking-wider uppercase ${meta.tagColor}`}>
+            {meta.tag}
+          </span>
+          <div className="flex items-center gap-2">
+            {/* Heart for image-less posts (image-posts already have it on overlay) */}
+            {!hasImage && (
+              <button
+                onClick={handleLike}
+                className="p-1 rounded-full hover:bg-muted transition-colors"
+                aria-label={isLiked ? 'Unlike' : 'Like'}
+              >
+                <Heart
+                  className={`h-[18px] w-[18px] ${isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                />
+              </button>
+            )}
             {post.optional_price != null && (
-              <span className="inline-flex items-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2.5 py-1 rounded-lg text-xs">
+              <span className="text-primary font-bold text-[15px]">
                 ₦{post.optional_price.toLocaleString()}
               </span>
             )}
-            {post.tags?.slice(0, 3).map((tag, i) => (
-              <span key={i} className="text-xs font-medium text-primary/50">#{tag}</span>
-            ))}
           </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-[15.5px] font-bold leading-snug tracking-tight text-foreground">
+          {post.title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-[13.5px] text-muted-foreground leading-relaxed line-clamp-2 mt-1.5">
+          {post.description}
+        </p>
+
+        {/* Urgency line — red when due soon, only when there's a deadline */}
+        {urgency && (
+          <p className={`text-[12px] font-semibold mt-2 ${urgency.urgent ? 'text-red-500' : 'text-muted-foreground'}`}>
+            {urgency.label}
+          </p>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-border/30">
-          <div className="flex items-center gap-1">
-            <button
-              className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-sm transition-all ${
-                isLiked
-                  ? 'bg-red-500/10 text-red-500'
-                  : 'hover:bg-red-500/5 hover:text-red-500 text-muted-foreground'
-              }`}
-              onClick={(e) => onLike(post.id, e)}
-            >
-              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="font-semibold text-xs">{likeCount || ''}</span>
-            </button>
-            <button
-              className="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
-              onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}`); }}
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span className="font-semibold text-xs">{post.comment_count || ''}</span>
-            </button>
-            <button
-              className="flex items-center justify-center h-8 w-8 rounded-full text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
-              onClick={(e) => onShare(post.id, post.title, post.description, e)}
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
+        {/* Author row */}
+        <div className="flex items-center gap-2.5 mt-3 pb-3">
+          <Avatar className="h-7 w-7 flex-shrink-0">
+            <AvatarImage src={post.profiles.profile_picture || ""} alt={post.profiles.name} />
+            <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
+              {post.profiles.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0 leading-tight">
+            <p className="text-[13px] font-semibold truncate">{post.profiles.name}</p>
+            {post.profiles.course && (
+              <p className="text-[11px] text-muted-foreground truncate">{post.profiles.course}</p>
+            )}
           </div>
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap flex-shrink-0">
+            {formatTimestamp(post.created_at)}
+          </span>
+        </div>
 
-          {!isOwner && (
+        {/* Action row — outlined "View Details" + filled CTA */}
+        <div className="flex items-center gap-2 pt-3 border-t border-border/40">
+          <Button
+            variant="outline"
+            onClick={(e) => { e.stopPropagation(); goToDetail(); }}
+            className="flex-1 h-10 rounded-xl border-border/60 text-foreground hover:bg-muted text-[13px] font-semibold"
+          >
+            View Details
+          </Button>
+          {isOwner ? (
             <Button
-              size="sm"
-              className="h-8 rounded-full px-3 sm:px-4 gap-1 sm:gap-1.5 bg-gradient-primary text-white text-[11px] sm:text-xs font-semibold shadow-sm shadow-primary/15 hover:shadow-primary/25 hover:scale-[1.03] active:scale-[0.97] transition-all"
-              onClick={(e) => { e.stopPropagation(); navigate(`/messages?userId=${post.user_id}&postId=${post.id}`); }}
+              onClick={handleEdit}
+              className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-[13px] font-semibold shadow-sm shadow-primary/20"
             >
-              <ActionIcon className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate max-w-[80px] sm:max-w-none">{config.action}</span>
+              Edit Post
+            </Button>
+          ) : (
+            <Button
+              onClick={goToMessage}
+              className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-[13px] font-semibold shadow-sm shadow-primary/20"
+            >
+              {meta.cta}
             </Button>
           )}
         </div>

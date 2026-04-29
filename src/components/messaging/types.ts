@@ -59,6 +59,7 @@ export interface PostContext {
   category: string;
   user_id: string;
   image_url?: string | null;
+  optional_price?: number | null;
   profiles?: {
     name: string;
     course: string | null;

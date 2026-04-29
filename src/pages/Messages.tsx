@@ -13,6 +13,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { ChatHeader } from "@/components/messaging/ChatHeader";
 import { ChatView } from "@/components/messaging/ChatView";
 import { MessageInput } from "@/components/messaging/MessageInput";
+import { PostContextCard } from "@/components/messaging/PostContextCard";
 
 const Messages = () => {
   const [searchParams] = useSearchParams();
@@ -138,10 +139,19 @@ const Messages = () => {
   const isChatOpen = selectedConversation !== null;
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <Navbar />
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      {/* Global navbar: desktop only. Mobile uses the in-list "Messages" header. */}
+      <div className="hidden md:contents">
+        <Navbar />
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden pt-14 pb-[68px] lg:pb-0">
+      <div
+        className={`flex-1 flex flex-col overflow-hidden ${
+          isChatOpen
+            ? 'md:pt-14'
+            : 'md:pt-14 pb-[68px] lg:pb-0'
+        }`}
+      >
         {/* Offline banner */}
         {!isOnline && (
           <div className="flex items-center justify-center gap-2 py-2 bg-destructive/10 border-b border-destructive/20 text-destructive text-xs font-semibold">
@@ -173,6 +183,13 @@ const Messages = () => {
                   isOnline={onlineUsers.has(selectedConversation!)}
                   onBack={handleBackToConversations}
                 />
+
+                {postContext && (
+                  <PostContextCard
+                    postContext={postContext}
+                    onClear={() => setPostContext(null)}
+                  />
+                )}
 
                 <ChatView
                   messages={messages}
@@ -215,7 +232,10 @@ const Messages = () => {
         </div>
       </div>
 
-      <BottomNav />
+      {/* Bottom nav — hidden on mobile when a chat is open (MessageInput replaces it) */}
+      <div className={isChatOpen ? 'hidden' : 'contents'}>
+        <BottomNav />
+      </div>
     </div>
   );
 };

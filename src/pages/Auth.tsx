@@ -215,7 +215,10 @@ const Auth = () => {
         <div className="mesh-background" />
 
         {/* Mobile logo */}
-        <button onClick={() => navigate('/')} className="absolute top-6 left-6 lg:hidden">
+        <button
+          onClick={() => navigate('/')}
+          className="absolute top-[calc(env(safe-area-inset-top,0px)+1.25rem)] left-6 lg:hidden"
+        >
           <Logo size={32} showText textClassName="text-sm" />
         </button>
 
@@ -227,7 +230,7 @@ const Auth = () => {
               {/* Back button */}
               <button
                 onClick={() => { setStep('form'); setOtpValues(Array(OTP_LENGTH).fill('')); }}
-                className="absolute top-6 right-6 lg:top-0 lg:right-0 lg:relative lg:mb-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute top-[calc(env(safe-area-inset-top,0px)+1.25rem)] right-6 lg:top-0 lg:right-0 lg:relative lg:mb-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back

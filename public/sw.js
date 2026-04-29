@@ -1,5 +1,7 @@
-// CampusLink Service Worker v2 — with update support
-const CACHE_NAME = 'campuslink-v2';
+// CampusLink Service Worker v3 — push notifications added
+const CACHE_NAME = 'campuslink-v3';
+// On localhost we let Vite's dev server do its thing — no fetch caching.
+const IS_DEV = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const STATIC_ASSETS = [
   '/',
   '/feed',
@@ -36,6 +38,9 @@ self.addEventListener('activate', (event) => {
 
 // Fetch strategy
 self.addEventListener('fetch', (event) => {
+  // In dev: don't intercept anything. Push handlers below still work.
+  if (IS_DEV) return;
+
   const { request } = event;
   const url = new URL(request.url);
 
@@ -78,4 +83,44 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+});
+
+// ─── Push notifications ─────────────────────────────────────
+self.addEventListener('push', (event) => {
+  let payload = { title: 'CampusLink', body: 'You have a new notification', data: {} };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch (e) {
+    if (event.data) payload.body = event.data.text();
+  }
+
+  const options = {
+    body: payload.body,
+    icon: '/icons/icon-192.svg',
+    badge: '/icons/icon-192.svg',
+    data: payload.data || {},
+    tag: payload.tag || payload.data?.tag,
+    renotify: true,
+    requireInteraction: false,
+  };
+
+  event.waitUntil(self.registration.showNotification(payload.title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/notifications';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
+      // Reuse an existing tab if we already have one open
+      const existing = clientsArr.find((c) => c.url.includes(self.location.origin));
+      if (existing) {
+        existing.focus();
+        existing.postMessage({ type: 'navigate', url });
+        return;
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

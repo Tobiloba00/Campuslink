@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Plus, Search, RefreshCw, BookOpen, GraduationCap, ShoppingBag,
-  TrendingUp, Users, Sparkles
+  Plus, Search, RefreshCw, BookOpen, ShoppingBag,
+  TrendingUp, Users, Sparkles, Flame, Building2, Wallet
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,8 +14,10 @@ import { FeedSkeleton } from "@/components/ui/skeleton-loaders";
 import BottomNav from "@/components/BottomNav";
 import { AIAssistant } from "@/components/AIAssistant";
 import { PostCard } from "@/components/feed/PostCard";
+import { FeedHero } from "@/components/feed/FeedHero";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/PullToRefresh";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
 
 type Post = {
   id: string;
@@ -31,12 +33,23 @@ type Post = {
   campus_highlight: string | null;
   engagement_count: number;
   comment_count?: number;
+  due_date?: string | null;
   profiles: {
     name: string;
     rating: number;
     profile_picture: string | null;
+    course?: string | null;
   };
 };
+
+// Anything strictly under this is shown when user picks "Low Budget" pill
+const LOW_BUDGET_THRESHOLD = 5000;
+// Posts due within this window count as "Urgent"
+const URGENT_WINDOW_HOURS = 48;
+// Hero card hides once a user has posted this many tasks (it's an onboarding nudge)
+const HIDE_HERO_AFTER_POSTS = 3;
+
+type SmartFilter = 'urgent' | 'my-dept' | 'low-budget' | null;
 
 type TrendingTag = { tag: string; count: number; score?: number };
 type TopHelper = { id: string; name: string; rating: number; profile_picture: string | null };
@@ -44,8 +57,10 @@ type TopHelper = { id: string; name: string; rating: number; profile_picture: st
 const Feed = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("all"); // category filter
+  const [smartFilter, setSmartFilter] = useState<SmartFilter>(null); // urgent / my-dept / low-budget
   const [user, setUser] = useState<any>(null);
+  const [userCourse, setUserCourse] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [hasNewPosts, setHasNewPosts] = useState(false);
   const [lastSeenPostId, setLastSeenPostId] = useState<string | null>(null);
@@ -54,6 +69,10 @@ const Feed = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [trendingTags, setTrendingTags] = useState<TrendingTag[]>([]);
   const [topHelpers, setTopHelpers] = useState<TopHelper[]>([]);
+  // null = unknown (don't render hero yet to avoid flash for established users)
+  const [myPostCount, setMyPostCount] = useState<number | null>(null);
+  // Auto-hides the sticky search + filter bar on scroll-down (matches Navbar behavior)
+  const headerHidden = useScrollDirection(12);
 
   // ─── Auth ───
   useEffect(() => {
@@ -73,7 +92,7 @@ const Feed = () => {
     setIsLoading(true);
     let query = supabase
       .from('posts')
-      .select('id, title, description, category, optional_price, ai_summary, image_url, created_at, user_id, tags, campus_highlight, engagement_count, profiles (name, rating, profile_picture), comments(count)')
+      .select('id, title, description, category, optional_price, ai_summary, image_url, created_at, user_id, tags, campus_highlight, engagement_count, due_date, profiles (name, rating, profile_picture, course), comments(count)')
       .order('created_at', { ascending: false });
 
     if (filter !== "all") {
@@ -107,6 +126,23 @@ const Feed = () => {
     if (!user) return;
     const { data } = await supabase.from('post_likes').select('post_id').eq('user_id', user.id);
     if (data) setLikedPosts(new Set(data.map(l => l.post_id)));
+  }, [user]);
+
+  // Fetch the current user's own course — used by the "My Dept" filter
+  const fetchUserCourse = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase.from('profiles').select('course').eq('id', user.id).single();
+    setUserCourse(data?.course || null);
+  }, [user]);
+
+  // Fetch how many posts the current user has — used to hide the hero card after a few
+  const fetchMyPostCount = useCallback(async () => {
+    if (!user) return;
+    const { count } = await supabase
+      .from('posts')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    setMyPostCount(count ?? 0);
   }, [user]);
 
   const fetchTrendingTags = useCallback(async () => {
@@ -156,9 +192,11 @@ const Feed = () => {
     if (!user) return;
     fetchPosts();
     fetchUserLikes();
+    fetchUserCourse();
+    fetchMyPostCount();
     fetchTrendingTags();
     fetchTopHelpers();
-  }, [user, fetchPosts, fetchUserLikes, fetchTrendingTags, fetchTopHelpers]);
+  }, [user, fetchPosts, fetchUserLikes, fetchUserCourse, fetchMyPostCount, fetchTrendingTags, fetchTopHelpers]);
 
   // ─── Pull to Refresh ───
   const handlePullRefresh = useCallback(async () => {
@@ -177,11 +215,15 @@ const Feed = () => {
       .channel('posts-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
         if (lastSeenPostId && payload.new.id !== lastSeenPostId) setHasNewPosts(true);
+        if (payload.new.user_id === user.id) setMyPostCount(c => (c ?? 0) + 1);
       })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, () => fetchPosts())
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, () => {
+        fetchPosts();
+        fetchMyPostCount();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, lastSeenPostId, fetchPosts]);
+  }, [user, lastSeenPostId, fetchPosts, fetchMyPostCount]);
 
   // ─── Handlers ───
   const toggleLike = useCallback(async (postId: string, e: React.MouseEvent) => {
@@ -234,8 +276,27 @@ const Feed = () => {
     const now = Date.now();
     const HOUR = 3600000;
 
+    // ── Smart filter (Urgent / My Dept / Low Budget) ──
+    // Applied before search so it composes naturally with the relevance score
+    const smartFiltered = posts.filter(post => {
+      if (!smartFilter) return true;
+      if (smartFilter === 'urgent') {
+        if (!post.due_date) return false;
+        const dueIn = new Date(post.due_date).getTime() - now;
+        return dueIn > 0 && dueIn <= URGENT_WINDOW_HOURS * HOUR;
+      }
+      if (smartFilter === 'my-dept') {
+        if (!userCourse || !post.profiles.course) return false;
+        return post.profiles.course.toLowerCase() === userCourse.toLowerCase();
+      }
+      if (smartFilter === 'low-budget') {
+        return post.optional_price != null && post.optional_price < LOW_BUDGET_THRESHOLD;
+      }
+      return true;
+    });
+
     // ── Search with relevance weighting ──
-    const searched = posts.map(post => {
+    const searched = smartFiltered.map(post => {
       if (!searchQuery) return { post, searchRelevance: 0 };
 
       const q = searchQuery.toLowerCase();
@@ -303,16 +364,24 @@ const Feed = () => {
         return { ...post, _score: score };
       })
       .sort((a, b) => b._score - a._score);
-  }, [posts, searchQuery, likeCounts]);
+  }, [posts, searchQuery, likeCounts, smartFilter, userCourse]);
 
   if (!user) return null;
 
   const FILTER_OPTIONS = [
     { key: 'all', label: 'All', icon: Sparkles },
     { key: 'Academic Help', label: 'Academic', icon: BookOpen },
-    { key: 'Tutoring', label: 'Tutoring', icon: GraduationCap },
+    { key: 'Tutoring', label: 'Tutoring', icon: Users },
     { key: 'Buy & Sell', label: 'Market', icon: ShoppingBag },
   ];
+
+  const SMART_FILTERS: { key: SmartFilter; label: string; icon: typeof Flame }[] = [
+    { key: 'urgent', label: 'Urgent', icon: Flame },
+    { key: 'my-dept', label: 'My Dept', icon: Building2 },
+    { key: 'low-budget', label: 'Low Budget', icon: Wallet },
+  ];
+
+  const toggleSmart = (key: SmartFilter) => setSmartFilter(prev => (prev === key ? null : key));
 
   return (
     <div className="min-h-screen bg-background">
@@ -360,6 +429,30 @@ const Feed = () => {
                 ))}
               </div>
 
+              <div className="pt-2 border-t border-border/40">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-4 mb-2">Quick filters</p>
+                <div className="space-y-1">
+                  {SMART_FILTERS.map(opt => {
+                    const active = smartFilter === opt.key;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.key}
+                        onClick={() => toggleSmart(opt.key)}
+                        className={`w-full flex items-center gap-3 h-9 px-4 rounded-xl text-sm font-medium transition-all ${
+                          active
+                            ? 'bg-foreground text-background'
+                            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <Button className="w-full h-11 font-semibold rounded-xl bg-gradient-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all" asChild>
                 <Link to="/create-post">
                   <Plus className="h-4 w-4 mr-2" /> Create Post
@@ -370,8 +463,15 @@ const Feed = () => {
 
           {/* ─── Main Feed ─── */}
           <main className="w-full max-w-[600px]">
-            {/* Search */}
-            <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl pb-3 pt-3 -mx-1 px-1 border-b border-border/10">
+            {/* Mobile-only hero card — hidden once user has posted enough tasks */}
+            {myPostCount !== null && myPostCount < HIDE_HERO_AFTER_POSTS && <FeedHero />}
+
+            {/* Search + filters — auto-hides on scroll-down, slides back on scroll-up */}
+            <div
+              className={`sticky top-0 z-30 bg-background/95 backdrop-blur-xl pb-3 pt-2 -mx-1 px-1 transition-transform duration-300 ease-out lg:!translate-y-0 ${
+                headerHidden ? '-translate-y-full' : 'translate-y-0'
+              }`}
+            >
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -382,22 +482,58 @@ const Feed = () => {
                 />
               </div>
 
-              {/* Mobile Filter Pills */}
+              {/* Mobile Filter Pills — first row: smart filters (matches mockup) */}
               <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide lg:hidden">
-                {FILTER_OPTIONS.map(opt => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setFilter(opt.key)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                      filter === opt.key
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    <opt.icon className="h-3 w-3" />
-                    {opt.label}
-                  </button>
-                ))}
+                <button
+                  onClick={() => { setFilter('all'); setSmartFilter(null); }}
+                  className={`flex items-center gap-1.5 px-4 h-9 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all ${
+                    filter === 'all' && smartFilter === null
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                      : 'bg-background border border-border/60 text-foreground/80 hover:bg-muted/60'
+                  }`}
+                >
+                  All
+                </button>
+                {SMART_FILTERS.map(opt => {
+                  const active = smartFilter === opt.key;
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => toggleSmart(opt.key)}
+                      className={`flex items-center gap-1.5 px-4 h-9 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all ${
+                        active
+                          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                          : 'bg-background border border-border/60 text-foreground/80 hover:bg-muted/60'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile Filter Pills — second row: categories (kept per "do both") */}
+              <div className="flex gap-2 mt-2 overflow-x-auto scrollbar-hide lg:hidden">
+                {FILTER_OPTIONS.filter(o => o.key !== 'all').map(opt => {
+                  const active = filter === opt.key;
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setFilter(active ? 'all' : opt.key)}
+                      className={`flex items-center gap-1.5 px-3 h-7 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all ${
+                        active
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -426,6 +562,19 @@ const Feed = () => {
                     </div>
                     <p className="font-semibold text-sm mb-1">No results for "{searchQuery}"</p>
                     <p className="text-xs text-muted-foreground">Try different keywords</p>
+                  </div>
+                )}
+
+                {filteredPosts.length === 0 && !searchQuery && smartFilter && posts.length > 0 && (
+                  <div className="rounded-2xl border border-border/30 p-10 text-center">
+                    <p className="font-semibold text-sm mb-1">
+                      {smartFilter === 'urgent' && 'Nothing urgent right now'}
+                      {smartFilter === 'my-dept' && (userCourse ? `No posts from ${userCourse} yet` : 'Set your department in Profile to use this filter')}
+                      {smartFilter === 'low-budget' && `No posts under ₦${LOW_BUDGET_THRESHOLD.toLocaleString()}`}
+                    </p>
+                    <button onClick={() => setSmartFilter(null)} className="text-xs text-primary font-semibold mt-2 hover:underline">
+                      Clear filter
+                    </button>
                   </div>
                 )}
               </div>
