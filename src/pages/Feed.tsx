@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Plus, Search, RefreshCw, BookOpen, ShoppingBag,
+  Plus, Search, BookOpen, ShoppingBag,
   TrendingUp, Users, Sparkles, Flame, Building2, Wallet
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -62,7 +62,6 @@ const Feed = () => {
   const [user, setUser] = useState<any>(null);
   const [userCourse, setUserCourse] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hasNewPosts, setHasNewPosts] = useState(false);
   const [lastSeenPostId, setLastSeenPostId] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
@@ -209,21 +208,111 @@ const Feed = () => {
   });
 
   // ─── Real-time ───
+  // Prepend new posts as they arrive (no more "New posts available" button),
+  // patch updates in place, drop deletes from local state, and live-track
+  // like counts as other users heart posts. WhatsApp/Twitter-style.
   useEffect(() => {
     if (!user) return;
+
     const channel = supabase
-      .channel('posts-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
-        if (lastSeenPostId && payload.new.id !== lastSeenPostId) setHasNewPosts(true);
-        if (payload.new.user_id === user.id) setMyPostCount(c => (c ?? 0) + 1);
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, () => {
-        fetchPosts();
-        fetchMyPostCount();
-      })
+      .channel('feed-realtime')
+      // ── posts INSERT ──
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        async (payload) => {
+          const newId = (payload.new as any).id;
+          // Skip if we already have it locally (e.g. user just created it)
+          setPosts((current) => current.find((p) => p.id === newId) ? current : current);
+
+          // Re-fetch the full row with profile join + comment count
+          const { data } = await supabase
+            .from('posts')
+            .select('id, title, description, category, optional_price, ai_summary, image_url, created_at, user_id, tags, campus_highlight, engagement_count, due_date, profiles (name, rating, profile_picture, course), comments(count)')
+            .eq('id', newId)
+            .single();
+          if (!data) return;
+          const enriched = {
+            ...data,
+            comment_count: (data as any).comments?.[0]?.count || 0,
+          } as Post;
+
+          setPosts((current) => {
+            if (current.find((p) => p.id === newId)) return current;
+            return [enriched, ...current];
+          });
+          setLastSeenPostId(newId);
+          if (enriched.user_id === user.id) setMyPostCount((c) => (c ?? 0) + 1);
+        }
+      )
+      // ── posts UPDATE — patch fields in place (e.g. status, due_date, image) ──
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        (payload) => {
+          const updated = payload.new as any;
+          setPosts((current) =>
+            current.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
+          );
+        }
+      )
+      // ── posts DELETE — remove from local state, no full re-fetch ──
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'posts' },
+        (payload) => {
+          const deletedId = (payload.old as any).id;
+          setPosts((current) => current.filter((p) => p.id !== deletedId));
+          if ((payload.old as any).user_id === user.id) {
+            setMyPostCount((c) => (c != null ? Math.max(0, c - 1) : c));
+          }
+        }
+      )
+      // ── post_likes INSERT — live heart-count for other viewers ──
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_likes' },
+        (payload) => {
+          const { post_id, user_id } = payload.new as any;
+          setLikeCounts((prev) => ({ ...prev, [post_id]: (prev[post_id] || 0) + 1 }));
+          // Only mark "i liked this" if the like came from the current user
+          // and we don't already have it (e.g. optimistic update beat us).
+          if (user_id === user.id) {
+            setLikedPosts((prev) => {
+              if (prev.has(post_id)) return prev;
+              const next = new Set(prev);
+              next.add(post_id);
+              return next;
+            });
+          }
+        }
+      )
+      // ── post_likes DELETE — live heart-count decrement ──
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_likes' },
+        (payload) => {
+          const { post_id, user_id } = payload.old as any;
+          setLikeCounts((prev) => ({
+            ...prev,
+            [post_id]: Math.max(0, (prev[post_id] || 0) - 1),
+          }));
+          if (user_id === user.id) {
+            setLikedPosts((prev) => {
+              if (!prev.has(post_id)) return prev;
+              const next = new Set(prev);
+              next.delete(post_id);
+              return next;
+            });
+          }
+        }
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, lastSeenPostId, fetchPosts, fetchMyPostCount]);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   // ─── Handlers ───
   const toggleLike = useCallback(async (postId: string, e: React.MouseEvent) => {
@@ -395,17 +484,6 @@ const Feed = () => {
         isReady={isReady}
       />
 
-      {/* New posts toast */}
-      {hasNewPosts && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top">
-          <Button
-            onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setHasNewPosts(false); fetchPosts(); }}
-            className="shadow-2xl shadow-primary/30 rounded-full bg-gradient-primary hover:scale-105 active:scale-95 transition-all text-sm font-semibold"
-          >
-            <RefreshCw className="mr-2 h-3.5 w-3.5" /> New posts available
-          </Button>
-        </div>
-      )}
 
       <div className="max-w-[1400px] mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+76px)] pb-24 lg:pb-8">
         <div className="flex gap-8 justify-center">
