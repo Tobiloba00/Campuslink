@@ -107,9 +107,18 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(payload.title, options));
 });
 
+// Only allow same-origin relative paths so a malformed payload can't
+// redirect users off-site.
+function safeUrl(raw) {
+  if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) {
+    return '/notifications';
+  }
+  return raw;
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/notifications';
+  const url = safeUrl(event.notification.data && event.notification.data.url);
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {

@@ -1,19 +1,21 @@
 project_id = "hthiaombwjumhkenasjt"
 
+# All AI functions now require a valid JWT (anon or user session).
+# Stops random external callers from burning the Gemini / Lovable API budget.
 [functions.generate-summary]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-post-analysis]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-conversation-starters]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-comment-reply]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-assistant]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-search]
-verify_jwt = false
+verify_jwt = true

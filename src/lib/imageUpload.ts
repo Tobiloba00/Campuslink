@@ -13,7 +13,7 @@ export async function uploadImage(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Validate file type
+  // Validate file type (browser-reported — easily spoofed)
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   if (!validTypes.includes(file.type)) {
     throw new Error('Invalid file type. Please upload a JPG, PNG, or WebP image.');
@@ -23,6 +23,18 @@ export async function uploadImage(
   const maxSize = bucket === 'message-images' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
   if (file.size > maxSize) {
     throw new Error(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
+  }
+
+  // Magic-byte sniff so a renamed binary can't pass the type check.
+  const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const isJpeg = head[0] === 0xFF && head[1] === 0xD8 && head[2] === 0xFF;
+  const isPng = head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4E && head[3] === 0x47;
+  // WebP files start with "RIFF" then 4 size bytes then "WEBP"
+  const isWebp =
+    head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46 &&
+    head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50;
+  if (!isJpeg && !isPng && !isWebp) {
+    throw new Error("That doesn't look like a real image file.");
   }
 
   // Compress image if needed

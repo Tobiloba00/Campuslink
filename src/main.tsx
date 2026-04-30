@@ -13,10 +13,18 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Notification click → focus the existing tab and route to data.url
+// Notification click → focus the existing tab and route to data.url.
+// Only accept relative paths starting with "/" — never external URLs or
+// "//evil.com" protocol-relative tricks.
+const isSafeAppUrl = (url: string): boolean =>
+  typeof url === 'string' &&
+  url.startsWith('/') &&
+  !url.startsWith('//') &&
+  !url.includes('\\');
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data?.type === 'navigate' && typeof event.data.url === 'string') {
+    if (event.data?.type === 'navigate' && isSafeAppUrl(event.data.url)) {
       const url = event.data.url;
       if (window.location.pathname + window.location.search !== url) {
         window.history.pushState({}, '', url);

@@ -23,6 +23,8 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [otpValues, setOtpValues] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const [otpLockoutUntil, setOtpLockoutUntil] = useState<number>(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -122,6 +124,16 @@ const Auth = () => {
   };
 
   const verifyOTP = async (code: string) => {
+    // Client-side brute-force guard: 5 wrong attempts → 60s lockout.
+    // Supabase Auth enforces its own server-side limits — this is just a
+    // belt-and-braces UX guard so people don't fire 1M codes from devtools.
+    const now = Date.now();
+    if (otpLockoutUntil > now) {
+      const secs = Math.ceil((otpLockoutUntil - now) / 1000);
+      toast.error(`Too many attempts. Try again in ${secs}s.`);
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
@@ -130,10 +142,20 @@ const Auth = () => {
         type: 'signup',
       });
       if (error) throw error;
+      setOtpAttempts(0);
+      setOtpLockoutUntil(0);
       toast.success("Email verified! Welcome to CampusLink!");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Invalid verification code");
+      const nextAttempts = otpAttempts + 1;
+      setOtpAttempts(nextAttempts);
+      if (nextAttempts >= 5) {
+        setOtpLockoutUntil(Date.now() + 60_000);
+        setOtpAttempts(0);
+        toast.error("Too many incorrect codes. Locked for 60 seconds.");
+      } else {
+        toast.error(error.message || "Invalid verification code");
+      }
       setOtpValues(Array(OTP_LENGTH).fill(''));
       otpRefs.current[0]?.focus();
     } finally {

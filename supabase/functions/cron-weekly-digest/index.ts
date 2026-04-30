@@ -11,18 +11,22 @@ serve(async () => {
 
     const oneWeekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
 
-    // All users with a course set
-    const { data: users } = await supabase
-      .from("profiles")
-      .select("id, course")
-      .not("course", "is", null);
-
-    if (!users || users.length === 0) {
-      return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
-    }
-
+    // Page through users so the digest scales beyond a few thousand profiles.
+    const PAGE = 500;
+    let offset = 0;
     let sent = 0;
-    for (const u of users) {
+
+    while (true) {
+      const { data: users, error } = await supabase
+        .from("profiles")
+        .select("id, course")
+        .not("course", "is", null)
+        .range(offset, offset + PAGE - 1);
+
+      if (error) throw error;
+      if (!users || users.length === 0) break;
+
+      for (const u of users) {
       // Honor opt-out
       const { data: prefs } = await supabase
         .from("notification_preferences")
@@ -66,6 +70,10 @@ serve(async () => {
           .upsert({ user_id: u.id, last_digest_sent_at: new Date().toISOString() });
         sent++;
       }
+      }
+
+      if (users.length < PAGE) break;
+      offset += PAGE;
     }
 
     return new Response(JSON.stringify({ ok: true, sent }), { status: 200 });

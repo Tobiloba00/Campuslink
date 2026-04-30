@@ -11,20 +11,24 @@ serve(async () => {
     const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
     const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
 
-    // Inactive 3+ days, NOT pinged in the last 7 days, opted in
-    const { data: candidates } = await supabase
-      .from("notification_preferences")
-      .select("user_id, last_active_at, last_reengagement_sent_at, push_reengagement")
-      .eq("push_reengagement", true)
-      .lt("last_active_at", threeDaysAgo)
-      .or(`last_reengagement_sent_at.is.null,last_reengagement_sent_at.lt.${sevenDaysAgo}`);
-
-    if (!candidates || candidates.length === 0) {
-      return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
-    }
-
+    // Page through eligible users so we don't load everyone into memory.
+    const PAGE = 500;
+    let offset = 0;
     let sent = 0;
-    for (const u of candidates) {
+
+    while (true) {
+      const { data: candidates, error } = await supabase
+        .from("notification_preferences")
+        .select("user_id, last_active_at, last_reengagement_sent_at, push_reengagement")
+        .eq("push_reengagement", true)
+        .lt("last_active_at", threeDaysAgo)
+        .or(`last_reengagement_sent_at.is.null,last_reengagement_sent_at.lt.${sevenDaysAgo}`)
+        .range(offset, offset + PAGE - 1);
+
+      if (error) throw error;
+      if (!candidates || candidates.length === 0) break;
+
+      for (const u of candidates) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}` },
@@ -43,6 +47,10 @@ serve(async () => {
           .eq("user_id", u.user_id);
         sent++;
       }
+      }
+
+      if (candidates.length < PAGE) break;
+      offset += PAGE;
     }
 
     return new Response(JSON.stringify({ ok: true, sent }), { status: 200 });
