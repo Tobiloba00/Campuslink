@@ -104,8 +104,13 @@ const PostDetail = () => {
       .single();
 
     if (error) {
-      toast.error("Failed to load post");
-      navigate("/feed");
+      // Distinguish "doesn't exist" from "couldn't load"
+      if (error.code === "PGRST116" || /no rows/i.test(error.message)) {
+        navigate("/not-found", { replace: true });
+      } else {
+        toast.error("Failed to load post");
+        navigate("/feed");
+      }
       return;
     }
     setPost(data as Post);

@@ -48,6 +48,32 @@ const CreatePost = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Explicit client-side validation — HTML5 required is unreliable
+    // across iOS PWA flows, and we want the error toasts to drive the UX.
+    const trimmedTitle = title.trim();
+    const trimmedDesc = description.trim();
+    if (trimmedTitle.length < 4) {
+      toast.error("Give your task a title (at least 4 characters)");
+      return;
+    }
+    if (trimmedTitle.length > 120) {
+      toast.error("Title is too long — keep it under 120 characters");
+      return;
+    }
+    if (!category) {
+      toast.error("Pick a category");
+      return;
+    }
+    if (trimmedDesc.length < 10) {
+      toast.error("Add a description so people understand what you need");
+      return;
+    }
+    if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
+      toast.error("Budget needs to be a positive number");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -86,8 +112,8 @@ const CreatePost = () => {
         .from('posts')
         .insert({
           user_id: user.id,
-          title,
-          description,
+          title: trimmedTitle,
+          description: trimmedDesc,
           category: category as any,
           optional_price: price ? parseFloat(price) : null,
           due_date: dueDate ? dueDate.toISOString() : null,

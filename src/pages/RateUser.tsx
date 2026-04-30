@@ -28,6 +28,12 @@ const RateUser = () => {
 
   const fetchData = async () => {
     try {
+      // Guard against /rate-user/ with no id, /rate-user/undefined, etc.
+      if (!userId) {
+        navigate("/not-found", { replace: true });
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate("/auth");
@@ -37,7 +43,7 @@ const RateUser = () => {
 
       if (user.id === userId) {
         toast.error("You cannot rate yourself");
-        navigate("/feed");
+        navigate(-1);
         return;
       }
 
@@ -47,11 +53,19 @@ const RateUser = () => {
         .eq("id", userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === "PGRST116" || /no rows/i.test(error.message)) {
+          navigate("/not-found", { replace: true });
+        } else {
+          toast.error("Failed to load user profile");
+          navigate(-1);
+        }
+        return;
+      }
       setProfile(data);
     } catch (error: any) {
       toast.error("Failed to load user profile");
-      navigate("/feed");
+      navigate(-1);
     } finally {
       setFetching(false);
     }

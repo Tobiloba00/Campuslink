@@ -11,7 +11,6 @@ import {
   Users,
   Loader2,
   SlidersHorizontal,
-  ChevronDown,
   UserPlus,
   ArrowRight,
 } from "lucide-react";
@@ -174,8 +173,6 @@ const UserSearch = () => {
           >
             All
           </FilterPill>
-          <FilterPill chevron>All Departments</FilterPill>
-          <FilterPill chevron>All Levels</FilterPill>
           <FilterPill
             active={activeFilter === "online"}
             onClick={() =>
@@ -196,16 +193,6 @@ const UserSearch = () => {
           <h2 className="text-lg font-bold tracking-tight">
             {searchQuery ? "Results" : "Popular on Campus"}
           </h2>
-          {!searchQuery && (
-            <button
-              onClick={() => {
-                /* placeholder — future "view all" */
-              }}
-              className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-            >
-              View all
-            </button>
-          )}
         </div>
 
         {/* ─── User cards ─── */}
@@ -336,12 +323,10 @@ const UserSearch = () => {
    ──────────────────────────────────────────── */
 const FilterPill = ({
   active = false,
-  chevron = false,
   onClick,
   children,
 }: {
   active?: boolean;
-  chevron?: boolean;
   onClick?: () => void;
   children: React.ReactNode;
 }) => (
@@ -354,7 +339,6 @@ const FilterPill = ({
     }`}
   >
     {children}
-    {chevron && <ChevronDown className="h-3 w-3 opacity-70" />}
   </button>
 );
 
