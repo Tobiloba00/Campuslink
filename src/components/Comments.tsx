@@ -195,6 +195,14 @@ export const Comments = ({
         is_ai: c.comment_text.startsWith("🤖 CampusLink AI:"),
       }));
       setComments(sortCommentsForThreadDisplay(processed));
+
+      // Auto-collapse threads: any comment that has replies starts hidden,
+      // user taps "Show replies" to expand. Less wall-of-text on busy posts.
+      const parentsWithReplies = new Set<string>();
+      processed.forEach((c) => {
+        if (c.parent_id) parentsWithReplies.add(c.parent_id);
+      });
+      setCollapsedIds(parentsWithReplies);
     }
   };
 
