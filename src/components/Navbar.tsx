@@ -177,6 +177,24 @@ export const Navbar = () => {
             </Button>
           )}
 
+          {/* Notifications bell — desktop. Mobile has its own above. */}
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-9 w-9 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground hidden lg:flex"
+              aria-label="Notifications"
+              onClick={() => navigate('/notifications')}
+            >
+              <Bell className="h-[18px] w-[18px]" />
+              {unreadNotifications > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full ring-2 ring-background">
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </span>
+              )}
+            </Button>
+          )}
+
           {user && <div className="w-px h-5 bg-border/40 mx-1 hidden lg:block" />}
 
           {/* Theme toggle: desktop visible, mobile hidden (kept inside avatar dropdown) */}
