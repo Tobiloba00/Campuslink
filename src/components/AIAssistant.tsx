@@ -1,18 +1,35 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, X, Send, Trash2, ArrowDown } from 'lucide-react';
+import {
+  X,
+  Send,
+  Trash2,
+  ArrowDown,
+  ChevronRight,
+  PenLine,
+  Star,
+  LayoutGrid,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { LogoMark } from '@/components/Logo';
 
-const SUGGESTED_QUESTIONS = [
-  "How do I create a post?",
-  "How does the rating system work?",
-  "What categories can I post in?",
-  "How do I message someone?",
-  "Tips for getting more responses?",
+type SuggestedQuestion = {
+  text: string;
+  icon: typeof PenLine;
+};
+
+const SUGGESTED_QUESTIONS: SuggestedQuestion[] = [
+  { text: 'How do I create a post?', icon: PenLine },
+  { text: 'How does the rating system work?', icon: Star },
+  { text: 'What categories can I post in?', icon: LayoutGrid },
+  { text: 'How do I message someone?', icon: Send },
+  { text: 'Tips for getting more responses?', icon: TrendingUp },
 ];
 
 export function AIAssistant() {
@@ -33,7 +50,7 @@ export function AIAssistant() {
       if (viewport) {
         viewport.scrollTo({
           top: viewport.scrollHeight,
-          behavior: smooth ? 'smooth' : 'instant'
+          behavior: smooth ? 'smooth' : 'instant',
         });
       }
     }
@@ -43,12 +60,13 @@ export function AIAssistant() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Focus input when opening
+  // Focus input when opening (only when there are existing messages — avoid
+  // the iOS keyboard popping over the welcome state).
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (isOpen && messages.length > 0 && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 350);
     }
-  }, [isOpen]);
+  }, [isOpen, messages.length]);
 
   // Hide FAB on scroll (mobile only)
   useEffect(() => {
@@ -96,7 +114,6 @@ export function AIAssistant() {
     if (!input.trim() || isLoading) return;
     sendMessage(input.trim());
     setInput('');
-    // Reset textarea height
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
@@ -114,7 +131,6 @@ export function AIAssistant() {
     sendMessage(question);
   };
 
-  // Auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     const el = e.target;
@@ -124,32 +140,30 @@ export function AIAssistant() {
 
   return (
     <>
-      {/* FAB Trigger */}
+      {/* FAB Trigger — uses the CampusLink mark instead of an AI sparkle */}
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed z-40 rounded-full shadow-xl flex items-center justify-center",
-          "bg-gradient-to-br from-primary to-primary/80 text-white",
-          "transition-all duration-300 hover:scale-110 active:scale-95",
-          "hover:shadow-primary/40 hover:shadow-2xl",
-          isMobile ? "bottom-[86px] right-4" : "bottom-6 right-6",
-          isOpen && "pointer-events-none opacity-0 scale-50",
-          !isVisible && isMobile ? "scale-75 opacity-40" : "opacity-100",
-          isMobile ? "h-12 w-12" : "h-14 w-14"
+          'fixed z-40 rounded-full shadow-xl flex items-center justify-center',
+          'bg-primary text-white',
+          'transition-all duration-300 hover:scale-110 active:scale-95',
+          'hover:shadow-primary/40 hover:shadow-2xl',
+          isMobile ? 'bottom-[96px] right-4 h-12 w-12' : 'bottom-6 right-6 h-14 w-14',
+          isOpen && 'pointer-events-none opacity-0 scale-50',
+          !isVisible && isMobile ? 'scale-75 opacity-40' : 'opacity-100'
         )}
-        aria-label="Open AI Assistant"
+        aria-label="Open CampusLink AI assistant"
       >
-        <Sparkles className={cn(isMobile ? "h-5 w-5" : "h-6 w-6")} />
-        {/* Pulse ring */}
+        <LogoMark size={isMobile ? 22 : 26} className="text-white" />
         {!isOpen && messages.length === 0 && (
           <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping opacity-40" />
         )}
       </button>
 
-      {/* Overlay */}
+      {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -157,54 +171,58 @@ export function AIAssistant() {
       {/* Chat Panel */}
       <div
         className={cn(
-          "fixed z-50 flex flex-col bg-background border shadow-2xl transition-all duration-300 ease-out overflow-hidden",
+          'fixed z-50 flex flex-col bg-background shadow-2xl transition-all duration-300 ease-out overflow-hidden',
           isMobile
-            ? "inset-x-0 bottom-0 rounded-t-2xl max-h-[85dvh] h-[85dvh] safe-area-inset-bottom"
-            : "bottom-6 right-6 w-[400px] h-[580px] rounded-2xl border-border/50",
+            ? 'inset-x-0 bottom-0 rounded-t-3xl max-h-[88dvh] h-[88dvh]'
+            : 'bottom-6 right-6 w-[420px] h-[620px] rounded-3xl border border-border/40',
           isOpen
-            ? "translate-y-0 opacity-100"
+            ? 'translate-y-0 opacity-100'
             : isMobile
-              ? "translate-y-full opacity-0 pointer-events-none"
-              : "translate-y-4 opacity-0 pointer-events-none scale-95"
+            ? 'translate-y-full opacity-0 pointer-events-none'
+            : 'translate-y-4 opacity-0 pointer-events-none scale-95'
         )}
       >
-        {/* Handle bar (mobile only) */}
+        {/* Drag handle (mobile only) */}
         {isMobile && (
-          <div className="flex justify-center pt-3 pb-1 shrink-0">
-            <div className="w-10 h-1 bg-muted-foreground/20 rounded-full" />
+          <div className="flex justify-center pt-2.5 pb-1 shrink-0">
+            <div className="w-9 h-1 bg-muted-foreground/25 rounded-full" />
           </div>
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
-              <Sparkles className="h-4 w-4 text-white" />
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <LogoMark size={26} className="text-primary" />
             </div>
-            <div>
-              <h3 className="text-sm font-bold">CampusLink AI</h3>
-              <p className="text-[10px] text-muted-foreground leading-none">
-                {isLoading ? 'Thinking...' : 'Your campus assistant'}
+            <div className="min-w-0">
+              <h3 className="text-[17px] font-bold tracking-tight leading-tight truncate">
+                CampusLink AI
+              </h3>
+              <p className="text-xs text-muted-foreground leading-none mt-0.5">
+                {isLoading ? 'Thinking…' : 'Your campus assistant'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {messages.length > 0 && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive"
+                className="h-9 w-9 rounded-xl bg-muted/50 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={clearMessages}
                 title="Clear chat"
+                aria-label="Clear chat"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-lg"
+              className="h-9 w-9 rounded-xl bg-muted/60 hover:bg-muted text-foreground"
               onClick={() => setIsOpen(false)}
+              aria-label="Close"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -214,53 +232,69 @@ export function AIAssistant() {
         {/* Messages */}
         <div className="flex-1 relative overflow-hidden">
           <ScrollArea ref={scrollRef} className="h-full">
-            <div className="px-4 py-3">
+            <div className="px-4 sm:px-5 pt-2 pb-4">
               {messages.length === 0 ? (
-                <div className="space-y-4 pt-4">
-                  <div className="text-center pb-2">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-3">
-                      <Sparkles className="h-7 w-7 text-primary" />
-                    </div>
-                    <h3 className="font-bold text-base mb-1">Hi there! 👋</h3>
-                    <p className="text-xs text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
-                      I'm your CampusLink assistant. Ask me anything about using the platform!
+                <div className="space-y-6">
+                  {/* Welcome */}
+                  <div className="flex flex-col items-center text-center pt-6">
+                    <ChatArtwork />
+                    <h3 className="font-extrabold text-[22px] tracking-tight mt-5 mb-1.5">
+                      Hi there! 👋
+                    </h3>
+                    <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
+                      I'm your CampusLink assistant.
+                      <br />
+                      How can I help you today?
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
+
+                  {/* Quick questions */}
+                  <div>
+                    <h4 className="text-[15px] font-bold tracking-tight mb-3">
                       Quick questions
-                    </p>
-                    {SUGGESTED_QUESTIONS.map((q, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSuggestion(q)}
-                        className="w-full text-left px-3.5 py-2.5 rounded-xl bg-muted/40 hover:bg-muted border border-transparent hover:border-border/30 text-sm transition-all active:scale-[0.98]"
-                      >
-                        {q}
-                      </button>
-                    ))}
+                    </h4>
+                    <div className="space-y-2.5">
+                      {SUGGESTED_QUESTIONS.map((q, i) => {
+                        const Icon = q.icon;
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => handleSuggestion(q.text)}
+                            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-card border border-border/40 hover:border-primary/30 hover:bg-primary/[0.03] transition-all active:scale-[0.99] text-left"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Icon className="h-[18px] w-[18px] text-primary" strokeWidth={1.8} />
+                            </div>
+                            <span className="flex-1 text-sm font-medium text-foreground">
+                              {q.text}
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 pt-2">
                   {messages.map((msg, i) => (
                     <div
                       key={i}
                       className={cn(
-                        "flex",
+                        'flex',
                         msg.role === 'user' ? 'justify-end' : 'justify-start'
                       )}
                     >
                       {msg.role === 'assistant' && (
-                        <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center mr-2 mt-1 shrink-0">
-                          <Sparkles className="h-3 w-3 text-primary" />
+                        <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center mr-2 mt-0.5 shrink-0">
+                          <LogoMark size={16} className="text-primary" />
                         </div>
                       )}
                       <div
                         className={cn(
-                          "max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                          'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed',
                           msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground rounded-br-md'
+                            ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm shadow-primary/20'
                             : 'bg-muted/60 border border-border/30 rounded-bl-md'
                         )}
                       >
@@ -275,17 +309,25 @@ export function AIAssistant() {
                     </div>
                   ))}
 
-                  {/* Typing indicator */}
                   {isLoading && messages[messages.length - 1]?.role === 'user' && (
                     <div className="flex justify-start">
-                      <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center mr-2 mt-1 shrink-0">
-                        <Sparkles className="h-3 w-3 text-primary" />
+                      <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center mr-2 mt-0.5 shrink-0">
+                        <LogoMark size={16} className="text-primary" />
                       </div>
                       <div className="bg-muted/60 border border-border/30 rounded-2xl rounded-bl-md px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <div
+                            className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"
+                            style={{ animationDelay: '0ms' }}
+                          />
+                          <div
+                            className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"
+                            style={{ animationDelay: '150ms' }}
+                          />
+                          <div
+                            className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"
+                            style={{ animationDelay: '300ms' }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -295,11 +337,12 @@ export function AIAssistant() {
             </div>
           </ScrollArea>
 
-          {/* Scroll to bottom button */}
+          {/* Scroll-to-bottom */}
           {showScrollDown && (
             <button
               onClick={() => scrollToBottom()}
               className="absolute bottom-2 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-background border border-border/50 shadow-lg flex items-center justify-center hover:bg-muted transition-all"
+              aria-label="Scroll to latest message"
             >
               <ArrowDown className="h-3.5 w-3.5" />
             </button>
@@ -307,31 +350,38 @@ export function AIAssistant() {
         </div>
 
         {/* Input area */}
-        <div className="shrink-0 border-t border-border/50 p-3 bg-background/80 backdrop-blur-sm">
-          <form onSubmit={handleSubmit} className="flex items-end gap-2">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
-              disabled={isLoading}
-              rows={1}
-              className={cn(
-                "flex-1 resize-none bg-muted/40 border border-border/30 rounded-xl px-3.5 py-2.5 text-sm",
-                "placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30",
-                "min-h-[40px] max-h-[120px] transition-colors",
-                "disabled:opacity-50"
-              )}
-              autoComplete="off"
-            />
+        <div
+          className="shrink-0 px-3 sm:px-4 pt-3 bg-background/80 backdrop-blur-sm border-t border-border/40"
+          style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + 12px)` }}
+        >
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 bg-card border border-border/50 rounded-full pl-4 pr-2 py-1.5 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/15 transition-all">
+              <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask anything..."
+                disabled={isLoading}
+                rows={1}
+                className={cn(
+                  'flex-1 resize-none bg-transparent border-none px-0 py-2 text-[15px]',
+                  'placeholder:text-muted-foreground/60 focus:outline-none',
+                  'min-h-[28px] max-h-[120px]',
+                  'disabled:opacity-50'
+                )}
+                autoComplete="off"
+              />
+            </div>
             <Button
               type="submit"
               size="icon"
               disabled={!input.trim() || isLoading}
-              className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shrink-0 transition-all disabled:opacity-30"
+              className="h-11 w-11 rounded-full bg-primary hover:bg-primary/90 shrink-0 transition-all disabled:opacity-30 shadow-md shadow-primary/25"
+              aria-label="Send"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-[18px] w-[18px]" />
             </Button>
           </form>
         </div>
@@ -339,3 +389,71 @@ export function AIAssistant() {
     </>
   );
 }
+
+/* ────────────────────────────────────────────
+   Welcome illustration — overlapping chat bubbles + sparkles
+   ──────────────────────────────────────────── */
+const ChatArtwork = () => (
+  <svg
+    width="120"
+    height="120"
+    viewBox="0 0 120 120"
+    fill="none"
+    aria-hidden="true"
+  >
+    {/* Soft back bubble */}
+    <ellipse
+      cx="48"
+      cy="58"
+      rx="32"
+      ry="30"
+      fill="hsl(var(--primary) / 0.12)"
+    />
+
+    {/* Front white bubble with shadow */}
+    <g filter="url(#chat-shadow)">
+      <path
+        d="M40 38 H86 a10 10 0 0 1 10 10 v18 a10 10 0 0 1 -10 10 H66 l-9 9 v-9 H40 a10 10 0 0 1 -10 -10 V48 a10 10 0 0 1 10 -10 z"
+        fill="hsl(var(--card))"
+      />
+    </g>
+
+    {/* Three dots in the bubble */}
+    <circle cx="52" cy="57" r="3" fill="hsl(var(--primary))" />
+    <circle cx="63" cy="57" r="3" fill="hsl(var(--primary))" />
+    <circle cx="74" cy="57" r="3" fill="hsl(var(--primary))" />
+
+    {/* Sparkle decorations */}
+    <path
+      d="M99 28 L101 33 L106 35 L101 37 L99 42 L97 37 L92 35 L97 33 Z"
+      fill="hsl(var(--primary))"
+    />
+    <circle cx="105" cy="48" r="2" fill="hsl(var(--primary) / 0.6)" />
+    <path
+      d="M22 88 L23 91 L26 92 L23 93 L22 96 L21 93 L18 92 L21 91 Z"
+      fill="hsl(var(--primary) / 0.5)"
+    />
+
+    <defs>
+      <filter
+        id="chat-shadow"
+        x="22"
+        y="32"
+        width="82"
+        height="62"
+        filterUnits="userSpaceOnUse"
+      >
+        <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+        <feOffset dy="2" />
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="0.08" />
+        </feComponentTransfer>
+        <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" />
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+);
