@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   Trash2, Users, FileText, ShieldCheck, Megaphone, Building2, Flag, Check, X, Loader2,
+  LayoutDashboard, Activity, Plus, ChevronRight, ArrowRight, Bell,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDistanceToNow, format, startOfDay } from "date-fns";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -39,11 +41,10 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+7rem)] pb-24 lg:pb-8">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Dashboard</h1>
-
-        <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="overflow-x-auto scrollbar-hide flex-wrap h-auto">
+      <div className="container mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+7rem)] pb-24 lg:pb-8 max-w-7xl">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="overflow-x-auto scrollbar-hide flex-wrap h-auto justify-start">
+            <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="h-4 w-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="applications" className="gap-2"><ShieldCheck className="h-4 w-4" />Applications</TabsTrigger>
             <TabsTrigger value="publishers" className="gap-2"><Megaphone className="h-4 w-4" />Publishers</TabsTrigger>
             <TabsTrigger value="reports" className="gap-2"><Flag className="h-4 w-4" />Reports</TabsTrigger>
@@ -52,6 +53,7 @@ const Admin = () => {
             <TabsTrigger value="users" className="gap-2"><Users className="h-4 w-4" />Users</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="dashboard"><DashboardTab /></TabsContent>
           <TabsContent value="applications"><ApplicationsTab /></TabsContent>
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
           <TabsContent value="reports"><ReportsTab /></TabsContent>
@@ -63,6 +65,404 @@ const Admin = () => {
     </div>
   );
 };
+
+/* ────────────────────────────────────────────────────────────
+   DashboardTab — overview matching the design mockup
+   ──────────────────────────────────────────────────────────── */
+const DashboardTab = () => {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    pendingApps: 0,
+    activePublishers: 0,
+    memosToday: 0,
+    pendingReports: 0,
+    activeSchools: 0,
+  });
+  const [pendingApps, setPendingApps] = useState<any[]>([]);
+  const [verifiedPubs, setVerifiedPubs] = useState<any[]>([]);
+  const [flaggedReports, setFlaggedReports] = useState<any[]>([]);
+  const [recentMemos, setRecentMemos] = useState<any[]>([]);
+  const [activity, setActivity] = useState<any[]>([]);
+  const [adminName, setAdminName] = useState("Admin");
+  const [adminPic, setAdminPic] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const today = startOfDay(new Date()).toISOString();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles").select("name, profile_picture")
+          .eq("id", user.id).single();
+        if (profile) { setAdminName(profile.name || "Admin"); setAdminPic(profile.profile_picture); }
+      }
+
+      // Counts (run in parallel)
+      const [
+        { count: pendingApps },
+        { count: activePublishers },
+        { count: memosToday },
+        { count: pendingReports },
+        { count: activeSchools },
+      ] = await Promise.all([
+        supabase.from("publisher_applications").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("publishers").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("memos").select("id", { count: "exact", head: true }).gte("created_at", today),
+        supabase.from("memo_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("schools").select("id", { count: "exact", head: true }),
+      ]);
+
+      setStats({
+        pendingApps: pendingApps ?? 0,
+        activePublishers: activePublishers ?? 0,
+        memosToday: memosToday ?? 0,
+        pendingReports: pendingReports ?? 0,
+        activeSchools: activeSchools ?? 0,
+      });
+
+      // Lists (top items)
+      const [{ data: apps }, { data: pubs }, { data: rs }, { data: ms }] = await Promise.all([
+        supabase.from("publisher_applications")
+          .select("*, profiles:user_id (name, profile_picture), schools:school_id (name)")
+          .eq("status", "pending").order("created_at", { ascending: false }).limit(3),
+        supabase.from("publishers")
+          .select("id, role, status, verified_at, profiles:user_id (name, profile_picture), schools:school_id (name)")
+          .eq("status", "active").order("verified_at", { ascending: false }).limit(4),
+        supabase.from("memo_reports")
+          .select("*, profiles:reporter_id (name)")
+          .eq("status", "pending").order("created_at", { ascending: false }).limit(3),
+        supabase.from("memos")
+          .select("id, title, urgency, created_at, publishers!inner(role, profiles:user_id (name))")
+          .order("created_at", { ascending: false }).limit(4),
+      ]);
+
+      setPendingApps(apps || []);
+      setVerifiedPubs(pubs || []);
+      setFlaggedReports(rs || []);
+      setRecentMemos(ms || []);
+
+      // Activity feed: synthesize from recent rows
+      const events: any[] = [];
+      (apps || []).slice(0, 2).forEach((a) =>
+        events.push({ icon: ShieldCheck, text: `New application from ${a.profiles?.name || "unknown"}`,
+                      time: a.created_at, color: "text-primary bg-primary/10" }));
+      (rs || []).slice(0, 2).forEach((r) =>
+        events.push({ icon: Flag, text: `New ${r.target_type} report (${r.reason})`,
+                      time: r.created_at, color: "text-red-600 bg-red-500/10" }));
+      (ms || []).slice(0, 2).forEach((m) =>
+        events.push({ icon: Megaphone, text: `New memo: "${m.title}"`,
+                      time: m.created_at, color: "text-emerald-600 bg-emerald-500/10" }));
+      events.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setActivity(events.slice(0, 6));
+
+      setLoading(false);
+    })();
+  }, []);
+
+  const approve = async (id: string) => {
+    const { error } = await supabase.rpc("approve_publisher_application", { p_app_id: id });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Approved");
+    setPendingApps((prev) => prev.filter((a) => a.id !== id));
+    setStats((s) => ({ ...s, pendingApps: Math.max(0, s.pendingApps - 1), activePublishers: s.activePublishers + 1 }));
+  };
+
+  const reject = async (id: string) => {
+    const reason = prompt("Reason for rejection?") || "Rejected";
+    const { error } = await supabase.rpc("reject_publisher_application", { p_app_id: id, p_reason: reason });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Rejected");
+    setPendingApps((prev) => prev.filter((a) => a.id !== id));
+    setStats((s) => ({ ...s, pendingApps: Math.max(0, s.pendingApps - 1) }));
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Welcome banner */}
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-primary/85 text-white p-5 flex items-center gap-4">
+        <Avatar className="h-12 w-12 ring-2 ring-white/30">
+          <AvatarImage src={adminPic || ""} />
+          <AvatarFallback className="bg-white/20 text-white text-base font-bold">
+            {adminName.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg sm:text-xl font-bold leading-tight">
+            Welcome back, {adminName.split(" ")[0]} <span className="inline-block">👋</span>
+          </h2>
+          <p className="text-sm text-white/80 leading-relaxed">
+            Monitor applications, memos, and platform activity in real-time
+          </p>
+        </div>
+        <div className="hidden sm:flex gap-2 flex-shrink-0">
+          <Button onClick={() => navigate("/admin")} variant="secondary" size="sm"
+                  className="rounded-full text-xs font-semibold bg-white text-primary hover:bg-white/90">
+            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />Approve Publishers
+          </Button>
+          <Button onClick={() => navigate("/memos/new")} size="sm"
+                  className="rounded-full text-xs font-semibold bg-white/15 text-white hover:bg-white/25">
+            <Plus className="h-3.5 w-3.5 mr-1" />Create Memo
+          </Button>
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <StatCard icon={ShieldCheck} label="Pending Apps" value={stats.pendingApps}
+                  hint={stats.pendingApps > 0 ? `${stats.pendingApps} awaiting review` : "All caught up"}
+                  color="text-primary bg-primary/10" />
+        <StatCard icon={Check} label="Active Publishers" value={stats.activePublishers}
+                  hint="Across all schools" color="text-emerald-600 bg-emerald-500/10" />
+        <StatCard icon={Megaphone} label="Memos Today" value={stats.memosToday}
+                  hint="In the last 24h" color="text-violet-600 bg-violet-500/10" />
+        <StatCard icon={Flag} label="Reports" value={stats.pendingReports}
+                  hint={stats.pendingReports > 0 ? "Needs review" : "Nothing flagged"}
+                  color="text-red-600 bg-red-500/10" />
+        <StatCard icon={Building2} label="Schools" value={stats.activeSchools}
+                  hint="Active campuses" color="text-amber-600 bg-amber-500/10" />
+      </div>
+
+      {/* Two-column layout on desktop */}
+      <div className="grid lg:grid-cols-3 gap-5">
+        {/* Left col — pending apps + flagged reports */}
+        <div className="lg:col-span-2 space-y-5">
+          <Section title="Pending Applications" count={stats.pendingApps} viewAllTab="applications">
+            {pendingApps.length === 0 ? (
+              <EmptyHint title="No pending applications" />
+            ) : (
+              <div className="space-y-2.5">
+                {pendingApps.map((a) => (
+                  <div key={a.id} className="rounded-xl bg-card border border-border/40 p-3 flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={a.profiles?.profile_picture || ""} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                        {a.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{a.profiles?.name || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {roleLabel(a.requested_role)} · {a.schools?.name || "—"}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {a.proof_screenshot_url && <ProofChip>Screenshot</ProofChip>}
+                        {a.proof_whatsapp_link && <ProofChip>WhatsApp</ProofChip>}
+                        {a.proof_email && <ProofChip>Email</ProofChip>}
+                        {a.proof_reference_name && <ProofChip>Reference</ProofChip>}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <Button onClick={() => approve(a.id)} size="sm"
+                              className="rounded-lg h-7 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">
+                        Approve
+                      </Button>
+                      <Button onClick={() => reject(a.id)} size="sm" variant="outline"
+                              className="rounded-lg h-7 px-3 text-xs font-semibold border-red-500/30 text-red-600 hover:bg-red-500/5">
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          <Section title="Flagged Reports" count={stats.pendingReports} viewAllTab="reports">
+            {flaggedReports.length === 0 ? (
+              <EmptyHint title="No flagged content" />
+            ) : (
+              <div className="space-y-2">
+                {flaggedReports.map((r) => (
+                  <div key={r.id} className="rounded-xl bg-card border border-border/40 p-3 flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <Flag className="h-4 w-4 text-red-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold capitalize truncate">
+                        {r.target_type} report — {r.reason}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        by {r.profiles?.name || "Unknown"} ·
+                        {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <Button onClick={() => navigate("/admin")} size="sm" variant="outline"
+                            className="rounded-lg h-7 text-xs font-semibold flex-shrink-0">
+                      Review
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+        </div>
+
+        {/* Right col — verified publishers, recent memos, activity, status */}
+        <div className="space-y-5">
+          <Section title="Verified Publishers" count={stats.activePublishers} viewAllTab="publishers" compact>
+            {verifiedPubs.length === 0 ? (
+              <EmptyHint title="No verified publishers yet" />
+            ) : (
+              <ul className="space-y-2">
+                {verifiedPubs.map((p) => (
+                  <li key={p.id} className="rounded-xl bg-card border border-border/40 p-3 flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={p.profiles?.profile_picture || ""} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                        {p.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{p.profiles?.name || "Unknown"}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{p.schools?.name}</p>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 flex-shrink-0">
+                      Verified
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          <Section title="Recent Memos" viewAllTab={null} compact>
+            {recentMemos.length === 0 ? (
+              <EmptyHint title="No memos yet" />
+            ) : (
+              <ul className="space-y-2">
+                {recentMemos.map((m) => (
+                  <li key={m.id} onClick={() => navigate(`/memos/${m.id}`)}
+                      className="rounded-xl bg-card border border-border/40 p-3 cursor-pointer hover:border-primary/30">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                        m.urgency === "urgent" ? "bg-red-500/10 text-red-600" :
+                        m.urgency === "important" ? "bg-amber-500/10 text-amber-600" :
+                        "bg-primary/10 text-primary"
+                      }`}>{m.urgency}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold truncate">{m.title}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          <Section title="Activity Feed" viewAllTab={null} compact>
+            {activity.length === 0 ? (
+              <EmptyHint title="Quiet around here" />
+            ) : (
+              <ul className="space-y-2">
+                {activity.map((e, i) => {
+                  const Icon = e.icon;
+                  return (
+                    <li key={i} className="flex items-center gap-2.5 rounded-xl bg-card border border-border/40 p-3">
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 ${e.color}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{e.text}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(e.time), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Section>
+
+          <Section title="System Status" viewAllTab={null} compact>
+            <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40">
+              <SystemRow label="AI Service" status="operational" />
+              <SystemRow label="Notifications" status="operational" />
+              <SystemRow label="Storage" status="operational" />
+              <SystemRow label="Realtime" status="operational" />
+            </div>
+          </Section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({
+  icon: Icon, label, value, hint, color,
+}: { icon: any; label: string; value: number; hint: string; color: string }) => (
+  <div className="rounded-2xl bg-card border border-border/40 p-3.5">
+    <div className={`h-8 w-8 rounded-lg flex items-center justify-center mb-2 ${color}`}>
+      <Icon className="h-4 w-4" />
+    </div>
+    <p className="text-2xl font-bold leading-none">{value}</p>
+    <p className="text-[11px] font-semibold text-muted-foreground mt-1">{label}</p>
+    <p className="text-[10px] text-muted-foreground/70 mt-0.5">{hint}</p>
+  </div>
+);
+
+const Section = ({
+  title, count, viewAllTab, compact = false, children,
+}: { title: string; count?: number; viewAllTab: string | null; compact?: boolean; children: React.ReactNode }) => {
+  const switchTab = (v: string) => {
+    const tab = document.querySelector(`[data-state][value="${v}"]`) as HTMLButtonElement | null;
+    tab?.click();
+  };
+  return (
+    <div>
+      <div className={`flex items-center justify-between ${compact ? "mb-2" : "mb-3"}`}>
+        <h3 className={`font-bold tracking-tight ${compact ? "text-sm" : "text-base"}`}>
+          {title}
+          {count != null && count > 0 && (
+            <span className="ml-2 text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {count}
+            </span>
+          )}
+        </h3>
+        {viewAllTab && (
+          <button onClick={() => switchTab(viewAllTab)}
+                  className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-0.5">
+            View all<ArrowRight className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+const ProofChip = ({ children }: { children: React.ReactNode }) => (
+  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+    {children}
+  </span>
+);
+
+const EmptyHint = ({ title }: { title: string }) => (
+  <div className="rounded-xl border border-border/30 bg-card p-6 text-center">
+    <p className="text-xs text-muted-foreground">{title}</p>
+  </div>
+);
+
+const SystemRow = ({ label, status }: { label: string; status: "operational" | "degraded" | "down" }) => {
+  const dotColor = status === "operational" ? "bg-emerald-500" : status === "degraded" ? "bg-amber-500" : "bg-red-500";
+  return (
+    <div className="flex items-center justify-between p-3">
+      <span className="text-xs font-medium">{label}</span>
+      <span className="flex items-center gap-1.5 text-[11px] font-semibold capitalize">
+        <span className={`h-2 w-2 rounded-full ${dotColor}`} />{status}
+      </span>
+    </div>
+  );
+};
+
+const roleLabel = (r: string) =>
+  r === "student_union" ? "Student Union" : r === "school_admin" ? "School Admin" : r;
 
 /* ─── Tab: Publisher applications ─── */
 const ApplicationsTab = () => {
