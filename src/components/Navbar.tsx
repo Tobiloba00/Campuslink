@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Trophy, Home, Search, Bell, Moon, Sun } from "lucide-react";
+import { LogOut, User as UserIcon, MessageSquare, LayoutDashboard, Trophy, Home, Search, Bell, Moon, Sun, Megaphone } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
@@ -98,6 +98,7 @@ export const Navbar = () => {
   const desktopLinks = [
     { path: '/feed', icon: Home, label: 'Feed' },
     { path: '/user-search', icon: Search, label: 'Explore' },
+    { path: '/memos', icon: Megaphone, label: 'Memos' },
     { path: '/messages', icon: MessageSquare, label: 'Messages' },
     { path: '/leaderboard', icon: Trophy, label: 'Leaders' },
   ];

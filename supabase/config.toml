@@ -19,3 +19,10 @@ verify_jwt = true
 
 [functions.ai-search]
 verify_jwt = true
+
+# Memo system: invoked by triggers via service-role; no JWT
+[functions.process-memo-ai]
+verify_jwt = false
+
+[functions.dispatch-memo-pushes]
+verify_jwt = false

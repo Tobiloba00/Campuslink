@@ -27,7 +27,12 @@ import {
   Info,
   ExternalLink,
   KeyRound,
+  ShieldCheck,
+  Megaphone,
 } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImageUpload } from "@/components/ImageUpload";
 import { uploadImage, deleteImage } from "@/lib/imageUpload";
@@ -73,6 +78,15 @@ const Profile = () => {
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
   const [bio, setBio] = useState("");
+  const [schoolId, setSchoolId] = useState<string>("");
+  const [facultyId, setFacultyId] = useState<string>("");
+  const [departmentId, setDepartmentId] = useState<string>("");
+  const [level, setLevel] = useState<string>("");
+  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+  const [faculties, setFaculties] = useState<{ id: string; name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [activePublisher, setActivePublisher] = useState<any>(null);
+  const [pendingApplication, setPendingApplication] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [postCount, setPostCount] = useState(0);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -133,8 +147,37 @@ const Profile = () => {
       setName(data.name || "");
       setCourse(data.course || "");
       setBio(data.bio || "");
+      setSchoolId(data.school_id || "");
+      setFacultyId(data.faculty_id || "");
+      setDepartmentId(data.department_id || "");
+      setLevel(data.level ? String(data.level) : "");
     }
+
+    // Load lookup tables for the academic dropdowns
+    const { data: ss } = await supabase.from("schools").select("id, name").order("name");
+    setSchools(ss || []);
+
+    // Publisher state — drives the "Become a publisher" CTA copy
+    const [{ data: pub }, { data: app }] = await Promise.all([
+      supabase.from("publishers").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("publisher_applications").select("*")
+        .eq("user_id", user.id).eq("status", "pending").maybeSingle(),
+    ]);
+    setActivePublisher(pub);
+    setPendingApplication(app);
   };
+
+  // Cascade: when school/faculty changes, reload children
+  useEffect(() => {
+    if (!schoolId) { setFaculties([]); return; }
+    supabase.from("faculties").select("id, name").eq("school_id", schoolId).order("name")
+      .then(({ data }) => setFaculties(data || []));
+  }, [schoolId]);
+  useEffect(() => {
+    if (!facultyId) { setDepartments([]); return; }
+    supabase.from("departments").select("id, name").eq("faculty_id", facultyId).order("name")
+      .then(({ data }) => setDepartments(data || []));
+  }, [facultyId]);
 
   const fetchReviews = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -252,7 +295,14 @@ const Profile = () => {
       }
       const { error } = await supabase
         .from("profiles")
-        .update({ name, course, bio, profile_picture: profilePictureUrl })
+        .update({
+          name, course, bio,
+          profile_picture: profilePictureUrl,
+          school_id: schoolId || null,
+          faculty_id: facultyId || null,
+          department_id: departmentId || null,
+          level: level ? parseInt(level, 10) : null,
+        })
         .eq("id", user.id);
       if (error) throw error;
       toast.success("Profile updated!");
@@ -628,6 +678,53 @@ const Profile = () => {
                       className="rounded-xl resize-none"
                     />
                   </div>
+
+                  {/* Academic identity — required for memos to be filtered properly */}
+                  <div className="pt-2 border-t border-border/40">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      Academic
+                    </p>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">School</Label>
+                        <Select value={schoolId} onValueChange={(v) => { setSchoolId(v); setFacultyId(""); setDepartmentId(""); }}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Pick your school" /></SelectTrigger>
+                          <SelectContent>
+                            {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Faculty</Label>
+                        <Select value={facultyId} onValueChange={(v) => { setFacultyId(v); setDepartmentId(""); }} disabled={!schoolId}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Pick a faculty" /></SelectTrigger>
+                          <SelectContent>
+                            {faculties.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Department</Label>
+                        <Select value={departmentId} onValueChange={setDepartmentId} disabled={!facultyId}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Pick a department" /></SelectTrigger>
+                          <SelectContent>
+                            {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Level</Label>
+                        <Select value={level} onValueChange={setLevel}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Pick your level" /></SelectTrigger>
+                          <SelectContent>
+                            {[100, 200, 300, 400, 500, 600].map((l) => (
+                              <SelectItem key={l} value={String(l)}>{l} Level</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                   <Button
                     type="submit"
                     disabled={loading || uploading}
@@ -705,6 +802,30 @@ const Profile = () => {
                   </ul>
                 )}
               </div>
+            )}
+
+            {/* Publisher status / apply */}
+            {activePublisher?.status === "active" ? (
+              <SettingsRow
+                icon={ShieldCheck}
+                label="Verified publisher"
+                onClick={() => navigate("/memos/new")}
+              />
+            ) : pendingApplication ? (
+              <SettingsRow
+                icon={ShieldCheck}
+                label="Application under review"
+                onClick={() => {}}
+              />
+            ) : (
+              <SettingsRow
+                icon={Megaphone}
+                label="Become a publisher"
+                onClick={() => {
+                  setSettingsOpen(false);
+                  navigate("/apply-publisher");
+                }}
+              />
             )}
 
             {/* Notifications */}

@@ -27,6 +27,10 @@ const RateUser = lazy(() => import("./pages/RateUser"));
 const MyTasks = lazy(() => import("./pages/MyTasks"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Memos = lazy(() => import("./pages/Memos"));
+const MemoDetail = lazy(() => import("./pages/MemoDetail"));
+const CreateMemo = lazy(() => import("./pages/CreateMemo"));
+const ApplyPublisher = lazy(() => import("./pages/ApplyPublisher"));
 
 const queryClient = new QueryClient();
 
@@ -63,6 +67,10 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/memos" element={<Memos />} />
+              <Route path="/memos/new" element={<CreateMemo />} />
+              <Route path="/memos/:id" element={<MemoDetail />} />
+              <Route path="/apply-publisher" element={<ApplyPublisher />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
