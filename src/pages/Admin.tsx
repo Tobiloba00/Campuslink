@@ -11,15 +11,63 @@ import { toast } from "sonner";
 import {
   Trash2, Users, FileText, ShieldCheck, Megaphone, Building2, Flag, Check, X, Loader2,
   LayoutDashboard, Activity, Plus, ChevronRight, ArrowRight, Bell,
+  TrendingUp, Settings as SettingsIcon, MoreHorizontal, BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { formatDistanceToNow, format, startOfDay } from "date-fns";
+
+type TabKey =
+  | "dashboard" | "applications" | "publishers" | "reports"
+  | "schools" | "users" | "posts";
+
+type NavItem = {
+  key: TabKey | "memos" | "analytics" | "settings";
+  label: string;
+  icon: any;
+  href?: string;        // external route (e.g. /memos)
+  disabled?: boolean;
+};
+
+/* Items in the desktop sidebar — order matches the mockup */
+const SIDEBAR_ITEMS: NavItem[] = [
+  { key: "dashboard",    label: "Dashboard",    icon: LayoutDashboard },
+  { key: "applications", label: "Applications", icon: ShieldCheck },
+  { key: "publishers",   label: "Publishers",   icon: Megaphone },
+  { key: "memos",        label: "Memos",        icon: FileText, href: "/memos" },
+  { key: "reports",      label: "Reports",      icon: Flag },
+  { key: "schools",      label: "Schools",      icon: Building2 },
+  { key: "users",        label: "Users",        icon: Users },
+  { key: "analytics",    label: "Analytics",    icon: BarChart3, disabled: true },
+  { key: "settings",     label: "Settings",     icon: SettingsIcon, disabled: true },
+];
+
+/* Mobile bottom-nav: 4 primary tabs + a More sheet */
+const MOBILE_PRIMARY: NavItem[] = [
+  { key: "dashboard",    label: "Dashboard",    icon: LayoutDashboard },
+  { key: "applications", label: "Applications", icon: ShieldCheck },
+  { key: "publishers",   label: "Publishers",   icon: Megaphone },
+  { key: "reports",      label: "Reports",      icon: Flag },
+];
+const MOBILE_MORE: NavItem[] = [
+  { key: "schools",      label: "Schools",      icon: Building2 },
+  { key: "users",        label: "Users",        icon: Users },
+  { key: "posts",        label: "Posts",        icon: FileText },
+  { key: "memos",        label: "Memos",        icon: Megaphone, href: "/memos" },
+  { key: "analytics",    label: "Analytics",    icon: BarChart3, disabled: true },
+  { key: "settings",     label: "Settings",     icon: SettingsIcon, disabled: true },
+];
 
 const Admin = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabKey>("dashboard");
+  const [adminName, setAdminName] = useState("Admin");
+  const [adminPic, setAdminPic] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -29,6 +77,9 @@ const Admin = () => {
         .select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
       if (!data) { toast.error("Access denied"); navigate("/"); return; }
       setIsAdmin(true);
+      const { data: profile } = await supabase.from("profiles")
+        .select("name, profile_picture").eq("id", user.id).single();
+      if (profile) { setAdminName(profile.name || "Admin"); setAdminPic(profile.profile_picture); }
       setLoading(false);
     })();
   }, [navigate]);
@@ -38,30 +89,155 @@ const Admin = () => {
   }
   if (!isAdmin) return null;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="container mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+7rem)] pb-24 lg:pb-8 max-w-7xl">
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="overflow-x-auto scrollbar-hide flex-wrap h-auto justify-start">
-            <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="h-4 w-4" />Dashboard</TabsTrigger>
-            <TabsTrigger value="applications" className="gap-2"><ShieldCheck className="h-4 w-4" />Applications</TabsTrigger>
-            <TabsTrigger value="publishers" className="gap-2"><Megaphone className="h-4 w-4" />Publishers</TabsTrigger>
-            <TabsTrigger value="reports" className="gap-2"><Flag className="h-4 w-4" />Reports</TabsTrigger>
-            <TabsTrigger value="schools" className="gap-2"><Building2 className="h-4 w-4" />Schools</TabsTrigger>
-            <TabsTrigger value="posts" className="gap-2"><FileText className="h-4 w-4" />Posts</TabsTrigger>
-            <TabsTrigger value="users" className="gap-2"><Users className="h-4 w-4" />Users</TabsTrigger>
-          </TabsList>
+  const handleNav = (item: NavItem) => {
+    if (item.disabled) { toast.info("Coming soon"); return; }
+    if (item.href) { navigate(item.href); return; }
+    setTab(item.key as TabKey);
+    setMoreOpen(false);
+  };
 
-          <TabsContent value="dashboard"><DashboardTab /></TabsContent>
-          <TabsContent value="applications"><ApplicationsTab /></TabsContent>
-          <TabsContent value="publishers"><PublishersTab /></TabsContent>
-          <TabsContent value="reports"><ReportsTab /></TabsContent>
-          <TabsContent value="schools"><SchoolsTab /></TabsContent>
-          <TabsContent value="posts"><PostsTab /></TabsContent>
-          <TabsContent value="users"><UsersTab /></TabsContent>
-        </Tabs>
-      </div>
+  return (
+    <div className="min-h-screen bg-muted/20">
+      <Navbar />
+
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-14 bottom-0 w-64 border-r border-border/40 bg-card z-30">
+        {/* Admin profile chip */}
+        <div className="px-5 py-5 flex items-center gap-3 border-b border-border/40">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={adminPic || ""} />
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+              {adminName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">{adminName}</p>
+            <p className="text-[11px] text-primary font-semibold">Super Admin</p>
+          </div>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {SIDEBAR_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = !item.href && tab === item.key;
+            return (
+              <button key={item.key} onClick={() => handleNav(item)}
+                      disabled={item.disabled}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left",
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                        item.disabled && "opacity-40 cursor-not-allowed"
+                      )}>
+                <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.2 : 1.8} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Platform Overview footer card */}
+        <div className="p-3 border-t border-border/40">
+          <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
+            <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center mb-2.5">
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-sm font-bold mb-0.5">Platform Overview</p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
+              Manage and monitor all platform activities in real-time.
+            </p>
+            <Button onClick={() => setTab("dashboard")} size="sm"
+                    className="w-full rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90">
+              <BarChart3 className="h-3 w-3 mr-1.5" />View Analytics
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="lg:pl-64 pb-24 lg:pb-12">
+        <div className="container mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+5rem)] lg:pt-[5.5rem] max-w-6xl">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="space-y-6">
+            {/* Hidden TabsList — Tabs requires it for value handling but we drive nav from sidebar/bottom */}
+            <TabsList className="sr-only">
+              <TabsTrigger value="dashboard">d</TabsTrigger>
+              <TabsTrigger value="applications">a</TabsTrigger>
+              <TabsTrigger value="publishers">p</TabsTrigger>
+              <TabsTrigger value="reports">r</TabsTrigger>
+              <TabsTrigger value="schools">s</TabsTrigger>
+              <TabsTrigger value="posts">po</TabsTrigger>
+              <TabsTrigger value="users">u</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="dashboard"><DashboardTab /></TabsContent>
+            <TabsContent value="applications"><ApplicationsTab /></TabsContent>
+            <TabsContent value="publishers"><PublishersTab /></TabsContent>
+            <TabsContent value="reports"><ReportsTab /></TabsContent>
+            <TabsContent value="schools"><SchoolsTab /></TabsContent>
+            <TabsContent value="posts"><PostsTab /></TabsContent>
+            <TabsContent value="users"><UsersTab /></TabsContent>
+          </Tabs>
+        </div>
+      </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border/40 pointer-events-auto"
+           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <div className="flex items-stretch justify-around max-w-md mx-auto h-16 px-2">
+          {MOBILE_PRIMARY.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.key;
+            return (
+              <button key={item.key} onClick={() => handleNav(item)}
+                      className="flex-1 flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+                      aria-current={active ? "page" : undefined}>
+                <Icon className={cn("h-[22px] w-[22px] transition-colors",
+                                    active ? "text-primary" : "text-muted-foreground/70")}
+                      strokeWidth={active ? 2.2 : 1.8} />
+                <span className={cn("text-[10px] leading-none transition-colors",
+                                    active ? "text-primary font-semibold"
+                                           : "text-muted-foreground/70 font-medium")}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+          <button onClick={() => setMoreOpen(true)}
+                  className="flex-1 flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform">
+            <MoreHorizontal className="h-[22px] w-[22px] text-muted-foreground/70" strokeWidth={1.8} />
+            <span className="text-[10px] leading-none text-muted-foreground/70 font-medium">More</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile More sheet */}
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader className="text-left mb-3">
+            <SheetTitle className="text-base">More</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-3 gap-3 pb-6">
+            {MOBILE_MORE.map((item) => {
+              const Icon = item.icon;
+              const active = tab === item.key;
+              return (
+                <button key={item.key} onClick={() => handleNav(item)} disabled={item.disabled}
+                        className={cn(
+                          "flex flex-col items-center gap-2 py-4 rounded-2xl border transition-colors",
+                          active ? "bg-primary/10 border-primary/30 text-primary"
+                                 : "bg-card border-border/40 hover:bg-muted/40 text-foreground",
+                          item.disabled && "opacity-40 cursor-not-allowed"
+                        )}>
+                  <Icon className="h-5 w-5" strokeWidth={1.8} />
+                  <span className="text-xs font-semibold">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
