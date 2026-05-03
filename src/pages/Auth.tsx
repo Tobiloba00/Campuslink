@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, ArrowLeft, BookOpen, MessageSquare, Star, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { track } from "@/lib/analytics";
 
 type AuthStep = 'form' | 'verify';
 
@@ -65,6 +66,7 @@ const Auth = () => {
         // Regular sign in with password
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        void track("user_login", { method: "password" });
         toast.success("Welcome back!");
         navigate("/");
       }
@@ -144,6 +146,7 @@ const Auth = () => {
       if (error) throw error;
       setOtpAttempts(0);
       setOtpLockoutUntil(0);
+      void track("user_login", { method: "otp" });
       toast.success("Email verified! Welcome to CampusLink!");
       navigate("/");
     } catch (error: any) {

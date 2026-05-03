@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,8 @@ import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { Logo } from "@/components/Logo";
+import { supabase } from "@/integrations/supabase/client";
+import { trackSessionOpen } from "@/lib/analytics";
 
 // Eagerly loaded (landing + auth — fast first paint)
 import Index from "./pages/Index";
@@ -43,12 +45,34 @@ const PageLoader = () => (
   </div>
 );
 
+const SessionAnalytics = () => {
+  useEffect(() => {
+    // Fire session_open the first time we observe an authenticated session.
+    let fired = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !fired) {
+        fired = true;
+        trackSessionOpen();
+      }
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && !fired) {
+        fired = true;
+        trackSessionOpen();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <SessionAnalytics />
         <Suspense fallback={<PageLoader />}>
           <PageTransition>
             <Routes>

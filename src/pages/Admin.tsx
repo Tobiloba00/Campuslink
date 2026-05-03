@@ -18,13 +18,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow, format, startOfDay } from "date-fns";
+import AnalyticsTab from "@/components/admin/AnalyticsTab";
 
 type TabKey =
   | "dashboard" | "applications" | "publishers" | "reports"
-  | "schools" | "users" | "posts";
+  | "schools" | "users" | "posts" | "analytics";
 
 type NavItem = {
-  key: TabKey | "memos" | "analytics" | "settings";
+  key: TabKey | "memos" | "settings";
   label: string;
   icon: any;
   href?: string;        // external route (e.g. /memos)
@@ -40,7 +41,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
   { key: "reports",      label: "Reports",      icon: Flag },
   { key: "schools",      label: "Schools",      icon: Building2 },
   { key: "users",        label: "Users",        icon: Users },
-  { key: "analytics",    label: "Analytics",    icon: BarChart3, disabled: true },
+  { key: "analytics",    label: "Analytics",    icon: BarChart3 },
   { key: "settings",     label: "Settings",     icon: SettingsIcon, disabled: true },
 ];
 
@@ -56,7 +57,7 @@ const MOBILE_MORE: NavItem[] = [
   { key: "users",        label: "Users",        icon: Users },
   { key: "posts",        label: "Posts",        icon: FileText },
   { key: "memos",        label: "Memos",        icon: Megaphone, href: "/memos" },
-  { key: "analytics",    label: "Analytics",    icon: BarChart3, disabled: true },
+  { key: "analytics",    label: "Analytics",    icon: BarChart3 },
   { key: "settings",     label: "Settings",     icon: SettingsIcon, disabled: true },
 ];
 
@@ -169,6 +170,7 @@ const Admin = () => {
               <TabsTrigger value="schools">s</TabsTrigger>
               <TabsTrigger value="posts">po</TabsTrigger>
               <TabsTrigger value="users">u</TabsTrigger>
+              <TabsTrigger value="analytics">an</TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard"><DashboardTab /></TabsContent>
@@ -178,6 +180,7 @@ const Admin = () => {
             <TabsContent value="schools"><SchoolsTab /></TabsContent>
             <TabsContent value="posts"><PostsTab /></TabsContent>
             <TabsContent value="users"><UsersTab /></TabsContent>
+            <TabsContent value="analytics"><AnalyticsTab /></TabsContent>
           </Tabs>
         </div>
       </main>

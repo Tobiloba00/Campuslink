@@ -15,6 +15,7 @@ import {
   Clock, Heart, Send, Flag, Loader2, MessageSquare, ThumbsUp, CheckCircle2,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { track, trackMemoView } from "@/lib/analytics";
 
 type Memo = any;
 type Discussion = any;
@@ -51,6 +52,7 @@ const MemoDetail = () => {
       const { data: m, error } = await supabase.from("memos").select("*").eq("id", id).single();
       if (error || !m) { navigate("/not-found", { replace: true }); return; }
       setMemo(m);
+      trackMemoView(m.id, m.urgency);
 
       const { data: p } = await supabase.from("publishers")
         .select("id, display_name, role, scope, verified_at, user:user_id (name, profile_picture)")
@@ -187,8 +189,14 @@ const MemoDetail = () => {
         )}
 
         {/* AI explain CTA */}
-        <Button onClick={() => setExplainOpen(true)} variant="outline"
-                className="w-full mb-5 rounded-xl h-11 justify-start gap-2 text-sm font-semibold">
+        <Button
+          onClick={() => {
+            setExplainOpen(true);
+            void track("memo_explained", { memo_id: memo.id, ai_processed: !!memo.ai_processed_at });
+          }}
+          variant="outline"
+          className="w-full mb-5 rounded-xl h-11 justify-start gap-2 text-sm font-semibold"
+        >
           <Sparkles className="h-4 w-4 text-primary" />
           Explain this memo
           {!memo.ai_processed_at && <Loader2 className="h-3 w-3 animate-spin ml-auto" />}
