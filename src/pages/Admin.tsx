@@ -138,23 +138,6 @@ const Admin = () => {
             );
           })}
         </nav>
-
-        {/* Platform Overview footer card */}
-        <div className="p-3 border-t border-border/40">
-          <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
-            <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center mb-2.5">
-              <TrendingUp className="h-4 w-4 text-primary" />
-            </div>
-            <p className="text-sm font-bold mb-0.5">Platform Overview</p>
-            <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
-              Manage and monitor all platform activities in real-time.
-            </p>
-            <Button onClick={() => setTab("dashboard")} size="sm"
-                    className="w-full rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90">
-              <BarChart3 className="h-3 w-3 mr-1.5" />View Analytics
-            </Button>
-          </div>
-        </div>
       </aside>
 
       {/* Main content */}
