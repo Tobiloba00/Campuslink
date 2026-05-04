@@ -982,22 +982,138 @@ const PostsTab = () => {
 
 const UsersTab = () => {
   const [users, setUsers] = useState<any[]>([]);
-  useEffect(() => { (async () => {
-    const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(200);
-    setUsers(data || []);
-  })(); }, []);
+  const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [showAdminsOnly, setShowAdminsOnly] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [me, setMe] = useState<string | null>(null);
+
+  const load = async () => {
+    const [{ data: profs }, { data: roles }, { data: { user } }] = await Promise.all([
+      supabase.from("profiles").select("id, name, email, course, rating, profile_picture, created_at")
+        .order("created_at", { ascending: false }).limit(500),
+      supabase.from("user_roles").select("user_id").eq("role", "admin"),
+      supabase.auth.getUser(),
+    ]);
+    setUsers(profs || []);
+    setAdminIds(new Set((roles || []).map((r: any) => r.user_id)));
+    setMe(user?.id ?? null);
+  };
+  useEffect(() => { load(); }, []);
+
+  const toggleAdmin = async (userId: string, makeAdmin: boolean) => {
+    if (!makeAdmin) {
+      const ok = confirm(`Remove admin access from this account? They'll lose the dashboard immediately.`);
+      if (!ok) return;
+    }
+    setBusy(userId);
+    const { error } = await supabase.rpc("set_user_admin", {
+      p_user_id: userId, p_make_admin: makeAdmin,
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(makeAdmin ? "Granted admin" : "Removed admin");
+    setAdminIds((prev) => {
+      const next = new Set(prev);
+      if (makeAdmin) next.add(userId); else next.delete(userId);
+      return next;
+    });
+  };
+
+  const filtered = users.filter((u) => {
+    const q = search.trim().toLowerCase();
+    const matchesQuery = !q ||
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.course?.toLowerCase().includes(q);
+    if (!matchesQuery) return false;
+    if (showAdminsOnly && !adminIds.has(u.id)) return false;
+    return true;
+  });
+
   return (
-    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-      {users.map((u) => (
-        <Card key={u.id}>
-          <CardContent className="p-4">
-            <p className="font-bold text-sm">{u.name}</p>
-            <p className="text-xs text-muted-foreground">{u.email}</p>
-            {u.course && <p className="text-xs">Course: {u.course}</p>}
-            <p className="text-xs">Rating: {u.rating?.toFixed(1) ?? "—"}</p>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <Input
+          placeholder="Search by name, email, or course"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-10 rounded-xl flex-1"
+        />
+        <Button
+          variant={showAdminsOnly ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowAdminsOnly((v) => !v)}
+          className="rounded-xl text-xs font-semibold"
+        >
+          <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
+          Admins only ({adminIds.size})
+        </Button>
+      </div>
+
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((u) => {
+          const isAdmin = adminIds.has(u.id);
+          const isSelf = me === u.id;
+          return (
+            <Card key={u.id}>
+              <CardContent className="p-4 space-y-2.5">
+                <div className="flex items-start gap-2.5">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={u.profile_picture || ""} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                      {u.name?.charAt(0).toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="font-bold text-sm truncate">{u.name || "—"}</p>
+                      {isAdmin && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-1">
+                          <ShieldCheck className="h-2.5 w-2.5" />Admin
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    {u.course && <p className="text-[11px] text-muted-foreground/80 truncate">{u.course}</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                  <span className="text-[11px] text-muted-foreground">
+                    Rating {u.rating?.toFixed(1) ?? "—"}
+                  </span>
+                  {isSelf ? (
+                    <span className="text-[10px] text-muted-foreground/60 italic">that's you</span>
+                  ) : isAdmin ? (
+                    <Button
+                      onClick={() => toggleAdmin(u.id, false)}
+                      size="sm" variant="outline" disabled={busy === u.id}
+                      className="rounded-lg h-7 text-[11px] font-semibold border-red-500/30 text-red-600 hover:bg-red-500/5"
+                    >
+                      Remove admin
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => toggleAdmin(u.id, true)}
+                      size="sm" disabled={busy === u.id}
+                      className="rounded-lg h-7 text-[11px] font-semibold bg-primary hover:bg-primary/90"
+                    >
+                      Make admin
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {filtered.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          No users match the filter.
+        </p>
+      )}
     </div>
   );
 };
