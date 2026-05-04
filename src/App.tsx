@@ -33,6 +33,7 @@ const Memos = lazy(() => import("./pages/Memos"));
 const MemoDetail = lazy(() => import("./pages/MemoDetail"));
 const CreateMemo = lazy(() => import("./pages/CreateMemo"));
 const ApplyPublisher = lazy(() => import("./pages/ApplyPublisher"));
+const PendingApproval = lazy(() => import("./pages/PendingApproval"));
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,7 @@ const App = () => (
               <Route path="/memos/new" element={<CreateMemo />} />
               <Route path="/memos/:id" element={<MemoDetail />} />
               <Route path="/apply-publisher" element={<ApplyPublisher />} />
+              <Route path="/pending-approval" element={<PendingApproval />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

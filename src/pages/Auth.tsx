@@ -4,14 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowRight, ArrowLeft, BookOpen, MessageSquare, Star, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight, ArrowLeft, BookOpen, MessageSquare, Star, Eye, EyeOff, Mail, ShieldCheck,
+  User as UserIcon, Building2,
+} from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { track } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 type AuthStep = 'form' | 'verify';
+type AccountType = 'individual' | 'organization';
 
 const OTP_LENGTH = 6;
+const PENDING_APP_KEY = 'cl-pending-app';  // localStorage key for org form state across the OTP step
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -28,6 +37,41 @@ const Auth = () => {
   const [otpLockoutUntil, setOtpLockoutUntil] = useState<number>(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  /* Organisation-signup state (only used when accountType === 'organization') */
+  const [accountType, setAccountType] = useState<AccountType>('individual');
+  const [orgName, setOrgName] = useState("");
+  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+  const [faculties, setFaculties] = useState<{ id: string; name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [orgSchoolId, setOrgSchoolId] = useState("");
+  const [orgRole, setOrgRole] = useState<"student_union" | "school_admin">("student_union");
+  const [orgScope, setOrgScope] = useState<"school" | "faculty" | "department">("school");
+  const [orgFacultyId, setOrgFacultyId] = useState("");
+  const [orgDepartmentId, setOrgDepartmentId] = useState("");
+  const [orgProofEmail, setOrgProofEmail] = useState("");
+  const [orgProofWa, setOrgProofWa] = useState("");
+  const [orgProofRef, setOrgProofRef] = useState("");
+
+  // Lazy-load schools when org tab is selected
+  useEffect(() => {
+    if (accountType !== 'organization' || !isSignUp) return;
+    if (schools.length > 0) return;
+    supabase.from("schools").select("id, name").order("name")
+      .then(({ data }) => setSchools(data || []));
+  }, [accountType, isSignUp, schools.length]);
+
+  useEffect(() => {
+    if (!orgSchoolId) { setFaculties([]); setOrgFacultyId(""); return; }
+    supabase.from("faculties").select("id, name").eq("school_id", orgSchoolId).order("name")
+      .then(({ data }) => setFaculties(data || []));
+  }, [orgSchoolId]);
+
+  useEffect(() => {
+    if (!orgFacultyId) { setDepartments([]); setOrgDepartmentId(""); return; }
+    supabase.from("departments").select("id, name").eq("faculty_id", orgFacultyId).order("name")
+      .then(({ data }) => setDepartments(data || []));
+  }, [orgFacultyId]);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -42,23 +86,57 @@ const Auth = () => {
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
+  const validateOrgForm = (): string | null => {
+    if (!orgName.trim()) return "Add an organisation name (e.g. FUOYE Student Union)";
+    if (!orgSchoolId) return "Pick the school you represent";
+    if (orgScope === "faculty" && !orgFacultyId) return "Pick a faculty";
+    if (orgScope === "department" && (!orgFacultyId || !orgDepartmentId)) return "Pick a faculty and department";
+    if (!orgProofEmail.trim() && !orgProofWa.trim() && !orgProofRef.trim()) {
+      return "Provide at least one piece of proof so an admin can verify you";
+    }
+    return null;
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isSignUp) {
-        // Sign up with password, then Supabase sends confirmation email
+        // Validate org-specific fields before creating the account
+        if (accountType === 'organization') {
+          const err = validateOrgForm();
+          if (err) { toast.error(err); setLoading(false); return; }
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { name },
+            data: { name, account_type: accountType },
             emailRedirectTo: `${window.location.origin}/`,
           },
         });
         if (error) throw error;
-        // Move to OTP verification step
+
+        // Park the org-application payload in localStorage so we survive a
+        // page refresh between signup and OTP verification.
+        if (accountType === 'organization') {
+          sessionStorage.setItem(PENDING_APP_KEY, JSON.stringify({
+            display_name: orgName.trim(),
+            school_id: orgSchoolId,
+            requested_role: orgRole,
+            requested_scope: orgScope,
+            faculty_id: orgScope !== "school" ? orgFacultyId : null,
+            department_id: orgScope === "department" ? orgDepartmentId : null,
+            proof_email: orgProofEmail.trim() || null,
+            proof_whatsapp_link: orgProofWa.trim() || null,
+            proof_reference_name: orgProofRef.trim() || null,
+          }));
+        } else {
+          sessionStorage.removeItem(PENDING_APP_KEY);
+        }
+
         setStep('verify');
         setResendCooldown(60);
         toast.success("Verification code sent to your email!");
@@ -147,6 +225,39 @@ const Auth = () => {
       setOtpAttempts(0);
       setOtpLockoutUntil(0);
       void track("user_login", { method: "otp" });
+
+      // If the user signed up as an organisation, create the publisher
+      // application now (we have a session so RLS allows the insert) and
+      // route them to the pending-approval screen.
+      const stashed = sessionStorage.getItem(PENDING_APP_KEY);
+      if (stashed) {
+        try {
+          const payload = JSON.parse(stashed);
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error: appErr } = await supabase.from("publisher_applications").insert({
+              user_id: user.id,
+              ...payload,
+            });
+            if (appErr) {
+              // Don't break the user — log + send to feed, they can apply manually
+              console.error("publisher_applications insert failed", appErr);
+              toast.error("Couldn't save application — apply from your profile.");
+              sessionStorage.removeItem(PENDING_APP_KEY);
+              navigate("/feed");
+              return;
+            }
+          }
+          sessionStorage.removeItem(PENDING_APP_KEY);
+          toast.success("Account created — application is under review");
+          navigate("/pending-approval");
+          return;
+        } catch (e) {
+          console.error(e);
+          sessionStorage.removeItem(PENDING_APP_KEY);
+        }
+      }
+
       toast.success("Email verified! Welcome to CampusLink!");
       navigate("/");
     } catch (error: any) {
@@ -354,14 +465,64 @@ const Auth = () => {
                 </p>
               </div>
 
+              {isSignUp && (
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  <button
+                    type="button"
+                    onClick={() => setAccountType('individual')}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border-2 transition-colors",
+                      accountType === 'individual'
+                        ? "bg-primary/5 border-primary text-primary"
+                        : "bg-card border-border/50 text-muted-foreground hover:bg-muted/40"
+                    )}
+                  >
+                    <UserIcon className="h-5 w-5" strokeWidth={1.8} />
+                    <span className="text-sm font-bold">Individual</span>
+                    <span className="text-[10px] font-medium leading-tight">Student account</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountType('organization')}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border-2 transition-colors",
+                      accountType === 'organization'
+                        ? "bg-primary/5 border-primary text-primary"
+                        : "bg-card border-border/50 text-muted-foreground hover:bg-muted/40"
+                    )}
+                  >
+                    <Building2 className="h-5 w-5" strokeWidth={1.8} />
+                    <span className="text-sm font-bold">Organization</span>
+                    <span className="text-[10px] font-medium leading-tight">School body / SUG</span>
+                  </button>
+                </div>
+              )}
+
               <form onSubmit={handleAuth} className="space-y-4">
+                {isSignUp && accountType === 'organization' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="orgName" className="text-sm font-medium">Organisation name</Label>
+                    <Input
+                      id="orgName"
+                      type="text"
+                      placeholder="e.g. FUOYE Student Union"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      required
+                      className="h-12 rounded-xl bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                    />
+                  </div>
+                )}
+
                 {isSignUp && (
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">Full name</Label>
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      {accountType === 'organization' ? 'Contact person name' : 'Full name'}
+                    </Label>
                     <Input
                       id="name"
                       type="text"
-                      placeholder="Enter your name"
+                      placeholder={accountType === 'organization' ? "Who's signing up on behalf of the org?" : "Enter your name"}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
@@ -402,6 +563,98 @@ const Auth = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* ── Organisation-only fields ── */}
+                {isSignUp && accountType === 'organization' && (
+                  <div className="space-y-3 pt-2 border-t border-border/40">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Organisation details
+                    </p>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">School</Label>
+                      <Select value={orgSchoolId} onValueChange={(v) => { setOrgSchoolId(v); setOrgFacultyId(""); setOrgDepartmentId(""); }}>
+                        <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50">
+                          <SelectValue placeholder={schools.length ? "Pick your school" : "No schools registered yet"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Role</Label>
+                        <Select value={orgRole} onValueChange={(v) => setOrgRole(v as any)}>
+                          <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="student_union">Student Union</SelectItem>
+                            <SelectItem value="school_admin">School Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Scope</Label>
+                        <Select value={orgScope} onValueChange={(v) => setOrgScope(v as any)}>
+                          <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="school">Whole school</SelectItem>
+                            <SelectItem value="faculty">A faculty</SelectItem>
+                            <SelectItem value="department">A department</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {orgScope !== "school" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Faculty</Label>
+                        <Select value={orgFacultyId} onValueChange={setOrgFacultyId} disabled={!orgSchoolId}>
+                          <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50">
+                            <SelectValue placeholder="Pick a faculty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {faculties.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {orgScope === "department" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Department</Label>
+                        <Select value={orgDepartmentId} onValueChange={setOrgDepartmentId} disabled={!orgFacultyId}>
+                          <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50">
+                            <SelectValue placeholder="Pick a department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="rounded-2xl bg-muted/40 border border-border/40 p-3 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Proof of role (at least one)
+                      </p>
+                      <Input value={orgProofEmail} onChange={(e) => setOrgProofEmail(e.target.value)}
+                             type="email" placeholder="School email"
+                             className="h-10 rounded-lg bg-background border-border/40" />
+                      <Input value={orgProofWa} onChange={(e) => setOrgProofWa(e.target.value)}
+                             placeholder="WhatsApp group link"
+                             className="h-10 rounded-lg bg-background border-border/40" />
+                      <Input value={orgProofRef} onChange={(e) => setOrgProofRef(e.target.value)}
+                             placeholder="Known executive's name"
+                             className="h-10 rounded-lg bg-background border-border/40" />
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                      A CampusLink admin will review your application before you can publish memos.
+                    </p>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
