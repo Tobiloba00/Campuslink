@@ -16,7 +16,7 @@ import {
   CheckCircle2, ClipboardCheck, Eye, Sparkles, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SchoolPicker } from "@/components/SchoolPicker";
+import { SchoolPicker, type SchoolPickerValue } from "@/components/SchoolPicker";
 
 type School = { id: string; name: string };
 type Faculty = { id: string; name: string };
@@ -35,11 +35,24 @@ const ApplyPublisher = () => {
   const [departments, setDepartments] = useState<Dept[]>([]);
 
   // Form fields
-  const [schoolId, setSchoolId] = useState("");
+  const [school, setSchool] = useState<SchoolPickerValue>({ id: "", name: "" });
   const [role, setRole] = useState<"student_union" | "school_admin" | "">("");
   const [scope, setScope] = useState<"school" | "faculty" | "department" | "">("");
   const [facultyId, setFacultyId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
+
+  // Faculty/department selection only works for schools that already exist
+  // (because their faculties/departments need to exist too).
+  const isProposedSchool = !school.id && !!school.name.trim();
+  // Whenever the user switches to a proposed school, force scope back to whole-school
+  useEffect(() => {
+    if (isProposedSchool && scope !== "school" && scope !== "") {
+      setScope("school");
+      setFacultyId("");
+      setDepartmentId("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isProposedSchool]);
   const [proofEmail, setProofEmail] = useState("");
   const [proofWa, setProofWa] = useState("");
   const [proofRef, setProofRef] = useState("");
@@ -63,10 +76,10 @@ const ApplyPublisher = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!schoolId) { setFaculties([]); return; }
-    supabase.from("faculties").select("id, name").eq("school_id", schoolId).order("name")
+    if (!school.id) { setFaculties([]); return; }
+    supabase.from("faculties").select("id, name").eq("school_id", school.id).order("name")
       .then(({ data }) => setFaculties(data || []));
-  }, [schoolId]);
+  }, [school.id]);
   useEffect(() => {
     if (!facultyId) { setDepartments([]); return; }
     supabase.from("departments").select("id, name").eq("faculty_id", facultyId).order("name")
@@ -74,7 +87,8 @@ const ApplyPublisher = () => {
   }, [facultyId]);
 
   const validateStep1 = (): string | null => {
-    if (!schoolId) return "Pick the school you represent";
+    if (!school.id && !school.name.trim()) return "Type or pick the school you represent";
+    if (school.name.trim().length < 2) return "School name is too short";
     if (!role) return "Pick a role";
     if (!scope) return "Pick a scope";
     if (scope === "faculty" && !facultyId) return "Pick a faculty";
@@ -106,7 +120,10 @@ const ApplyPublisher = () => {
 
       const { error } = await supabase.from("publisher_applications").insert({
         user_id: user.id,
-        school_id: schoolId,
+        // Either send the FK or the proposed name — the DB CHECK enforces
+        // that at least one is set.
+        school_id: school.id || null,
+        proposed_school_name: school.id ? null : school.name.trim(),
         requested_role: role,
         requested_scope: scope,
         faculty_id: scope !== "school" ? facultyId : null,
@@ -165,12 +182,14 @@ const ApplyPublisher = () => {
                 <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-5 sm:p-7 space-y-6">
                   {step === 1 && (
                     <Step1
-                      schoolId={schoolId} setSchoolId={(v) => { setSchoolId(v); setFacultyId(""); setDepartmentId(""); }}
+                      school={school}
+                      setSchool={(v) => { setSchool(v); setFacultyId(""); setDepartmentId(""); }}
                       role={role} setRole={setRole}
                       scope={scope} setScope={(v) => { setScope(v); setFacultyId(""); setDepartmentId(""); }}
                       facultyId={facultyId} setFacultyId={setFacultyId}
                       departmentId={departmentId} setDepartmentId={setDepartmentId}
                       schools={schools} faculties={faculties} departments={departments}
+                      isProposedSchool={isProposedSchool}
                     />
                   )}
                   {step === 2 && (
@@ -306,16 +325,16 @@ const ProgressHeader = ({ step, total }: { step: Step; total: number }) => (
 
 /* ─── Step 1: School + Role + Scope ─── */
 const Step1 = ({
-  schoolId, setSchoolId, role, setRole, scope, setScope,
+  school, setSchool, role, setRole, scope, setScope,
   facultyId, setFacultyId, departmentId, setDepartmentId,
-  schools, faculties, departments,
+  schools, faculties, departments, isProposedSchool,
 }: any) => (
   <>
     <SectionHeader index={1} title="School & Role" />
 
     <div className="space-y-4">
-      <FormField label="School" hint="Start typing your school's name and pick from the list.">
-        <SchoolPicker value={schoolId} onChange={setSchoolId} schools={schools} />
+      <FormField label="School" hint="Type your school's name. If it's not in the list yet, you can still proceed — we'll add it once you're verified.">
+        <SchoolPicker value={school} onChange={setSchool} schools={schools} />
       </FormField>
 
       <FormField label="Role">
@@ -328,20 +347,29 @@ const Step1 = ({
         </Select>
       </FormField>
 
-      <FormField label="Scope" hint="Scope determines who will see your memos.">
-        <Select value={scope} onValueChange={setScope}>
+      <FormField
+        label="Scope"
+        hint={isProposedSchool
+          ? "Locked to whole-school for new schools — pick faculty / department after your school is verified."
+          : "Scope determines who will see your memos."}
+      >
+        <Select
+          value={scope}
+          onValueChange={setScope}
+          disabled={isProposedSchool}
+        >
           <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select scope" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="school">Whole school</SelectItem>
-            <SelectItem value="faculty">A faculty</SelectItem>
-            <SelectItem value="department">A department</SelectItem>
+            <SelectItem value="faculty" disabled={isProposedSchool}>A faculty</SelectItem>
+            <SelectItem value="department" disabled={isProposedSchool}>A department</SelectItem>
           </SelectContent>
         </Select>
       </FormField>
 
-      {scope && scope !== "school" && (
+      {scope && scope !== "school" && !isProposedSchool && (
         <FormField label="Faculty">
-          <Select value={facultyId} onValueChange={setFacultyId} disabled={!schoolId}>
+          <Select value={facultyId} onValueChange={setFacultyId} disabled={!school.id}>
             <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Pick a faculty" /></SelectTrigger>
             <SelectContent>
               {faculties.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
@@ -350,7 +378,7 @@ const Step1 = ({
         </FormField>
       )}
 
-      {scope === "department" && (
+      {scope === "department" && !isProposedSchool && (
         <FormField label="Department">
           <Select value={departmentId} onValueChange={setDepartmentId} disabled={!facultyId}>
             <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Pick a department" /></SelectTrigger>

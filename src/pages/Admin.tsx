@@ -669,9 +669,24 @@ const ApplicationsTab = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm">{a.profiles?.name || "Unknown"} ({a.profiles?.email})</p>
                 <p className="text-xs text-muted-foreground">
-                  Wants <span className="font-semibold">{a.requested_role.replace("_"," ")}</span> at {a.schools?.name}
-                  ({a.requested_scope}{a.faculties?.name ? ` · ${a.faculties.name}` : ""}{a.departments?.name ? ` · ${a.departments.name}` : ""})
+                  Wants <span className="font-semibold">{a.requested_role.replace("_"," ")}</span> at{" "}
+                  {a.schools?.name ? (
+                    a.schools.name
+                  ) : a.proposed_school_name ? (
+                    <>
+                      <span className="font-semibold">{a.proposed_school_name}</span>
+                      <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600">
+                        New school
+                      </span>
+                    </>
+                  ) : "—"}
+                  {" "}({a.requested_scope}{a.faculties?.name ? ` · ${a.faculties.name}` : ""}{a.departments?.name ? ` · ${a.departments.name}` : ""})
                 </p>
+                {!a.schools?.name && a.proposed_school_name && (
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 leading-relaxed">
+                    Approving will auto-create this school in the platform.
+                  </p>
+                )}
                 <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                   Submitted {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
                 </p>

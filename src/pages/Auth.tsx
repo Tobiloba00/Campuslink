@@ -15,7 +15,7 @@ import {
 import { Logo } from "@/components/Logo";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { SchoolPicker } from "@/components/SchoolPicker";
+import { SchoolPicker, type SchoolPickerValue } from "@/components/SchoolPicker";
 
 type AuthStep = 'form' | 'verify';
 type AccountType = 'individual' | 'organization';
@@ -44,9 +44,10 @@ const Auth = () => {
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [faculties, setFaculties] = useState<{ id: string; name: string }[]>([]);
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
-  const [orgSchoolId, setOrgSchoolId] = useState("");
+  const [orgSchool, setOrgSchool] = useState<SchoolPickerValue>({ id: "", name: "" });
   const [orgRole, setOrgRole] = useState<"student_union" | "school_admin">("student_union");
   const [orgScope, setOrgScope] = useState<"school" | "faculty" | "department">("school");
+  const orgIsProposedSchool = !orgSchool.id && !!orgSchool.name.trim();
   const [orgFacultyId, setOrgFacultyId] = useState("");
   const [orgDepartmentId, setOrgDepartmentId] = useState("");
   const [orgProofEmail, setOrgProofEmail] = useState("");
@@ -62,10 +63,20 @@ const Auth = () => {
   }, [accountType, isSignUp, schools.length]);
 
   useEffect(() => {
-    if (!orgSchoolId) { setFaculties([]); setOrgFacultyId(""); return; }
-    supabase.from("faculties").select("id, name").eq("school_id", orgSchoolId).order("name")
+    if (!orgSchool.id) { setFaculties([]); setOrgFacultyId(""); return; }
+    supabase.from("faculties").select("id, name").eq("school_id", orgSchool.id).order("name")
       .then(({ data }) => setFaculties(data || []));
-  }, [orgSchoolId]);
+  }, [orgSchool.id]);
+
+  // If the user types a brand-new school, force scope back to whole-school
+  useEffect(() => {
+    if (orgIsProposedSchool && orgScope !== "school") {
+      setOrgScope("school");
+      setOrgFacultyId("");
+      setOrgDepartmentId("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgIsProposedSchool]);
 
   useEffect(() => {
     if (!orgFacultyId) { setDepartments([]); setOrgDepartmentId(""); return; }
@@ -89,7 +100,8 @@ const Auth = () => {
 
   const validateOrgForm = (): string | null => {
     if (!orgName.trim()) return "Add an organisation name (e.g. FUOYE Student Union)";
-    if (!orgSchoolId) return "Pick the school you represent";
+    if (!orgSchool.id && !orgSchool.name.trim()) return "Type or pick the school you represent";
+    if (orgSchool.name.trim().length < 2) return "School name is too short";
     if (orgScope === "faculty" && !orgFacultyId) return "Pick a faculty";
     if (orgScope === "department" && (!orgFacultyId || !orgDepartmentId)) return "Pick a faculty and department";
     if (!orgProofEmail.trim() && !orgProofWa.trim() && !orgProofRef.trim()) {
@@ -125,7 +137,8 @@ const Auth = () => {
         if (accountType === 'organization') {
           sessionStorage.setItem(PENDING_APP_KEY, JSON.stringify({
             display_name: orgName.trim(),
-            school_id: orgSchoolId,
+            school_id: orgSchool.id || null,
+            proposed_school_name: orgSchool.id ? null : orgSchool.name.trim(),
             requested_role: orgRole,
             requested_scope: orgScope,
             faculty_id: orgScope !== "school" ? orgFacultyId : null,
@@ -575,8 +588,8 @@ const Auth = () => {
                     <div className="space-y-1.5">
                       <Label className="text-sm font-medium">School</Label>
                       <SchoolPicker
-                        value={orgSchoolId}
-                        onChange={(id) => { setOrgSchoolId(id); setOrgFacultyId(""); setOrgDepartmentId(""); }}
+                        value={orgSchool}
+                        onChange={(v) => { setOrgSchool(v); setOrgFacultyId(""); setOrgDepartmentId(""); }}
                         schools={schools}
                         placeholder="Type your school name…"
                       />
@@ -595,12 +608,13 @@ const Auth = () => {
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Scope</Label>
-                        <Select value={orgScope} onValueChange={(v) => setOrgScope(v as any)}>
+                        <Select value={orgScope} onValueChange={(v) => setOrgScope(v as any)}
+                                disabled={orgIsProposedSchool}>
                           <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="school">Whole school</SelectItem>
-                            <SelectItem value="faculty">A faculty</SelectItem>
-                            <SelectItem value="department">A department</SelectItem>
+                            <SelectItem value="faculty" disabled={orgIsProposedSchool}>A faculty</SelectItem>
+                            <SelectItem value="department" disabled={orgIsProposedSchool}>A department</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
