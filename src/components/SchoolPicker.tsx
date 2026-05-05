@@ -82,31 +82,32 @@ export const SchoolPicker = ({
   };
 
   const proposed = !!value.name.trim() && !value.id;
+  const hasText = value.name.length > 0;
 
   return (
     <div ref={wrapperRef} className={cn("relative", className)}>
-      <Search
-        className={cn(
-          "absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors",
-          locked ? "text-primary"
-                 : proposed ? "text-amber-500"
-                            : "text-muted-foreground"
-        )}
-      />
+      {/* Search icon only shown when the field is empty — clears out of the
+          way once the user has typed or picked a school. */}
+      {!hasText && (
+        <Search
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground"
+        />
+      )}
       <Input
         value={value.name}
         onChange={(e) => handleType(e.target.value)}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
         className={cn(
-          "h-11 rounded-xl pl-10 pr-10 transition-colors",
+          "h-11 rounded-xl pr-10 transition-colors",
+          hasText ? "pl-3.5" : "pl-10",
           locked && "border-primary/40 bg-primary/5",
           proposed && "border-amber-500/30 bg-amber-500/5",
           inputClassName
         )}
         autoComplete="off"
       />
-      {value.name && (
+      {hasText && (
         <button
           type="button"
           onClick={clear}

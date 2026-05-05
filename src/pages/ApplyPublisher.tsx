@@ -44,9 +44,10 @@ const ApplyPublisher = () => {
   // Faculty/department selection only works for schools that already exist
   // (because their faculties/departments need to exist too).
   const isProposedSchool = !school.id && !!school.name.trim();
-  // Whenever the user switches to a proposed school, force scope back to whole-school
+  // Whenever the user switches to a proposed school, force scope to whole-school
+  // (covers the case where scope was empty / faculty / department before).
   useEffect(() => {
-    if (isProposedSchool && scope !== "school" && scope !== "") {
+    if (isProposedSchool && scope !== "school") {
       setScope("school");
       setFacultyId("");
       setDepartmentId("");
