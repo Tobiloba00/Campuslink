@@ -15,6 +15,7 @@ import {
 import { Logo } from "@/components/Logo";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { SchoolPicker } from "@/components/SchoolPicker";
 
 type AuthStep = 'form' | 'verify';
 type AccountType = 'individual' | 'organization';
@@ -573,14 +574,12 @@ const Auth = () => {
 
                     <div className="space-y-1.5">
                       <Label className="text-sm font-medium">School</Label>
-                      <Select value={orgSchoolId} onValueChange={(v) => { setOrgSchoolId(v); setOrgFacultyId(""); setOrgDepartmentId(""); }}>
-                        <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-border/50">
-                          <SelectValue placeholder={schools.length ? "Pick your school" : "No schools registered yet"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <SchoolPicker
+                        value={orgSchoolId}
+                        onChange={(id) => { setOrgSchoolId(id); setOrgFacultyId(""); setOrgDepartmentId(""); }}
+                        schools={schools}
+                        placeholder="Type your school name…"
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">

@@ -16,6 +16,7 @@ import {
   CheckCircle2, ClipboardCheck, Eye, Sparkles, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SchoolPicker } from "@/components/SchoolPicker";
 
 type School = { id: string; name: string };
 type Faculty = { id: string; name: string };
@@ -313,31 +314,19 @@ const Step1 = ({
     <SectionHeader index={1} title="School & Role" />
 
     <div className="space-y-4">
-      <div className="grid sm:grid-cols-2 gap-3">
-        <FormField label="School">
-          <Select value={schoolId} onValueChange={setSchoolId}>
-            <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select your school" /></SelectTrigger>
-            <SelectContent>
-              {schools.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {schools.length === 0 && (
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              No schools yet — ask the platform admin to add one.
-            </p>
-          )}
-        </FormField>
+      <FormField label="School" hint="Start typing your school's name and pick from the list.">
+        <SchoolPicker value={schoolId} onChange={setSchoolId} schools={schools} />
+      </FormField>
 
-        <FormField label="Role">
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select your role" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="student_union">Student Union</SelectItem>
-              <SelectItem value="school_admin">School Admin</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormField>
-      </div>
+      <FormField label="Role">
+        <Select value={role} onValueChange={setRole}>
+          <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select your role" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="student_union">Student Union</SelectItem>
+            <SelectItem value="school_admin">School Admin</SelectItem>
+          </SelectContent>
+        </Select>
+      </FormField>
 
       <FormField label="Scope" hint="Scope determines who will see your memos.">
         <Select value={scope} onValueChange={setScope}>
