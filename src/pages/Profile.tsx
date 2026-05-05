@@ -351,8 +351,7 @@ const Profile = () => {
   };
 
   const openSettings = () => {
-    setSettingsPanel(null);
-    setSettingsOpen(true);
+    navigate("/settings");
   };
 
   return (
