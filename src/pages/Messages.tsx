@@ -202,6 +202,9 @@ const Messages = () => {
                   onRetryMessage={retryMessage}
                   onReact={toggleReaction}
                   onSetReplyTo={setReplyTo}
+                  postContext={postContext}
+                  aiSuggestions={aiSuggestions}
+                  onSelectSuggestion={handleSelectAiSuggestion}
                 />
 
                 <MessageInput

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { MessageBubble } from "./MessageBubble";
 import { groupMessagesByDate } from "./utils";
-import { Message, UserProfile, ReplyContext } from "./types";
-import { Loader2, ChevronDown, Lock } from "lucide-react";
+import { Message, UserProfile, ReplyContext, PostContext } from "./types";
+import { Loader2, ChevronDown, Lock, MessageSquare, Sparkles } from "lucide-react";
 import { ImageLightbox } from "./ImageLightbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ChatViewProps {
   messages: Message[];
@@ -16,7 +17,23 @@ interface ChatViewProps {
   onRetryMessage: (msg: Message) => void;
   onReact: (messageId: string, emoji: string) => void;
   onSetReplyTo: (ctx: ReplyContext | null) => void;
+  /** Used to render a friendly empty-state for new conversations, especially
+   *  when entering from a post (so the chat doesn't feel "stuck"). */
+  postContext?: PostContext | null;
+  aiSuggestions?: string[];
+  onSelectSuggestion?: (text: string) => void;
 }
+
+const DEFAULT_STARTERS_WITH_POST = [
+  "Hi, is this still available?",
+  "I'm interested — can you tell me more?",
+  "What's the best price?",
+];
+const DEFAULT_STARTERS_GENERIC = [
+  "Hey 👋",
+  "Hi, hope you're doing well!",
+  "Quick question for you…",
+];
 
 export const ChatView = memo(({
   messages,
@@ -28,7 +45,10 @@ export const ChatView = memo(({
   onLoadMore,
   onRetryMessage,
   onReact,
-  onSetReplyTo
+  onSetReplyTo,
+  postContext,
+  aiSuggestions,
+  onSelectSuggestion,
 }: ChatViewProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
@@ -134,6 +154,20 @@ export const ChatView = memo(({
           </div>
         )}
 
+        {/* Empty state — shown only when there are no messages at all */}
+        {messages.length === 0 && !isLoadingMore && selectedUserProfile && (
+          <EmptyConversation
+            user={selectedUserProfile}
+            postContext={postContext ?? null}
+            suggestions={
+              (aiSuggestions && aiSuggestions.length > 0)
+                ? aiSuggestions
+                : (postContext ? DEFAULT_STARTERS_WITH_POST : DEFAULT_STARTERS_GENERIC)
+            }
+            onSelect={onSelectSuggestion}
+          />
+        )}
+
         {/* Messages */}
         <div className="flex flex-col">
           {messageGroups.map((group) => (
@@ -210,3 +244,58 @@ export const ChatView = memo(({
 });
 
 ChatView.displayName = 'ChatView';
+
+/* ────────────────────────────────────────────
+   Empty-state for fresh conversations
+   ──────────────────────────────────────────── */
+const EmptyConversation = ({
+  user, postContext, suggestions, onSelect,
+}: {
+  user: UserProfile;
+  postContext: PostContext | null;
+  suggestions: string[];
+  onSelect?: (text: string) => void;
+}) => (
+  <div className="flex flex-col items-center text-center pt-10 pb-6 px-4">
+    <Avatar className="h-16 w-16 mb-3 ring-4 ring-background shadow-sm">
+      <AvatarImage src={user.profile_picture || ""} />
+      <AvatarFallback className="text-lg bg-primary/10 text-primary font-bold">
+        {user.name?.charAt(0).toUpperCase() || "?"}
+      </AvatarFallback>
+    </Avatar>
+    <h3 className="text-base font-bold tracking-tight">
+      Say hi to {user.name?.split(" ")[0] || "them"}
+    </h3>
+    {postContext ? (
+      <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[280px]">
+        Reach out about <span className="font-semibold text-foreground">"{postContext.title}"</span>{" "}
+        — kick things off with a quick message below.
+      </p>
+    ) : (
+      <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[280px]">
+        This is the start of your conversation. Type a message or pick a starter.
+      </p>
+    )}
+
+    {/* Quick replies */}
+    {suggestions.length > 0 && onSelect && (
+      <div className="mt-5 w-full max-w-sm">
+        <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider flex items-center justify-center gap-1.5 mb-2">
+          <Sparkles className="h-3 w-3" />
+          {postContext ? "Quick replies" : "Conversation starters"}
+        </p>
+        <div className="flex flex-col gap-2">
+          {suggestions.slice(0, 4).map((s, i) => (
+            <button
+              key={i}
+              onClick={() => onSelect(s)}
+              className="px-3.5 py-2.5 rounded-xl bg-card border border-border/40 text-sm text-foreground/85 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground active:scale-[0.99] transition-all text-left"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+);
