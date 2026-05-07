@@ -289,6 +289,44 @@ export const MessageBubble = memo(({
             </div>
           )}
 
+          {/* Embedded post — when this message was sent in the context of a
+              post (Buy / I Can Help on a feed card), the post lives inside
+              the bubble itself so the receiver knows what we're talking about. */}
+          {message.post && (
+            <a
+              href={`/post/${message.post.id}`}
+              onClick={(e) => { e.preventDefault(); window.location.href = `/post/${message.post!.id}`; }}
+              className={`flex items-stretch gap-2.5 mb-1.5 rounded-lg overflow-hidden transition-colors ${
+                isMe
+                  ? 'bg-white/15 hover:bg-white/20'
+                  : 'bg-primary/5 hover:bg-primary/10 border border-primary/15'
+              }`}
+            >
+              <div className={`h-14 w-14 flex-shrink-0 ${isMe ? 'bg-white/10' : 'bg-muted/40'} flex items-center justify-center`}>
+                {message.post.image_url ? (
+                  <img src={message.post.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${isMe ? 'text-white/60' : 'text-primary/60'}`}>
+                    Post
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 py-2 pr-2">
+                <p className={`text-[11px] font-bold uppercase tracking-wider mb-0.5 ${isMe ? 'text-white/70' : 'text-primary/70'}`}>
+                  About this post
+                </p>
+                <p className={`text-xs font-bold leading-tight truncate ${isMe ? 'text-white' : 'text-foreground'}`}>
+                  {message.post.title}
+                </p>
+                {message.post.optional_price != null && (
+                  <p className={`text-[11px] font-semibold leading-tight mt-0.5 ${isMe ? 'text-white/85' : 'text-primary'}`}>
+                    ₦{Number(message.post.optional_price).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </a>
+          )}
+
           {/* Text */}
           {message.message && renderMessageContent(message.message)}
         </div>

@@ -17,6 +17,13 @@ export interface ReplyContext {
   imageUrl: string | null;
 }
 
+export interface MessagePostEmbed {
+  id: string;
+  title: string;
+  image_url: string | null;
+  optional_price: number | null;
+}
+
 export interface Message {
   id: string;
   sender_id: string;
@@ -30,6 +37,11 @@ export interface Message {
   tempId?: string;
   reactions?: MessageReaction[];
   replyTo?: ReplyContext;
+  reply_to_message_id?: string | null;
+  post_id?: string | null;
+  /** Hydrated from the join — present when this message was sent in the
+   *  context of a post (e.g. Buy / I Can Help on a feed card). */
+  post?: MessagePostEmbed | null;
 }
 
 export interface Conversation {

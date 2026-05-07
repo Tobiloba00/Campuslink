@@ -180,7 +180,14 @@ export const useMessaging = (currentUserId: string | undefined) => {
     try {
       let query = supabase
         .from('messages')
-        .select('*')
+        .select(`
+          *,
+          reply_target:reply_to_message_id (
+            id, message, image_url, sender_id,
+            sender:sender_id (name)
+          ),
+          post:post_id (id, title, image_url, optional_price)
+        `)
         .eq('room_id', roomId)
         .order('created_at', { ascending: false })
         .limit(MESSAGE_LIMIT);
@@ -194,7 +201,22 @@ export const useMessaging = (currentUserId: string | undefined) => {
       if (error) throw error;
 
       if (data) {
-        const typed = data.map((msg): Message => ({ ...msg, status: 'delivered' }));
+        const typed = data.map((row: any): Message => ({
+          ...row,
+          status: 'delivered' as const,
+          replyTo: row.reply_target ? {
+            messageId: row.reply_target.id,
+            text: row.reply_target.message,
+            imageUrl: row.reply_target.image_url,
+            senderName: row.reply_target.sender?.name || 'Someone',
+          } : undefined,
+          post: row.post ? {
+            id: row.post.id,
+            title: row.post.title,
+            image_url: row.post.image_url,
+            optional_price: row.post.optional_price,
+          } : null,
+        }));
         const reversed = typed.reverse();
 
         if (loadMore) {
@@ -220,7 +242,12 @@ export const useMessaging = (currentUserId: string | undefined) => {
   }, [fetchMessages, hasMore, isLoadingMore]);
 
   // ─── 7. Send Message (Optimistic UI) ───
-  const sendMessage = useCallback(async (text: string, imageFile: File | null, imagePreview: string | null) => {
+  const sendMessage = useCallback(async (
+    text: string,
+    imageFile: File | null,
+    imagePreview: string | null,
+    options?: { replyTo?: { messageId: string; senderName: string; text: string | null; imageUrl: string | null }; postEmbed?: { id: string; title: string; image_url: string | null; optional_price: number | null } }
+  ) => {
     if (!currentUserId || !selectedConversationRef.current) return;
 
     const targetUserId = selectedConversationRef.current;
@@ -243,6 +270,10 @@ export const useMessaging = (currentUserId: string | undefined) => {
       read_at: null,
       status: 'sending',
       tempId,
+      replyTo: options?.replyTo,
+      reply_to_message_id: options?.replyTo?.messageId ?? null,
+      post_id: options?.postEmbed?.id ?? null,
+      post: options?.postEmbed ?? null,
     };
 
     setMessages(prev => [...prev, optimisticMessage]);
@@ -261,16 +292,20 @@ export const useMessaging = (currentUserId: string | undefined) => {
           receiver_id: targetUserId,
           message: optimisticMessage.message,
           image_url: imageUrl,
-          room_id: roomIdToUse
+          room_id: roomIdToUse,
+          reply_to_message_id: options?.replyTo?.messageId ?? null,
+          post_id: options?.postEmbed?.id ?? null,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Replace optimistic message with real one
+      // Replace optimistic message with real one (preserve hydrated replyTo + post)
       setMessages(prev => prev.map(msg =>
-        msg.tempId === tempId ? { ...data, status: 'sent' } : msg
+        msg.tempId === tempId
+          ? { ...data, status: 'sent' as const, replyTo: options?.replyTo, post: options?.postEmbed ?? null }
+          : msg
       ));
 
       // Update conversation list preview
@@ -385,12 +420,50 @@ export const useMessaging = (currentUserId: string | undefined) => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${selectedRoomId}` },
-        (payload) => {
-          const newMsg = payload.new as Message;
+        async (payload) => {
+          const newMsg = payload.new as any;
           // Skip if we already have it (optimistic or duplicate)
           if (messagesRef.current.find(m => m.id === newMsg.id || m.tempId === newMsg.id)) return;
 
-          setMessages(prev => [...prev, { ...newMsg, status: 'delivered' }]);
+          // If the row references a reply target or post, fetch the joined
+          // shape so the bubble can render those bits — same query as the
+          // initial fetchMessages.
+          let hydrated: Message = { ...newMsg, status: 'delivered' };
+          if (newMsg.reply_to_message_id || newMsg.post_id) {
+            const { data: full } = await supabase
+              .from('messages')
+              .select(`
+                *,
+                reply_target:reply_to_message_id (
+                  id, message, image_url, sender_id,
+                  sender:sender_id (name)
+                ),
+                post:post_id (id, title, image_url, optional_price)
+              `)
+              .eq('id', newMsg.id)
+              .single();
+            if (full) {
+              const f: any = full;
+              hydrated = {
+                ...f,
+                status: 'delivered' as const,
+                replyTo: f.reply_target ? {
+                  messageId: f.reply_target.id,
+                  text: f.reply_target.message,
+                  imageUrl: f.reply_target.image_url,
+                  senderName: f.reply_target.sender?.name || 'Someone',
+                } : undefined,
+                post: f.post ? {
+                  id: f.post.id,
+                  title: f.post.title,
+                  image_url: f.post.image_url,
+                  optional_price: f.post.optional_price,
+                } : null,
+              };
+            }
+          }
+
+          setMessages(prev => [...prev, hydrated]);
 
           if (newMsg.sender_id !== currentUserId) {
             playSound();

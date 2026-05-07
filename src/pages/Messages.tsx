@@ -128,11 +128,32 @@ const Messages = () => {
   };
 
   const handleSendMessage = async (text: string, file: File | null, preview: string | null) => {
-    await sendMessage(text, file, preview);
+    // First-message-in-context: stamp the post onto the actual message so
+    // the receiver sees it embedded, and clear the sticky preview header.
+    const postEmbed = postContext && messages.length === 0 ? {
+      id: postContext.id,
+      title: postContext.title,
+      image_url: postContext.image_url ?? null,
+      optional_price: postContext.optional_price ?? null,
+    } : undefined;
+
+    await sendMessage(text, file, preview, {
+      replyTo: replyTo ? {
+        messageId: replyTo.messageId,
+        senderName: replyTo.senderName,
+        text: replyTo.text,
+        imageUrl: replyTo.imageUrl,
+      } : undefined,
+      postEmbed,
+    });
+
+    // Clear the reply chip and the sticky post header — both have done their job
+    if (replyTo) setReplyTo(null);
+    if (postEmbed) setPostContext(null);
   };
 
   const handleSelectAiSuggestion = (suggestion: string) => {
-    sendMessage(suggestion, null, null);
+    handleSendMessage(suggestion, null, null);
     setAiSuggestions([]);
   };
 
@@ -184,7 +205,10 @@ const Messages = () => {
                   onBack={handleBackToConversations}
                 />
 
-                {postContext && (
+                {/* Sticky preview header — only while the chat is empty. After
+                    the first message goes out, the post is embedded inside
+                    that message, so the header would just be redundant. */}
+                {postContext && messages.length === 0 && (
                   <PostContextCard
                     postContext={postContext}
                     onClear={() => setPostContext(null)}
