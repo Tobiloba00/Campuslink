@@ -3,6 +3,7 @@ import { Check, CheckCheck, Loader2, Copy, RotateCcw, SmilePlus, Reply } from "l
 import { Message, UserProfile, ReplyContext } from './types';
 import { formatMessageTime, detectLinks } from "./utils";
 import { useState, memo, useRef, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ReactionPicker } from "./ReactionPicker";
 
@@ -31,6 +32,7 @@ export const MessageBubble = memo(({
   onReply,
   onImageClick
 }: MessageBubbleProps) => {
+  const navigate = useNavigate();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const isFailed = message.status === 'failed';
@@ -257,6 +259,43 @@ export const MessageBubble = memo(({
               : `chat-bubble-other ${isFirstInSequence ? 'rounded-2xl rounded-bl-sm' : 'rounded-2xl'} ${!isLastInSequence ? 'rounded-bl-sm' : ''}`
           } ${isFailed ? 'opacity-50 ring-1 ring-red-400/50' : ''} ${isSending ? 'opacity-70' : ''}`}
         >
+          {/* Quoted post — sits at the very top of the bubble like a
+              WhatsApp "reply privately" quote. Tap to jump back to the
+              original post (works for both sender and receiver). */}
+          {message.post && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/post/${message.post!.id}`);
+              }}
+              className={`w-full flex items-stretch gap-2.5 mb-1.5 rounded-lg overflow-hidden border-l-[3px] transition-colors text-left ${
+                isMe
+                  ? 'bg-white/12 hover:bg-white/20 border-white/70'
+                  : 'bg-primary/5 hover:bg-primary/10 border-primary'
+              }`}
+            >
+              {message.post.image_url ? (
+                <div className={`h-12 w-12 flex-shrink-0 ${isMe ? 'bg-white/10' : 'bg-muted/40'}`}>
+                  <img src={message.post.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                </div>
+              ) : null}
+              <div className="flex-1 min-w-0 py-1.5 pr-2 pl-2.5">
+                <p className={`text-[10px] font-bold uppercase tracking-wider leading-none ${isMe ? 'text-white/75' : 'text-primary'}`}>
+                  Reply about post
+                </p>
+                <p className={`text-[12.5px] font-semibold leading-tight truncate mt-1 ${isMe ? 'text-white' : 'text-foreground'}`}>
+                  {message.post.title}
+                </p>
+                {message.post.optional_price != null && (
+                  <p className={`text-[11px] leading-tight mt-0.5 ${isMe ? 'text-white/85' : 'text-primary'}`}>
+                    ₦{Number(message.post.optional_price).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </button>
+          )}
+
           {/* Reply preview */}
           {replyTo && (
             <div className={`mb-1.5 px-2.5 py-1.5 rounded-lg border-l-2 ${isMe ? 'bg-white/10 border-white/40' : 'bg-primary/5 border-primary/40'} cursor-pointer`}>
@@ -287,44 +326,6 @@ export const MessageBubble = memo(({
                 onLoad={() => setImageLoaded(true)}
               />
             </div>
-          )}
-
-          {/* Embedded post — when this message was sent in the context of a
-              post (Buy / I Can Help on a feed card), the post lives inside
-              the bubble itself so the receiver knows what we're talking about. */}
-          {message.post && (
-            <a
-              href={`/post/${message.post.id}`}
-              onClick={(e) => { e.preventDefault(); window.location.href = `/post/${message.post!.id}`; }}
-              className={`flex items-stretch gap-2.5 mb-1.5 rounded-lg overflow-hidden transition-colors ${
-                isMe
-                  ? 'bg-white/15 hover:bg-white/20'
-                  : 'bg-primary/5 hover:bg-primary/10 border border-primary/15'
-              }`}
-            >
-              <div className={`h-14 w-14 flex-shrink-0 ${isMe ? 'bg-white/10' : 'bg-muted/40'} flex items-center justify-center`}>
-                {message.post.image_url ? (
-                  <img src={message.post.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${isMe ? 'text-white/60' : 'text-primary/60'}`}>
-                    Post
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0 py-2 pr-2">
-                <p className={`text-[11px] font-bold uppercase tracking-wider mb-0.5 ${isMe ? 'text-white/70' : 'text-primary/70'}`}>
-                  About this post
-                </p>
-                <p className={`text-xs font-bold leading-tight truncate ${isMe ? 'text-white' : 'text-foreground'}`}>
-                  {message.post.title}
-                </p>
-                {message.post.optional_price != null && (
-                  <p className={`text-[11px] font-semibold leading-tight mt-0.5 ${isMe ? 'text-white/85' : 'text-primary'}`}>
-                    ₦{Number(message.post.optional_price).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            </a>
           )}
 
           {/* Text */}

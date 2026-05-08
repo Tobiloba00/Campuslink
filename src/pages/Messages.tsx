@@ -128,9 +128,11 @@ const Messages = () => {
   };
 
   const handleSendMessage = async (text: string, file: File | null, preview: string | null) => {
-    // First-message-in-context: stamp the post onto the actual message so
-    // the receiver sees it embedded, and clear the sticky preview header.
-    const postEmbed = postContext && messages.length === 0 ? {
+    // If we navigated here from a feed post, stamp the post onto the next
+    // message we send — regardless of whether this is a brand-new chat or
+    // an existing one. After it goes out, the postContext is cleared so
+    // subsequent messages in the same session don't double-embed.
+    const postEmbed = postContext ? {
       id: postContext.id,
       title: postContext.title,
       image_url: postContext.image_url ?? null,
