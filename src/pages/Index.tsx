@@ -242,34 +242,51 @@ const Index = () => {
           <div className="grid lg:grid-cols-[1fr_360px] gap-8 lg:gap-12 items-start">
             {/* ── Copy ── */}
             <div className="order-2 lg:order-1">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1.5 rounded-full mb-4">
-                <Sparkles className="h-3 w-3" />Live preview
-              </p>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-3">
-                What you'll see when you sign in
+              <h2 className="text-2xl sm:text-3xl md:text-[42px] font-extrabold tracking-tight leading-[1.1] mb-4">
+                Built for how students actually help each other
               </h2>
-              <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed mb-5 max-w-xl">
-                Real categories, real posts from real students on the platform.
-                Browse the feed, post a task, get help in minutes.
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed mb-6 max-w-xl">
+                Drop a question when you&apos;re stuck on an assignment.
+                Find a peer who&apos;s already passed MTH 201. Sell your old engineering
+                calculator before semester ends. Your campus is full of students who
+                can help — CampusLink just makes them easy to find.
               </p>
-              <ul className="space-y-2.5 text-sm text-muted-foreground max-w-md">
-                <li className="flex items-start gap-2.5">
-                  <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <BookOpen className="h-3 w-3" />
+              <ul className="space-y-3.5 max-w-md">
+                <li className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <BookOpen className="h-3.5 w-3.5" />
                   </div>
-                  <span><strong className="text-foreground font-semibold">Academic Help</strong> — assignments, projects, exam prep</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-foreground leading-tight">Academic Help</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-0.5">
+                      Post your tutorial question or coursework. Peers chime in,
+                      no more refreshing the class WhatsApp group.
+                    </p>
+                  </div>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Users className="h-3 w-3" />
+                <li className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Users className="h-3.5 w-3.5" />
                   </div>
-                  <span><strong className="text-foreground font-semibold">Tutoring</strong> — book a peer who's aced the course</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-foreground leading-tight">Tutoring</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-0.5">
+                      Book a session with someone who&apos;s already passed the course
+                      — by department, level, or the specific topic.
+                    </p>
+                  </div>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <div className="h-5 w-5 rounded-full bg-accent/10 text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <ShoppingBag className="h-3 w-3" />
+                <li className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-xl bg-accent/10 text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <ShoppingBag className="h-3.5 w-3.5" />
                   </div>
-                  <span><strong className="text-foreground font-semibold">Buy &amp; Sell</strong> — calculators, textbooks, hostel kit</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-foreground leading-tight">Buy &amp; Sell</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-0.5">
+                      Textbooks, calculators, hostel kit, used laptops —
+                      buy what you need, list what you&apos;re done with.
+                    </p>
+                  </div>
                 </li>
               </ul>
             </div>
