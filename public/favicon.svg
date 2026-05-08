@@ -1,13 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-  <!-- Two-disc CampusLink mark, transparent background.
-       Adapts to the user's color scheme: dark-navy on light tabs,
-       white on dark tabs, so it never disappears in either theme. -->
+  <!-- Two-disc CampusLink mark — back disc dark, front disc solid grey.
+       Adapts the back to dark-mode browser tabs but keeps the grey
+       constant so the brand identity reads the same in both themes. -->
   <style>
     .disc-back  { fill: #0f172a; }
-    .disc-front { fill: #0f172a; fill-opacity: 0.55; }
+    .disc-front { fill: #94a3b8; }
     @media (prefers-color-scheme: dark) {
-      .disc-back  { fill: #ffffff; }
-      .disc-front { fill: #ffffff; fill-opacity: 0.55; }
+      .disc-back  { fill: #f1f5f9; }
     }
   </style>
   <circle class="disc-back"  cx="14" cy="20" r="10"/>

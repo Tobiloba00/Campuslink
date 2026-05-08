@@ -7,8 +7,11 @@ interface LogoProps {
   textClassName?: string;
 }
 
-// Abstract mark: two interlocking circles. Symbolic of "Campus + Link" — students
-// connected. Replaces the previous graduation-cap mark across the app.
+// Abstract mark: two interlocking discs. Symbolic of "Campus + Link" —
+// students connected. The back disc tracks the parent's text color
+// (currentColor) so it works on light and dark surfaces; the front disc
+// is a solid neutral grey so the two read as distinct, clearly-different
+// shapes — not just a faded copy of the back. Matches the reference image.
 const Mark = ({ size, className }: { size: number; className?: string }) => (
   <svg
     width={size}
@@ -19,10 +22,8 @@ const Mark = ({ size, className }: { size: number; className?: string }) => (
     className={cn("flex-shrink-0", className)}
     aria-label="CampusLink"
   >
-    {/* Back disc */}
     <circle cx="14" cy="20" r="10" fill="currentColor" />
-    {/* Front disc, lighter so they read as overlapping/linked */}
-    <circle cx="26" cy="20" r="10" fill="currentColor" opacity="0.55" />
+    <circle cx="26" cy="20" r="10" fill="hsl(215 16% 65%)" />
   </svg>
 );
 
