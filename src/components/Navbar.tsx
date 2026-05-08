@@ -129,6 +129,15 @@ export const Navbar = () => {
                 size="icon"
                 asChild
                 className="h-10 w-10 rounded-full hover:bg-muted text-foreground/80"
+                aria-label="Memos"
+              >
+                <Link to="/memos"><Megaphone className="h-[20px] w-[20px]" /></Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="h-10 w-10 rounded-full hover:bg-muted text-foreground/80"
                 aria-label="Search people"
               >
                 <Link to="/user-search"><Search className="h-[20px] w-[20px]" /></Link>
