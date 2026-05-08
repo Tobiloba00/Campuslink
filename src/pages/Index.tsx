@@ -369,7 +369,7 @@ const Index = () => {
               { value: postCount, suffix: '+', label: 'Posts Created', icon: BookOpen, color: 'text-accent' },
               { value: connectionCount, suffix: '+', label: 'Messages Sent', icon: MessageSquare, color: 'text-primary' },
             ].map((stat, i) => (
-              <div key={i} className={`${statsSection.inView ? 'animate-count-up' : 'opacity-0'}`} style={{ animationDelay: `${i * 0.15}s` }}>
+              <div key={i} className={statsSection.inView ? 'animate-count-up' : ''} style={{ animationDelay: `${i * 0.15}s` }}>
                 <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-2 sm:mb-3 ${stat.color} opacity-60`} />
                 <div className={`text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight ${stat.color}`}>
                   {formatNumber(stat.value)}{stat.suffix}
@@ -384,7 +384,7 @@ const Index = () => {
       {/* ═══ Features Grid ═══ */}
       <section ref={featuresSection.ref} className="py-14 md:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className={`text-center mb-16 transition-all duration-700 ${featuresSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="text-center mb-12 md:mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-xs font-bold uppercase tracking-wider mb-4">
               <Zap className="h-3 w-3" /> Features
             </div>
@@ -466,7 +466,7 @@ const Index = () => {
       {/* ═══ How It Works ═══ */}
       <section ref={howItWorksSection.ref} className="py-14 md:py-20 border-y border-border/50 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className={`text-center mb-16 transition-all duration-700 ${howItWorksSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="text-center mb-12 md:mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
               <Shield className="h-3 w-3" /> How it works
             </div>
@@ -508,7 +508,7 @@ const Index = () => {
       {/* ═══ CTA Section ═══ */}
       <section ref={ctaSection.ref} className="py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className={`transition-all duration-700 ${ctaSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div>
             <div className="relative inline-block mb-8">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-3xl scale-150" />
               <div className="relative h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-2xl shadow-primary/30 text-primary-foreground">
