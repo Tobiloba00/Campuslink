@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   MessageSquare, TrendingUp, Users, ArrowRight,
   Loader2, Sparkles, BookOpen, ShoppingBag, Shield, Zap, Star,
-  ChevronRight
+  ChevronRight, Search, Bell, Plus,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo, LogoMark } from "@/components/Logo";
 
@@ -49,10 +50,19 @@ const useInView = (threshold = 0.2) => {
   return { ref, inView };
 };
 
+type RecentTask = {
+  id: string;
+  title: string;
+  category: string;
+  optional_price: number | null;
+  created_at: string;
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
 
   const statsSection = useInView(0.3);
   const featuresSection = useInView(0.15);
@@ -70,6 +80,7 @@ const Index = () => {
       } else {
         setLoading(false);
         fetchStats();
+        fetchRecentTasks();
       }
     });
 
@@ -96,6 +107,19 @@ const Index = () => {
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchRecentTasks = async () => {
+    try {
+      const { data } = await supabase
+        .from('posts')
+        .select('id, title, category, optional_price, created_at')
+        .order('created_at', { ascending: false })
+        .limit(2);
+      setRecentTasks((data as RecentTask[]) || []);
+    } catch (error) {
+      console.error('Error fetching recent tasks:', error);
     }
   };
 
@@ -201,6 +225,129 @@ const Index = () => {
           <div className="animate-hero-delayed-2 mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             <span>Powered by AI — smart matching, summaries & insights</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Live preview — what the platform actually looks like ═══ */}
+      <section className="relative py-12 md:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-[1fr_380px] gap-10 lg:gap-16 items-center">
+            {/* ── Copy ── */}
+            <div className="text-center lg:text-left order-2 lg:order-1">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1.5 rounded-full mb-4">
+                <Sparkles className="h-3 w-3" />Live preview
+              </p>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4">
+                What you'll see when you sign in
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-6 max-w-xl mx-auto lg:mx-0">
+                Real categories, real posts from real students on the platform.
+                Browse the feed, post a task, get help in minutes.
+              </p>
+              <ul className="space-y-2.5 text-sm text-muted-foreground max-w-md mx-auto lg:mx-0 lg:list-none">
+                <li className="flex items-start gap-2 justify-center lg:justify-start">
+                  <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <BookOpen className="h-3 w-3" />
+                  </div>
+                  <span><strong className="text-foreground font-semibold">Academic Help</strong> — assignments, projects, exam prep</span>
+                </li>
+                <li className="flex items-start gap-2 justify-center lg:justify-start">
+                  <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Users className="h-3 w-3" />
+                  </div>
+                  <span><strong className="text-foreground font-semibold">Tutoring</strong> — book a peer who's aced the course</span>
+                </li>
+                <li className="flex items-start gap-2 justify-center lg:justify-start">
+                  <div className="h-5 w-5 rounded-full bg-accent/10 text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <ShoppingBag className="h-3 w-3" />
+                  </div>
+                  <span><strong className="text-foreground font-semibold">Buy &amp; Sell</strong> — calculators, textbooks, hostel kit</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* ── Phone-style preview ── */}
+            <div className="order-1 lg:order-2 mx-auto w-full max-w-[340px]">
+              <div className="relative rounded-[36px] border border-border/40 bg-card shadow-2xl shadow-primary/10 overflow-hidden">
+                {/* Notch hint */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-1.5 rounded-full bg-foreground/10" />
+
+                <div className="px-5 pt-9 pb-5 space-y-4">
+                  {/* Greeting */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] text-muted-foreground leading-none">Good morning,</p>
+                      <p className="text-base font-bold tracking-tight mt-1">Student <span aria-hidden>👋</span></p>
+                    </div>
+                    <button className="relative h-9 w-9 rounded-full hover:bg-muted/40 flex items-center justify-center text-muted-foreground" aria-label="Notifications">
+                      <Bell className="h-[18px] w-[18px]" />
+                      <span className="absolute top-1 right-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
+                    </button>
+                  </div>
+
+                  {/* Search */}
+                  <div className="flex items-center gap-2 h-10 px-3.5 rounded-2xl bg-muted/40 text-muted-foreground">
+                    <Search className="h-3.5 w-3.5" />
+                    <span className="text-xs">Search for tasks, people, or skills…</span>
+                  </div>
+
+                  {/* Categories */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-[13px] font-bold tracking-tight">Categories</p>
+                      <span className="text-[11px] font-semibold text-primary">See all</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <CategoryTile icon={BookOpen}    label="Academic Help" tint="bg-primary/10 text-primary" />
+                      <CategoryTile icon={Users}       label="Tutoring"       tint="bg-emerald-500/10 text-emerald-600" />
+                      <CategoryTile icon={ShoppingBag} label="Buy & Sell"     tint="bg-accent/10 text-accent" />
+                    </div>
+                  </div>
+
+                  {/* Recent Tasks — real posts when there's data */}
+                  <div>
+                    <p className="text-[13px] font-bold tracking-tight mb-2.5">Recent Tasks</p>
+                    <div className="space-y-2">
+                      {recentTasks.length > 0 ? (
+                        recentTasks.map((t) => (
+                          <PreviewTaskCard
+                            key={t.id}
+                            title={t.title}
+                            category={t.category}
+                            price={t.optional_price}
+                            ago={formatDistanceToNow(new Date(t.created_at), { addSuffix: false })}
+                          />
+                        ))
+                      ) : (
+                        <>
+                          <PreviewTaskCard
+                            title="Need help with Calculus assignment"
+                            category="Academic Help"
+                            price={3000}
+                            ago="2h"
+                          />
+                          <PreviewTaskCard
+                            title="Selling slightly used HP laptop"
+                            category="Buy & Sell"
+                            price={120000}
+                            ago="5h"
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => navigate('/auth')}
+                    className="w-full h-11 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-primary/30 hover:bg-primary/90 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />Post a Task
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -407,6 +554,49 @@ const Index = () => {
           </div>
         </div>
       </footer>
+    </div>
+  );
+};
+
+/* ─── Small helpers used by the live-preview phone card ─── */
+const CategoryTile = ({
+  icon: Icon, label, tint,
+}: { icon: typeof BookOpen; label: string; tint: string }) => (
+  <div className="rounded-2xl bg-muted/30 border border-border/30 p-2.5 flex flex-col items-center gap-1.5 text-center">
+    <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${tint}`}>
+      <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+    </div>
+    <p className="text-[10px] font-semibold leading-tight">{label}</p>
+  </div>
+);
+
+const PreviewTaskCard = ({
+  title, category, price, ago,
+}: { title: string; category: string; price: number | null; ago: string }) => {
+  const cleanAgo = ago.replace("about ", "")
+    .replace(" minutes", "m").replace(" minute", "m")
+    .replace(" hours", "h").replace(" hour", "h")
+    .replace(" days", "d").replace(" day", "d")
+    .replace("less than a m", "now");
+  return (
+    <div className="rounded-2xl bg-muted/20 border border-border/30 p-3 flex items-start gap-2.5">
+      <div className="h-9 w-9 rounded-xl bg-card border border-border/40 flex items-center justify-center flex-shrink-0">
+        <BookOpen className="h-4 w-4 text-primary/80" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[11.5px] font-bold leading-tight truncate">{title}</p>
+        <span className="inline-block mt-1 text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+          {category}
+        </span>
+      </div>
+      <div className="text-right flex-shrink-0">
+        {price != null && (
+          <p className="text-[11.5px] font-bold text-emerald-600 leading-tight">
+            ₦{Number(price).toLocaleString()}
+          </p>
+        )}
+        <p className="text-[9px] text-muted-foreground mt-0.5">{cleanAgo} ago</p>
+      </div>
     </div>
   );
 };
