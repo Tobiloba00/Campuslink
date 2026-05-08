@@ -6,6 +6,7 @@ import {
   MessageSquare, TrendingUp, Users, ArrowRight,
   Loader2, Sparkles, BookOpen, ShoppingBag, Shield, Zap, Star,
   ChevronRight, Search, Bell, Plus,
+  GraduationCap, FileText, Building2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -15,7 +16,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 type PlatformStats = {
   users: number;
   posts: number;
-  connections: number;
+  memos: number;
+  schools: number;
 };
 
 const useCountUp = (end: number, duration = 2000, start = false) => {
@@ -78,7 +80,7 @@ const Index = () => {
 
   const userCount = useCountUp(stats?.users || 0, 2000, statsSection.inView);
   const postCount = useCountUp(stats?.posts || 0, 2000, statsSection.inView);
-  const connectionCount = useCountUp(stats?.connections || 0, 2500, statsSection.inView);
+  const schoolCount = useCountUp(stats?.schools || 0, 2000, statsSection.inView);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -102,15 +104,16 @@ const Index = () => {
 
   const fetchStats = async () => {
     try {
-      const [profilesResult, postsResult, messagesResult] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('posts').select('id', { count: 'exact', head: true }),
-        supabase.from('messages').select('room_id', { count: 'exact', head: true }),
-      ]);
+      // Single SECURITY DEFINER RPC — bypasses RLS so anon visitors see
+      // honest numbers (the old per-table counts hit a wall on messages).
+      const { data, error } = await supabase.rpc('platform_stats');
+      if (error) throw error;
+      const d = (data as Partial<PlatformStats>) || {};
       setStats({
-        users: profilesResult.count || 0,
-        posts: postsResult.count || 0,
-        connections: messagesResult.count || 0,
+        users: d.users ?? 0,
+        posts: d.posts ?? 0,
+        memos: d.memos ?? 0,
+        schools: d.schools ?? 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -134,6 +137,10 @@ const Index = () => {
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return `${num}`;
   };
+
+  // Don't show the "+" suffix until the number is round enough to mean
+  // something. "0+" reads as broken; "12+" reads as a real count.
+  const honestSuffix = (num: number) => (num >= 10 ? "+" : "");
 
   if (loading) {
     return (
@@ -382,14 +389,16 @@ const Index = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
             {[
-              { value: userCount, suffix: '+', label: 'Active Students', icon: Users, color: 'text-primary' },
-              { value: postCount, suffix: '+', label: 'Posts Created', icon: BookOpen, color: 'text-accent' },
-              { value: connectionCount, suffix: '+', label: 'Messages Sent', icon: MessageSquare, color: 'text-primary' },
+              { value: userCount,    label: 'Students',     icon: GraduationCap, tint: 'bg-primary/10 text-primary'              },
+              { value: postCount,    label: 'Posts',        icon: FileText,      tint: 'bg-accent/10  text-accent'                },
+              { value: schoolCount,  label: 'Universities', icon: Building2,     tint: 'bg-emerald-500/10 text-emerald-600'       },
             ].map((stat, i) => (
               <div key={i} className={statsSection.inView ? 'animate-count-up' : ''} style={{ animationDelay: `${i * 0.15}s` }}>
-                <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-2 sm:mb-3 ${stat.color} opacity-60`} />
-                <div className={`text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight ${stat.color}`}>
-                  {formatNumber(stat.value)}{stat.suffix}
+                <div className={`h-10 w-10 sm:h-11 sm:w-11 rounded-2xl ${stat.tint} mx-auto mb-3 flex items-center justify-center`}>
+                  <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
+                </div>
+                <div className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+                  {formatNumber(stat.value)}{honestSuffix(stat.value)}
                 </div>
                 <div className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">{stat.label}</div>
               </div>
