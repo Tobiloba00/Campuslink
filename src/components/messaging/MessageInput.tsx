@@ -151,32 +151,38 @@ export const MessageInput = ({
         </div>
       )}
 
-      {/* Post-quote preview — shown BEFORE the message is sent, so the user
-          sees exactly what they're about to attach. Mirrors WhatsApp's
-          "Reply Privately" preview pinned just above the keyboard. */}
+      {/* Post-quote preview — pinned above the keyboard exactly like
+          WhatsApp's Reply Privately. Bigger / louder than the reply chip
+          because the user is committing to attaching the post itself. */}
       {postContext && (
-        <div className="px-4 pt-3">
-          <div className="flex items-stretch gap-2 px-2 py-2 bg-primary/5 rounded-xl border-l-2 border-primary overflow-hidden">
-            {postContext.image_url ? (
-              <div className="h-10 w-10 flex-shrink-0 rounded-md overflow-hidden bg-muted/40">
+        <div className="px-3 pt-3">
+          <div className="flex items-stretch gap-3 p-2.5 bg-primary/10 dark:bg-primary/15 rounded-2xl border-l-[4px] border-primary overflow-hidden ring-1 ring-primary/15">
+            <div className="h-12 w-12 flex-shrink-0 rounded-lg overflow-hidden bg-primary/15 flex items-center justify-center">
+              {postContext.image_url ? (
                 <img src={postContext.image_url} alt="" className="h-full w-full object-cover" />
-              </div>
-            ) : null}
-            <div className="flex-1 min-w-0 py-0.5">
+              ) : (
+                <Sparkles className="h-5 w-5 text-primary" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-center">
               <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
                 Replying about post
               </p>
-              <p className="text-xs font-semibold text-foreground truncate mt-1 leading-tight">
+              <p className="text-sm font-bold text-foreground truncate mt-1 leading-tight">
                 {postContext.title}
               </p>
               {postContext.optional_price != null && (
-                <p className="text-[11px] text-primary font-semibold leading-tight">
+                <p className="text-xs text-primary font-semibold leading-tight mt-0.5">
                   ₦{Number(postContext.optional_price).toLocaleString()}
                 </p>
               )}
             </div>
-            <button onClick={onClearPostContext} className="p-1 rounded-full hover:bg-muted transition-colors flex-shrink-0 self-start">
-              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            <button
+              onClick={onClearPostContext}
+              aria-label="Don't include this post"
+              className="p-1.5 rounded-full hover:bg-primary/20 transition-colors flex-shrink-0 self-start"
+            >
+              <X className="h-4 w-4 text-primary" />
             </button>
           </div>
         </div>

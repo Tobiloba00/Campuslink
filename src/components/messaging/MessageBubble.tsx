@@ -269,26 +269,32 @@ export const MessageBubble = memo(({
                 e.stopPropagation();
                 navigate(`/post/${message.post!.id}`);
               }}
-              className={`w-full flex items-stretch gap-2.5 mb-1.5 rounded-lg overflow-hidden border-l-[3px] transition-colors text-left ${
+              className={`w-full flex items-stretch gap-2 mb-2 rounded-lg overflow-hidden border-l-[4px] transition-colors text-left ${
                 isMe
-                  ? 'bg-white/12 hover:bg-white/20 border-white/70'
-                  : 'bg-primary/5 hover:bg-primary/10 border-primary'
+                  ? 'bg-white/20 hover:bg-white/30 border-white'
+                  : 'bg-primary/8 hover:bg-primary/12 border-primary'
               }`}
             >
-              {message.post.image_url ? (
-                <div className={`h-12 w-12 flex-shrink-0 ${isMe ? 'bg-white/10' : 'bg-muted/40'}`}>
+              <div className={`h-14 w-14 flex-shrink-0 flex items-center justify-center ${
+                isMe ? 'bg-white/15' : 'bg-primary/10'
+              }`}>
+                {message.post.image_url ? (
                   <img src={message.post.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                </div>
-              ) : null}
-              <div className="flex-1 min-w-0 py-1.5 pr-2 pl-2.5">
-                <p className={`text-[10px] font-bold uppercase tracking-wider leading-none ${isMe ? 'text-white/75' : 'text-primary'}`}>
+                ) : (
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${isMe ? 'text-white' : 'text-primary'}`}>
+                    Post
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 py-1.5 pr-2 pl-1">
+                <p className={`text-[10px] font-bold uppercase tracking-wider leading-none ${isMe ? 'text-white' : 'text-primary'}`}>
                   Reply about post
                 </p>
-                <p className={`text-[12.5px] font-semibold leading-tight truncate mt-1 ${isMe ? 'text-white' : 'text-foreground'}`}>
+                <p className={`text-[13px] font-bold leading-tight truncate mt-1 ${isMe ? 'text-white' : 'text-foreground'}`}>
                   {message.post.title}
                 </p>
                 {message.post.optional_price != null && (
-                  <p className={`text-[11px] leading-tight mt-0.5 ${isMe ? 'text-white/85' : 'text-primary'}`}>
+                  <p className={`text-[11px] font-semibold leading-tight mt-0.5 ${isMe ? 'text-white/95' : 'text-primary'}`}>
                     ₦{Number(message.post.optional_price).toLocaleString()}
                   </p>
                 )}
