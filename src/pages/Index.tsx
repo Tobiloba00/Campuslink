@@ -146,9 +146,7 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-primary flex items-center justify-center animate-glow-pulse text-primary-foreground">
-            <LogoMark size={24} />
-          </div>
+          <LogoMark size={48} className="text-foreground animate-pulse" />
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <p className="text-muted-foreground text-sm">Loading CampusLink...</p>
@@ -536,10 +534,8 @@ const Index = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div>
             <div className="relative inline-block mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-3xl scale-150" />
-              <div className="relative h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-2xl shadow-primary/30 text-primary-foreground">
-                <LogoMark size={32} />
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/15 to-accent/15 rounded-full blur-3xl scale-150" />
+              <LogoMark size={64} className="relative text-foreground" />
             </div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-6">
@@ -570,10 +566,8 @@ const Index = () => {
       <footer className="border-t border-border/50 py-10 md:py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg bg-gradient-primary flex items-center justify-center text-primary-foreground">
-                <LogoMark size={14} />
-              </div>
+            <div className="flex items-center gap-2">
+              <LogoMark size={22} className="text-foreground" />
               <span className="font-bold text-sm tracking-tight">Campus Link</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
