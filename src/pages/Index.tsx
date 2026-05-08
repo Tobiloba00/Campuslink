@@ -146,7 +146,9 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <LogoMark size={48} className="text-foreground animate-pulse" />
+          <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center animate-pulse">
+            <LogoMark size={28} />
+          </div>
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <p className="text-muted-foreground text-sm">Loading CampusLink...</p>
@@ -164,8 +166,13 @@ const Index = () => {
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
-          <a href="/" className="group flex-shrink-0">
-            <Logo size={28} />
+          <a href="/" className="group flex-shrink-0 flex items-center gap-2">
+            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center">
+              <LogoMark size={20} />
+            </div>
+            <span className="font-display font-extrabold tracking-tight text-base hidden sm:inline">
+              <span className="text-foreground">Campus</span>{' '}<span className="text-primary">Link</span>
+            </span>
           </a>
           <div className="flex items-center gap-1.5 sm:gap-3">
             <ThemeToggle />
@@ -534,8 +541,10 @@ const Index = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div>
             <div className="relative inline-block mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/15 to-accent/15 rounded-full blur-3xl scale-150" />
-              <LogoMark size={64} className="relative text-foreground" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-3xl scale-150" />
+              <div className="relative h-16 w-16 rounded-2xl bg-primary flex items-center justify-center mx-auto shadow-2xl shadow-primary/30">
+                <LogoMark size={36} />
+              </div>
             </div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-6">
@@ -567,7 +576,9 @@ const Index = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <LogoMark size={22} className="text-foreground" />
+              <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+                <LogoMark size={16} />
+              </div>
               <span className="font-bold text-sm tracking-tight">Campus Link</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">

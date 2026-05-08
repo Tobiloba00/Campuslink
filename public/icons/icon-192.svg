@@ -1,8 +1,8 @@
 <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- App-icon background with the brand primary -->
   <rect width="192" height="192" rx="42" fill="#2563eb"/>
-  <!-- Two-circle CampusLink mark — back disc -->
-  <circle cx="68" cy="96" r="48" fill="white"/>
-  <!-- Front disc, lighter so they read as overlapping / linked -->
-  <circle cx="124" cy="96" r="48" fill="white" fill-opacity="0.55"/>
+  <!-- Solid white back disc, 45%-opacity white front disc — the front
+       semi-transparency creates a glassmorphism step against the back
+       and a soft light-blue where it sits alone over the brand bg. -->
+  <circle cx="68"  cy="96" r="48" fill="#FFFFFF"/>
+  <circle cx="124" cy="96" r="48" fill="#FFFFFF" fill-opacity="0.45"/>
 </svg>

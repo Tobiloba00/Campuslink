@@ -1,14 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-  <!-- Two-disc CampusLink mark — back disc dark navy, front disc light
-       blue. Back flips to white in dark browser tabs so it stays visible,
-       but the blue stays the same in both themes for brand consistency. -->
-  <style>
-    .disc-back  { fill: #0f172a; }
-    .disc-front { fill: #93c5fd; }
-    @media (prefers-color-scheme: dark) {
-      .disc-back  { fill: #f1f5f9; }
-    }
-  </style>
-  <circle class="disc-back"  cx="14" cy="20" r="10"/>
-  <circle class="disc-front" cx="26" cy="20" r="10"/>
+  <!-- Brand mark: solid white back disc + 45%-opacity white front disc
+       on the brand-primary blue. The semi-transparent front lets the
+       blue bleed through where it sits alone, giving a glassmorphism
+       step against the back disc. -->
+  <rect width="40" height="40" rx="8" fill="#2563eb"/>
+  <circle cx="14" cy="20" r="10" fill="#FFFFFF"/>
+  <circle cx="26" cy="20" r="10" fill="#FFFFFF" fill-opacity="0.45"/>
 </svg>
