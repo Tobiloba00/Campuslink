@@ -8,10 +8,10 @@ interface LogoProps {
 }
 
 // Abstract mark: two interlocking discs. Symbolic of "Campus + Link" —
-// students connected. The back disc tracks the parent's text color
-// (currentColor) so it works on light and dark surfaces; the front disc
-// is a solid neutral grey so the two read as distinct, clearly-different
-// shapes — not just a faded copy of the back. Matches the reference image.
+// students connected. Back disc tracks the parent's text color so it
+// works on any surface; front disc is a solid light blue (the brand's
+// primary palette, ~75% lightness) so the two read as a real two-tone
+// rather than a faded copy.
 const Mark = ({ size, className }: { size: number; className?: string }) => (
   <svg
     width={size}
@@ -23,7 +23,7 @@ const Mark = ({ size, className }: { size: number; className?: string }) => (
     aria-label="CampusLink"
   >
     <circle cx="14" cy="20" r="10" fill="currentColor" />
-    <circle cx="26" cy="20" r="10" fill="hsl(215 16% 65%)" />
+    <circle cx="26" cy="20" r="10" fill="#93c5fd" />
   </svg>
 );
 
