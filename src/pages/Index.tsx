@@ -176,7 +176,7 @@ const Index = () => {
       </header>
 
       {/* ═══ Hero Section ═══ */}
-      <section className="relative pt-[calc(env(safe-area-inset-top,0px)+7rem)] pb-16 md:pt-40 md:pb-28">
+      <section className="relative pt-[calc(env(safe-area-inset-top,0px)+6rem)] pb-10 md:pt-32 md:pb-16">
         {/* Decorative elements */}
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-40 left-1/4 w-[300px] h-[300px] bg-accent/5 rounded-full blur-[100px] pointer-events-none animate-float-slow" />
@@ -237,9 +237,9 @@ const Index = () => {
       </section>
 
       {/* ═══ Live preview — what the platform actually looks like ═══ */}
-      <section className="relative py-12 md:py-20">
+      <section className="relative py-10 md:py-14">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-[1fr_380px] gap-10 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-[1fr_360px] gap-8 lg:gap-12 items-start">
             {/* ── Copy ── */}
             <div className="order-2 lg:order-1">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1.5 rounded-full mb-4">
@@ -360,7 +360,7 @@ const Index = () => {
       </section>
 
       {/* ═══ Stats Bar ═══ */}
-      <section ref={statsSection.ref} className="relative py-16 md:py-20 border-y border-border/50">
+      <section ref={statsSection.ref} className="relative py-10 md:py-14 border-y border-border/50">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-transparent to-accent/3" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
@@ -382,7 +382,7 @@ const Index = () => {
       </section>
 
       {/* ═══ Features Grid ═══ */}
-      <section ref={featuresSection.ref} className="py-20 md:py-32">
+      <section ref={featuresSection.ref} className="py-14 md:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className={`text-center mb-16 transition-all duration-700 ${featuresSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-xs font-bold uppercase tracking-wider mb-4">
@@ -464,7 +464,7 @@ const Index = () => {
       </section>
 
       {/* ═══ How It Works ═══ */}
-      <section ref={howItWorksSection.ref} className="py-20 md:py-32 border-y border-border/50 bg-muted/30">
+      <section ref={howItWorksSection.ref} className="py-14 md:py-20 border-y border-border/50 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className={`text-center mb-16 transition-all duration-700 ${howItWorksSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
@@ -506,7 +506,7 @@ const Index = () => {
       </section>
 
       {/* ═══ CTA Section ═══ */}
-      <section ref={ctaSection.ref} className="py-24 md:py-32">
+      <section ref={ctaSection.ref} className="py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div className={`transition-all duration-700 ${ctaSection.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="relative inline-block mb-8">
