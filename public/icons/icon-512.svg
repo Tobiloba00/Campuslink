@@ -1,7 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="512" height="512" rx="112" fill="#2563eb"/>
-  <path d="M256 100L406 164L256 228L106 164Z" fill="white"/>
-  <path d="M160 180V256C160 282 200 304 256 304C312 304 352 282 352 256V180L256 228L160 180Z" fill="white" opacity="0.55"/>
-  <line x1="352" y1="180" x2="352" y2="372" stroke="white" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="352" cy="392" r="18" fill="white"/>
+  <!-- Two-circle CampusLink mark, scaled to 512 — back disc then front disc -->
+  <circle cx="180" cy="256" r="128" fill="white"/>
+  <circle cx="332" cy="256" r="128" fill="white" fill-opacity="0.55"/>
 </svg>

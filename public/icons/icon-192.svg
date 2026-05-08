@@ -1,7 +1,8 @@
 <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- App-icon background with the brand primary -->
   <rect width="192" height="192" rx="42" fill="#2563eb"/>
-  <path d="M96 38L152 62L96 86L40 62Z" fill="white"/>
-  <path d="M60 68V96C60 106 75 114 96 114C117 114 132 106 132 96V68L96 86L60 68Z" fill="white" opacity="0.55"/>
-  <line x1="132" y1="68" x2="132" y2="140" stroke="white" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="132" cy="148" r="7" fill="white"/>
+  <!-- Two-circle CampusLink mark — back disc -->
+  <circle cx="68" cy="96" r="48" fill="white"/>
+  <!-- Front disc, lighter so they read as overlapping / linked -->
+  <circle cx="124" cy="96" r="48" fill="white" fill-opacity="0.55"/>
 </svg>
