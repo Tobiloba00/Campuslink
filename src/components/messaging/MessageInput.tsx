@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { Image as ImageIcon, Send, X, Loader2, Sparkles, Reply, Plus } from "lucide-react";
+import { Image as ImageIcon, Send, X, Loader2, Sparkles, Reply, Plus, Smile } from "lucide-react";
 import { compressImage } from "@/lib/imageUtils";
 import { toast } from "sonner";
 import { PostContext, ReplyContext } from "./types";
@@ -226,8 +226,9 @@ export const MessageInput = ({
         </div>
       )}
 
-      {/* Input row — matches mockup: + (attach) on left, input pill, circular send on right */}
-      <div className="flex items-end gap-2 p-3 sm:p-4">
+      {/* Input row — clean composer pill with three distinct controls:
+          + (attach) · text pill (with emoji icon embedded right) · send */}
+      <div className="flex items-center gap-2 p-3 sm:p-4">
         <input
           type="file"
           ref={fileInputRef}
@@ -237,16 +238,18 @@ export const MessageInput = ({
           disabled={isCompressing || isOffline || isSending}
         />
 
+        {/* + Attach */}
         <button
-          className="h-10 w-10 rounded-full bg-muted/60 hover:bg-muted text-foreground/70 hover:text-foreground flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40"
+          className="h-10 w-10 rounded-full border border-border/50 bg-card text-foreground/70 hover:text-foreground hover:bg-muted/60 flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40"
           onClick={() => fileInputRef.current?.click()}
           disabled={isCompressing || isOffline || isSending}
           aria-label="Attach image"
         >
-          <Plus className="h-5 w-5" strokeWidth={2.2} />
+          <Plus className="h-5 w-5" strokeWidth={2} />
         </button>
 
-        <div className="flex-1">
+        {/* Input pill with embedded emoji button */}
+        <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
             value={text}
@@ -257,18 +260,31 @@ export const MessageInput = ({
             onKeyDown={handleKeyDown}
             disabled={isCompressing || isOffline || isSending}
             placeholder={isOffline ? "Waiting for connection..." : "Type a message..."}
-            className="w-full rounded-full bg-muted/40 border border-border/30 focus:border-primary/30 focus:ring-1 focus:ring-primary/15 px-4 py-2.5 min-h-[40px] max-h-[120px] resize-none overflow-y-auto chat-text leading-relaxed placeholder:text-muted-foreground/40 transition-all outline-none"
+            className="w-full rounded-full bg-card border border-border/50 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 pl-5 pr-12 py-2.5 min-h-[40px] max-h-[120px] resize-none overflow-y-auto chat-text leading-relaxed placeholder:text-muted-foreground/50 transition-all outline-none"
             rows={1}
           />
+          <button
+            type="button"
+            onClick={() => {
+              setText((t) => t + "😊");
+              textareaRef.current?.focus();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center transition-colors"
+            aria-label="Insert emoji"
+            tabIndex={-1}
+          >
+            <Smile className="h-[18px] w-[18px]" strokeWidth={1.7} />
+          </button>
         </div>
 
+        {/* Send */}
         <button
           onClick={handleSend}
           disabled={!canSend}
           className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
             canSend
-              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:scale-105 active:scale-95'
-              : 'bg-muted/60 text-muted-foreground/30'
+              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30 hover:shadow-lg hover:scale-[1.04] active:scale-95'
+              : 'bg-muted text-muted-foreground/40'
           }`}
           aria-label="Send"
         >
