@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { Image as ImageIcon, Send, X, Loader2, Sparkles, Reply, Plus, Smile } from "lucide-react";
+import { Image as ImageIcon, Send, X, Loader2, Sparkles, Reply, Plus } from "lucide-react";
 import { compressImage } from "@/lib/imageUtils";
 import { toast } from "sonner";
 import { PostContext, ReplyContext } from "./types";
@@ -248,8 +248,8 @@ export const MessageInput = ({
           <Plus className="h-5 w-5" strokeWidth={2} />
         </button>
 
-        {/* Input pill with embedded emoji button */}
-        <div className="flex-1 relative">
+        {/* Input pill */}
+        <div className="flex-1">
           <textarea
             ref={textareaRef}
             value={text}
@@ -260,21 +260,9 @@ export const MessageInput = ({
             onKeyDown={handleKeyDown}
             disabled={isCompressing || isOffline || isSending}
             placeholder={isOffline ? "Waiting for connection..." : "Type a message..."}
-            className="w-full rounded-full bg-card border border-border/50 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 pl-5 pr-12 py-2.5 min-h-[40px] max-h-[120px] resize-none overflow-y-auto chat-text leading-relaxed placeholder:text-muted-foreground/50 transition-all outline-none"
+            className="w-full rounded-full bg-card border border-border/50 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 px-5 py-2.5 min-h-[40px] max-h-[120px] resize-none overflow-y-auto chat-text leading-relaxed placeholder:text-muted-foreground/50 transition-all outline-none"
             rows={1}
           />
-          <button
-            type="button"
-            onClick={() => {
-              setText((t) => t + "😊");
-              textareaRef.current?.focus();
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center transition-colors"
-            aria-label="Insert emoji"
-            tabIndex={-1}
-          >
-            <Smile className="h-[18px] w-[18px]" strokeWidth={1.7} />
-          </button>
         </div>
 
         {/* Send */}
