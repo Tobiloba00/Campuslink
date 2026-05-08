@@ -151,6 +151,37 @@ export const MessageInput = ({
         </div>
       )}
 
+      {/* Post-quote preview — shown BEFORE the message is sent, so the user
+          sees exactly what they're about to attach. Mirrors WhatsApp's
+          "Reply Privately" preview pinned just above the keyboard. */}
+      {postContext && (
+        <div className="px-4 pt-3">
+          <div className="flex items-stretch gap-2 px-2 py-2 bg-primary/5 rounded-xl border-l-2 border-primary overflow-hidden">
+            {postContext.image_url ? (
+              <div className="h-10 w-10 flex-shrink-0 rounded-md overflow-hidden bg-muted/40">
+                <img src={postContext.image_url} alt="" className="h-full w-full object-cover" />
+              </div>
+            ) : null}
+            <div className="flex-1 min-w-0 py-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
+                Replying about post
+              </p>
+              <p className="text-xs font-semibold text-foreground truncate mt-1 leading-tight">
+                {postContext.title}
+              </p>
+              {postContext.optional_price != null && (
+                <p className="text-[11px] text-primary font-semibold leading-tight">
+                  ₦{Number(postContext.optional_price).toLocaleString()}
+                </p>
+              )}
+            </div>
+            <button onClick={onClearPostContext} className="p-1 rounded-full hover:bg-muted transition-colors flex-shrink-0 self-start">
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Reply context */}
       {replyTo && (
         <div className="px-4 pt-3">

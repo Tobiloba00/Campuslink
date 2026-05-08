@@ -207,15 +207,10 @@ const Messages = () => {
                   onBack={handleBackToConversations}
                 />
 
-                {/* Sticky preview header — only while the chat is empty. After
-                    the first message goes out, the post is embedded inside
-                    that message, so the header would just be redundant. */}
-                {postContext && messages.length === 0 && (
-                  <PostContextCard
-                    postContext={postContext}
-                    onClear={() => setPostContext(null)}
-                  />
-                )}
+                {/* The post preview now lives directly above the keyboard
+                    inside MessageInput (so the user sees what they're about
+                    to attach while they're typing). The sticky header up
+                    here would be duplicate noise. */}
 
                 <ChatView
                   messages={messages}
