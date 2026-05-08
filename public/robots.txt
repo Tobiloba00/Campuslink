@@ -1,8 +1,26 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /messages
+Disallow: /create-post
+Disallow: /edit-post/
+Disallow: /pending-approval
+Disallow: /apply-publisher
+Disallow: /settings
+Disallow: /profile
+Disallow: /notifications
+Disallow: /my-tasks
+Disallow: /rate-user/
+
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /messages
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /messages
 
 User-agent: Twitterbot
 Allow: /
@@ -10,5 +28,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
+Sitemap: https://campuslink-self.vercel.app/sitemap.xml

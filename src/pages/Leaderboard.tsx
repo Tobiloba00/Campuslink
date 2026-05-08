@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Medal, Award, Star, Crown, MessageSquare, ArrowLeft } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
+import { usePageMeta as _usePageMeta } from "@/hooks/usePageMeta";
+
 const Leaderboard = () => {
+  _usePageMeta({
+    title: "Top helpers leaderboard",
+    description: "See the highest-rated peer helpers on CampusLink — verified students helping students with assignments, tutoring, and projects.",
+    canonical: "https://campuslink-self.vercel.app/leaderboard",
+  });
   const navigate = useNavigate();
   const [topHelpers, setTopHelpers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

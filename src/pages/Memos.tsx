@@ -8,6 +8,7 @@ import {
   Megaphone, AlertCircle, AlertTriangle, ChevronRight, ShieldCheck, Plus, Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type Memo = {
   id: string;
@@ -36,6 +37,11 @@ const URGENCY_META = {
 
 const Memos = () => {
   const navigate = useNavigate();
+  usePageMeta({
+    title: "Official school memos",
+    description: "Official notices and announcements from your school's verified Student Union and admin bodies — filtered to your faculty, department, and level.",
+    canonical: "https://campuslink-self.vercel.app/memos",
+  });
   const [memos, setMemos] = useState<Memo[]>([]);
   const [pubMap, setPubMap] = useState<Record<string, PubInfo>>({});
   const [loading, setLoading] = useState(true);

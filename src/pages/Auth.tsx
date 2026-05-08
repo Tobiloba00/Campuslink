@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { track } from "@/lib/analytics";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { cn } from "@/lib/utils";
 import { SchoolPicker, type SchoolPickerValue } from "@/components/SchoolPicker";
 
@@ -25,6 +26,11 @@ const PENDING_APP_KEY = 'cl-pending-app';  // localStorage key for org form stat
 
 const Auth = () => {
   const navigate = useNavigate();
+  usePageMeta({
+    title: "Sign in or sign up",
+    description: "Create your free CampusLink account or log in. Verified Nigerian university students only — built for academic help, peer tutoring, and a campus marketplace.",
+    canonical: "https://campuslink-self.vercel.app/auth",
+  });
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<AuthStep>('form');

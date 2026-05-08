@@ -10,6 +10,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo, LogoMark } from "@/components/Logo";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type PlatformStats = {
   users: number;
@@ -63,6 +64,12 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
+
+  usePageMeta({
+    title: "Academic Help, Tutors & Campus Marketplace for Nigerian Students",
+    description: "CampusLink is a free, AI-powered platform for Nigerian university students. Find a tutor, post a task, sell textbooks, and connect with verified peers — all in one app.",
+    canonical: "https://campuslink-self.vercel.app/",
+  });
 
   const statsSection = useInView(0.3);
   const featuresSection = useInView(0.15);
@@ -234,31 +241,31 @@ const Index = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-[1fr_380px] gap-10 lg:gap-16 items-center">
             {/* ── Copy ── */}
-            <div className="text-center lg:text-left order-2 lg:order-1">
+            <div className="order-2 lg:order-1">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1.5 rounded-full mb-4">
                 <Sparkles className="h-3 w-3" />Live preview
               </p>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-3">
                 What you'll see when you sign in
               </h2>
-              <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-6 max-w-xl mx-auto lg:mx-0">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed mb-5 max-w-xl">
                 Real categories, real posts from real students on the platform.
                 Browse the feed, post a task, get help in minutes.
               </p>
-              <ul className="space-y-2.5 text-sm text-muted-foreground max-w-md mx-auto lg:mx-0 lg:list-none">
-                <li className="flex items-start gap-2 justify-center lg:justify-start">
+              <ul className="space-y-2.5 text-sm text-muted-foreground max-w-md">
+                <li className="flex items-start gap-2.5">
                   <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
                     <BookOpen className="h-3 w-3" />
                   </div>
                   <span><strong className="text-foreground font-semibold">Academic Help</strong> — assignments, projects, exam prep</span>
                 </li>
-                <li className="flex items-start gap-2 justify-center lg:justify-start">
+                <li className="flex items-start gap-2.5">
                   <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Users className="h-3 w-3" />
                   </div>
                   <span><strong className="text-foreground font-semibold">Tutoring</strong> — book a peer who's aced the course</span>
                 </li>
-                <li className="flex items-start gap-2 justify-center lg:justify-start">
+                <li className="flex items-start gap-2.5">
                   <div className="h-5 w-5 rounded-full bg-accent/10 text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
                     <ShoppingBag className="h-3 w-3" />
                   </div>

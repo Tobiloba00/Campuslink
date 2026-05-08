@@ -3,11 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-    <title>CampusLink - Connect, Learn, Thrive</title>
-    <meta name="description" content="Connect with students for academic help, tutoring, and campus marketplace. Build your reputation and help your peers succeed." />
-    <meta name="author" content="CampusLink" />
 
-    <!-- PWA -->
+    <!-- ─── Primary SEO ─────────────────────────────────────── -->
+    <title>CampusLink — Academic Help, Tutors & Marketplace for Nigerian Students</title>
+    <meta name="description" content="CampusLink connects students at Nigerian universities for academic help, peer tutoring, and a campus marketplace — buy & sell textbooks, find a tutor in your course, get help with assignments, all in one free, AI-powered app." />
+    <meta name="keywords" content="campus help, academic help Nigeria, university tutoring, student marketplace, find a tutor, buy textbooks Nigeria, FUOYE, UNILAG, OAU, UI, UNN, Covenant University, Babcock, Bowen, peer learning, study help, student community, campus side hustle, assignment help, project help, Nigerian university app, student-to-student help" />
+    <meta name="author" content="CampusLink" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://campuslink-self.vercel.app/" />
+
+    <!-- Geo / language signals — helps with local search -->
+    <meta name="geo.region" content="NG" />
+    <meta name="geo.placename" content="Nigeria" />
+    <meta name="language" content="English" />
+
+    <!-- ─── PWA ─────────────────────────────────────────────── -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a0a0b" media="(prefers-color-scheme: dark)" />
@@ -17,32 +28,158 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
     <meta name="mobile-web-app-capable" content="yes" />
-
-    <!-- Prevent tap highlight & callout on mobile -->
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Fonts -->
+    <!-- ─── Fonts ───────────────────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- OG — link preview on WhatsApp, Twitter, etc -->
-    <meta property="og:title" content="CampusLink - Connect, Learn, Thrive" />
-    <meta property="og:description" content="The all-in-one platform where students find help, trade resources, and build real connections that matter." />
+    <!-- ─── Open Graph / WhatsApp / FB ───────────────────────── -->
+    <meta property="og:site_name" content="CampusLink" />
+    <meta property="og:title" content="CampusLink — Academic Help, Tutors & Marketplace for Nigerian Students" />
+    <meta property="og:description" content="Free, AI-powered student platform for Nigerian universities. Find a tutor, post a task, sell your old textbooks — all in one app." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://campuslink-self.vercel.app" />
+    <meta property="og:url" content="https://campuslink-self.vercel.app/" />
     <meta property="og:image" content="https://campuslink-self.vercel.app/og-image.png" />
+    <meta property="og:image:secure_url" content="https://campuslink-self.vercel.app/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CampusLink — student help platform" />
+    <meta property="og:locale" content="en_NG" />
 
+    <!-- ─── Twitter / X ─────────────────────────────────────── -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="CampusLink - Connect, Learn, Thrive" />
-    <meta name="twitter:description" content="The all-in-one platform where students find help, trade resources, and build real connections." />
+    <meta name="twitter:site" content="@campuslink" />
+    <meta name="twitter:title" content="CampusLink — Academic Help & Marketplace for Nigerian Students" />
+    <meta name="twitter:description" content="Free, AI-powered student platform for Nigerian universities. Find a tutor, post a task, sell your textbooks." />
     <meta name="twitter:image" content="https://campuslink-self.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="CampusLink screenshots and feature highlights" />
 
+    <!-- ─── Structured data (JSON-LD) ──────────────────────────
+         Three discrete schemas: Organization, WebApplication, WebSite
+         (with a SearchAction so Google can offer in-result search).
+    ──────────────────────────────────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "CampusLink",
+      "url": "https://campuslink-self.vercel.app/",
+      "logo": "https://campuslink-self.vercel.app/logo.png",
+      "description": "Student-to-student help platform connecting Nigerian university students for academic help, peer tutoring, and a campus marketplace.",
+      "areaServed": { "@type": "Country", "name": "Nigeria" },
+      "audience": { "@type": "EducationalAudience", "educationalRole": "student" }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "CampusLink",
+      "url": "https://campuslink-self.vercel.app/",
+      "description": "AI-powered platform where Nigerian university students find help, trade textbooks, and book peer tutors. Free to join.",
+      "applicationCategory": "EducationalApplication",
+      "applicationSubCategory": "Student Community",
+      "operatingSystem": "Web, iOS, Android",
+      "browserRequirements": "Requires JavaScript and modern browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "NGN",
+        "availability": "https://schema.org/InStock"
+      },
+      "featureList": [
+        "Academic help requests",
+        "Peer tutoring marketplace",
+        "Buy and sell campus items",
+        "Real-time direct messaging",
+        "AI-powered post matching",
+        "Verified school memos",
+        "Student ratings and reviews"
+      ],
+      "screenshot": "https://campuslink-self.vercel.app/og-image.png"
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "CampusLink",
+      "url": "https://campuslink-self.vercel.app/",
+      "inLanguage": "en-NG",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://campuslink-self.vercel.app/feed?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is CampusLink?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CampusLink is a free platform built for Nigerian university students. Post a task to get academic help, book a peer tutor for your course, or buy and sell campus essentials like textbooks and calculators — all in one place."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is CampusLink free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — CampusLink is completely free to sign up and use. Some posts (like tutoring sessions or marketplace items) may carry a price set by the student offering them, but the platform itself is free."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which Nigerian universities can use CampusLink?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CampusLink works at every Nigerian university. Students set their school, faculty, department, and level on signup, and feeds and memos automatically scope to their campus."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I find a tutor on CampusLink?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Open the Feed and filter by Tutoring, or search for a course code (e.g. CSC 201). You'll see verified peers offering to tutor — message them directly or post your own request and let tutors come to you."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ─── Discovery hints ───────────────────────────────────── -->
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <link rel="alternate" hreflang="en-NG" href="https://campuslink-self.vercel.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://campuslink-self.vercel.app/" />
   </head>
 
   <body>
+    <!-- noscript fallback for crawlers / users without JS -->
+    <noscript>
+      <div style="font-family:sans-serif;max-width:640px;margin:64px auto;padding:0 24px;text-align:center;color:#111">
+        <h1 style="font-size:32px;font-weight:800;margin-bottom:12px">CampusLink</h1>
+        <p style="font-size:16px;line-height:1.6;color:#444">
+          CampusLink is a free, AI-powered platform for Nigerian university students —
+          academic help, peer tutoring, campus marketplace, and verified school memos
+          in one app. Please enable JavaScript to use the site, or
+          <a href="https://campuslink-self.vercel.app/" style="color:#2563eb">visit the homepage</a>.
+        </p>
+      </div>
+    </noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
